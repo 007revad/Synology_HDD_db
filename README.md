@@ -10,6 +10,7 @@ The script works in DSM 7 and DSM 6.
 
 #### What the script does:
 
+* Gets the Synology NAS model and DSM version (so it knows which db files to edit).
 * Gets a list of the HDDs, SSDs and NVMe drives installed in your Synology NAS.
 * Gets each drive's model number and firmware version.
 * Checks if each drive is already in the Synology's compatible-drive database.
