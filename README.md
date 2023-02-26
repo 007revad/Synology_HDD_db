@@ -43,3 +43,7 @@ sudo /path-to-script/syno_hdd_db.sh -showedits
 **Note:** Replace /path-to-script/ with the actual path to the script on your Synology.
 
 <p align="leftr"><img src="images/syno_hdd_db.png"></p>
+
+**Credits**
+
+The idea for this script came from a comment made by Empyrealist on the Synology subreddit.
