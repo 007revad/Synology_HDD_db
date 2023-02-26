@@ -53,21 +53,25 @@ fi
 
 # SATA drives, sata1, sata2 etc
 for drive in /dev/sata*; do
-    tmp=$(hdparm -i "$drive" | grep Model)
-    hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
-    fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
-    if [[ $hdmodel ]] && [[ $fwrev ]]; then
-        hdparm+=("${hdmodel},${fwrev}")
+    if [[ $drive =~ /dev/sata[1-9][0-9]?[0-9]?$ ]]; then
+        tmp=$(hdparm -i "$drive" | grep Model)
+        hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
+        fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
+        if [[ $hdmodel ]] && [[ $fwrev ]]; then
+            hdparm+=("${hdmodel},${fwrev}")
+        fi
     fi
 done
 
 # SATA drives sda, sdb etc
-for drive in /dev/sd[a-z]{1,2}; do
-    tmp=$(hdparm -i "$drive" | grep Model)
-    hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
-    fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
-    if [[ $hdmodel ]] && [[ $fwrev ]]; then
-        hdparm+=("${hdmodel},${fwrev}")
+for drive in /dev/sd*; do
+    if [[ $drive =~ /dev/sd[a-z]{1,3}$ ]]; then
+        tmp=$(hdparm -i "$drive" | grep Model)
+        hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
+        fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
+        if [[ $hdmodel ]] && [[ $fwrev ]]; then
+            hdparm+=("${hdmodel},${fwrev}")
+        fi
     fi
 done
 
