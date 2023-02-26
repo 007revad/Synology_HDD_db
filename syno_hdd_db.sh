@@ -61,7 +61,7 @@ for drive in /dev/sata*; do
     fi
 done
 
-# SATA drives, sda, sdb etc
+# SATA drives sda, sdb etc
 for drive in /dev/sd[a-z]{1,2}; do
     tmp=$(hdparm -i "$drive" | grep Model)
     hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
@@ -82,8 +82,13 @@ fi
 if [[ ${#hdds[@]} -eq "0" ]]; then
     echo -e "\e[41m ERROR:\e[0m No drives found!" && exit 2
 else
-    echo "HDD/SSD models found: ${#hdds[@]}"  # debug
-    echo -e "${hdds[@]}" "\n"
+    echo "HDD/SSD models found: ${#hdds[@]}"
+    num="0"
+    while [[ $num -lt "${#hdds[@]}" ]]; do
+        echo "${hdds[num]}"
+        num=$((num +1))
+    done
+    echo
 fi
 
 
@@ -118,7 +123,12 @@ if [[ $express ]]; then
         echo -e "No NVMe drives found\n"
     else    
         echo "NVMe drive models found: ${#nvmes[@]}"
-        echo -e "${nvmes[@]}" "\n"
+        num="0"
+        while [[ $num -lt "${#nvmes[@]}" ]]; do
+            echo "${nvmes[num]}"
+            num=$((num +1))
+        done
+        echo
     fi
 fi
 
