@@ -51,28 +51,25 @@ fi
 #------------------------------------------------------------------------------
 # Get list of installed HDDs and SATA SSDs
 
-if [[ $dsm -gt "6" ]]; then
-    # DSM 7 (sata drives, sata1, sata2 etc)
-#    for drive in /dev/sata[0-9]{1,2}; do
-    for drive in /dev/sata*; do
-        tmp=$(hdparm -i "$drive" | grep Model)
-        hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
-        fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
-        if [[ $hdmodel ]] && [[ $fwrev ]]; then
-            hdparm+=("${hdmodel},${fwrev}")
-        fi
-    done
-else
-    # DSM 6 (sata drives, sda, sdb etc)
-    for drive in /dev/sd[a-z]{1,2}; do
-        tmp=$(hdparm -i "$drive" | grep Model)
-        hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
-        fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
-        if [[ $hdmodel ]] && [[ $fwrev ]]; then
-            hdparm+=("${hdmodel},${fwrev}")
-        fi
-    done
-fi
+# SATA drives, sata1, sata2 etc
+for drive in /dev/sata*; do
+    tmp=$(hdparm -i "$drive" | grep Model)
+    hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
+    fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
+    if [[ $hdmodel ]] && [[ $fwrev ]]; then
+        hdparm+=("${hdmodel},${fwrev}")
+    fi
+done
+
+# SATA drives, sda, sdb etc
+for drive in /dev/sd[a-z]{1,2}; do
+    tmp=$(hdparm -i "$drive" | grep Model)
+    hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
+    fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
+    if [[ $hdmodel ]] && [[ $fwrev ]]; then
+        hdparm+=("${hdmodel},${fwrev}")
+    fi
+done
 
 # Sort hdparm array into new hdds array to remove duplicates
 if [[ ${#hdparm[@]} -gt "0" ]]; then
