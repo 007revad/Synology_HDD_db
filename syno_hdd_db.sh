@@ -71,7 +71,7 @@ done
 
 # SATA drives sda, sdb etc
 for drive in /dev/sd*; do
-    if [[ $drive =~ /dev/sd[a-z]{1,3}$ ]]; then
+    if [[ $drive =~ /dev/sd[a-z]{1,2}$ ]]; then
         tmp=$(hdparm -i "$drive" | grep Model)
         hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
         fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
@@ -227,15 +227,11 @@ done
 if [[ ${showedits,,} == "yes" ]]; then
     lines=$(((db2Edits *12) +4))
     if [[ $db1Edits -gt "0" ]]; then
-        #echo -e "\nChanges to $(basename -- "$db1")"
         echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
-        #jq . "$db1"  # nice colorized json format but displays whole file
         jq . "$db1" | tail -n "$lines"  # show last 20 lines per edit
     fi
     if [[ $db2Edits -gt "0" ]]; then
-        #echo -e "\nChanges to $(basename -- "$db2")"
         echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
-        #jq . "$db2" | tail -n $((db2Edits *16))  # show last 20 lines per edit
         jq . "$db2" | tail -n "$lines"  # show last 20 lines per edit
     fi
 fi
