@@ -66,6 +66,20 @@ for drive in /dev/sata*; do
         if [[ $hdmodel ]] && [[ $fwrev ]]; then
             hdparm+=("${hdmodel},${fwrev}")
         fi
+    
+        # Add extra model without "WDC " to fix issue #1
+        if [[ $hdmodel =~ ^WDC.* ]]; then
+            hdmodel2=${hdmodel#"WDC "}  # Remove "WDC " from start
+            #echo "$hdmodel2" "  Without 'WDC ' brand"  # debug
+            shopt -s extglob
+            hdmodel2=${hdmodel2/#*([[:space:]])}  # Remove leading spaces
+            #echo "$hdmodel2" "  Without leading spaces"  # debug
+            shopt -u extglob
+            if [[ $hdmodel2 ]] && [[ $fwrev ]]; then
+                hdparm+=("${hdmodel2},${fwrev}")
+            fi
+        fi
+
     fi
 done
 
@@ -78,6 +92,20 @@ for drive in /dev/sd*; do
         if [[ $hdmodel ]] && [[ $fwrev ]]; then
             hdparm+=("${hdmodel},${fwrev}")
         fi
+        
+        # Add extra model without "WDC " to fix issue #1
+        if [[ $hdmodel =~ ^WDC.* ]]; then
+            hdmodel2=${hdmodel#"WDC "}  # Remove "WDC " from start
+            #echo "$hdmodel2" "  Without 'WDC ' brand"  # debug
+            shopt -s extglob
+            hdmodel2=${hdmodel2/#*([[:space:]])}  # Remove leading spaces
+            #echo "$hdmodel2" "  Without leading spaces"  # debug
+            shopt -u extglob
+            if [[ $hdmodel2 ]] && [[ $fwrev ]]; then
+                hdparm+=("${hdmodel2},${fwrev}")
+            fi
+        fi
+
     fi
 done
 
