@@ -36,6 +36,12 @@ if [[ ${1,,} == "-s" ]] || [[ ${1,,} == "-showedits" ]]; then showedits=yes; fi
 model=$(cat /proc/sys/kernel/syno_hw_version)
 model=${model,,}  # convert to lower case
 
+# Check for -j after model - GitHub issue #2
+if [[ $model =~ '-j'$ ]]; then
+    model=${model%??}  # remove last to chars
+fi
+
+# Get DSM major version
 dsm=$(get_key_value /etc.defaults/VERSION majorversion)
 if [[ $dsm -gt "6" ]]; then
     version="_v$dsm"
