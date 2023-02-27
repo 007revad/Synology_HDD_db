@@ -147,6 +147,17 @@ if [[ ! -f "$db1" ]]; then echo -e "\e[41m ERROR:\e[0m $db1 not found!" && exit 
 if [[ ! -f "$db2" ]]; then echo -e "\e[41m ERROR:\e[0m $db2 not found!" && exit 4; fi
 
 
+# Backup database file if needed
+if [[ ! -f "$db1.bak" ]]; then
+    if cp "$db1" "$db1.bak"; then
+        echo -e "Backed up database to $(basename -- "${db1}").bak\n"
+    else
+        echo -e "\e[41m ERROR:\e[0m Failed to backup $(basename -- "${db1}")!"
+        exit 5
+    fi
+fi
+
+
 # Shell Colors
 Yellow='\e[0;33m'
 Cyan='\e[0;36m'
@@ -184,7 +195,7 @@ function updatedb() {
             fi
         else
             echo -e "\n\e[41m ERROR: Failed to update $(basename -- "$2")${Off}"
-            exit 5
+            exit 6
         fi
     fi
 }
