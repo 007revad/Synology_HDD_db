@@ -222,6 +222,12 @@ while [[ $num -lt "${#nvmes[@]}" ]]; do
     num=$((num +1))
 done
 
+# Brute force method just in case
+sdc=support_disk_compatibility
+setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
+if [[ $setting == "yes" ]]; then
+    sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/g" "/etc.defaults/synoinfo.conf"
+fi
 
 # Show the changes
 if [[ ${showedits,,} == "yes" ]]; then
@@ -236,6 +242,7 @@ if [[ ${showedits,,} == "yes" ]]; then
     fi
 fi
 
+echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
 
 exit
 
