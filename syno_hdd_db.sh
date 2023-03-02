@@ -30,6 +30,26 @@
 # Add support for NVMe drives.
 
 
+scriptver="1.0.7"
+
+# Check latest release with GitHub API
+get_latest_release() {
+    curl --silent "https://api.github.com/repos/$1/releases/latest" |
+    grep '"tag_name":' |          # Get tag line
+    sed -E 's/.*"([^"]+)".*/\1/'  # Pluck JSON value
+}
+
+tag=$(get_latest_release "007revad/Synology_HDD_db")
+
+if [[ ${tag:1} > "$scriptver" ]]; then
+    echo "There is a newer version of this script available."
+    echo -e "Current version: ${scriptver}\nLatest version:  ${tag:1}"
+    echo "https://github.com/007revad/Synology_HDD_db/releases/latest"
+    echo ""
+    sleep 10
+fi
+
+
 # Check for -s or -showedits flag
 if [[ ${1,,} == "-s" ]] || [[ ${1,,} == "-showedits" ]]; then showedits=yes; fi
 
