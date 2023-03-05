@@ -46,7 +46,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="1.1.8"
+scriptver="1.1.9"
 
 # Check latest release with GitHub API
 get_latest_release() {
@@ -111,31 +111,95 @@ fi
 
 
 #------------------------------------------------------------------------------
-# Get list of installed HDDs and SATA SSDs
+# Get list of installed SATA, SAS and NVMe drives
 
-# SATA drives, sata1, sata2 etc
-for drive in /dev/sata*; do
-    if [[ $drive =~ /dev/sata[1-9][0-9]?[0-9]?$ ]]; then
-        tmp=$(hdparm -i "$drive" | grep Model)
-        hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
-        fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
-        if [[ $hdmodel ]] && [[ $fwrev ]]; then
-            hdparm+=("${hdmodel},${fwrev}")
-        fi
+getModel() {
+    hdmodel=$(smartctl -i "$1" | grep -i "Device Model:" | awk '{print $3 $4 $5}')
+    if [[ ! $hdmodel ]]; then
+        hdmodel=$(smartctl -i "$1" | grep -i "Product:" | awk '{print $2 $3 $4}')
     fi
+    #echo "Model:    $hdmodel"  # debug
+
+    # Brands that return "BRAND <model>" and need "BRAND " removed.
+    hdmodel=${hdmodel#"WDC "}       # Remove "WDC " from start of model name
+    hdmodel=${hdmodel#"HGST "}      # Remove "HGST " from start of model name
+    hdmodel=${hdmodel#"TOSHIBA "}   # Remove "TOSHIBA " from start of model name
+
+    # Old drive brands
+    hdmodel=${hdmodel#"Hitachi "}   # Remove "Hitachi " from start of model name
+    hdmodel=${hdmodel#"SAMSUNG "}   # Remove "SAMSUNG " from start of model name
+    hdmodel=${hdmodel#"FUJISTU "}   # Remove "FUJISTU " from start of model name
+    hdmodel=${hdmodel#"APPLE HDD "} # Remove "APPLE HDD " from start of model name
+
+    shopt -s extglob
+    hdmodel=${hdmodel/#*([[:space:]])}  # Remove leading spaces
+    hdmodel=${hdmodel/%*([[:space:]])}  # Remove trailing spaces
+    shopt -u extglob
+    #echo "Model:    $hdmodel"  # debug
+}
+
+getFwVersion() {
+    tmp=$(hdparm -i "$1" | grep Model)
+    fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
+    #echo "Firmware: $fwrev"  # debug
+}
+
+getNVMeModel() {
+    nvmemodel=$(cat $1/model)
+    shopt -s extglob
+    nvmemodel=${nvmemodel/#*([[:space:]])}  # Remove leading spaces
+    nvmemodel=${nvmemodel/%*([[:space:]])}  # Remove trailing spaces
+    shopt -u extglob
+    #echo "NVMe Model:    $nvmemodel"  # debug
+}
+
+getNVMeFwVersion() {
+    nvmefw=$(cat $1/firmware_rev)
+    nvmefw=$(echo "$nvmefw" | xargs)  # trim leading and trailing white space
+    #echo "NVMe Firmware: $nvmefw"  # debug
+}
+
+
+for d in `cat /proc/partitions | awk '{print $4}'`; do
+    if [ ! -e /dev/$d ]; then
+        continue;
+    fi
+    #echo $d  # debug
+    case "$d" in
+        hd*|sd*)
+            if [[ $d =~ [hs]d[a-z]{1,2}$ ]]; then
+                echo -e "\n$d"  # debug
+                getModel "/dev/$d"
+                getFwVersion "/dev/$d"
+                if [[ $hdmodel ]] && [[ $fwrev ]]; then
+                    hdparm+=("${hdmodel},${fwrev}")
+                fi
+            fi
+        ;;
+        sas*|sata*)
+            if [[ $d =~ (sas|sata)[0-9][0-9]?[0-9]?$ ]]; then
+                echo -e "\n$d"  # debug
+                getModel "/dev/$d"
+                getFwVersion "/dev/$d"
+                if [[ $hdmodel ]] && [[ $fwrev ]]; then
+                    hdparm+=("${hdmodel},${fwrev}")
+                fi
+            fi
+        ;;
+        nvme*)
+            if [[ $d =~ nvme[0-9][0-9]?n[0-9][0-9]?$ ]]; then
+                echo -e "\n$d"  # debug
+                n=n$(printf "$d" | cut -d "n" -f 2)
+                getNVMeModel "/sys/class/nvme/$n"
+                getNVMeFwVersion "/sys/class/nvme/$n"
+                if [[ $nvmemodel ]] && [[ $nvmefw ]]; then
+                    nvmelist+=("${nvmemodel},${nvmefw}")
+                fi
+            fi
+        ;;
+    esac
 done
 
-# SATA drives sda, sdb etc
-for drive in /dev/sd*; do
-    if [[ $drive =~ /dev/sd[a-z]{1,2}$ ]]; then
-        tmp=$(hdparm -i "$drive" | grep Model)
-        hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
-        fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
-        if [[ $hdmodel ]] && [[ $fwrev ]]; then
-            hdparm+=("${hdmodel},${fwrev}")
-        fi
-    fi
-done
 
 # Sort hdparm array into new hdds array to remove duplicates
 if [[ ${#hdparm[@]} -gt "0" ]]; then
@@ -158,50 +222,24 @@ else
 fi
 
 
-#------------------------------------------------------------------------------
-# Get list of installed NVMe drives
+# Sort nvmelist array into new nvmes array to remove duplicates
+if [[ ${#nvmelist[@]} -gt "0" ]]; then
+    while IFS= read -r -d '' x; do
+        nvmes+=("$x")
+    done < <(printf "%s\0" "${nvmelist[@]}" | sort -uz)
+fi
 
-express=$(cat /proc/devices | grep nvme)
-if [[ $express ]]; then
-    for path in /sys/class/nvme/*; do
-        nvmemodel=$(cat "$path"/model)
-
-        shopt -s extglob
-        nvmemodel=${nvmemodel/#*([[:space:]])}  # Remove leading spaces
-        #echo "$nvmemodel" "  Without leading spaces"  # debug
-        nvmemodel=${nvmemodel/%*([[:space:]])}  # Remove trailing spaces
-        #echo "$nvmemodel" "  Without trailing spaces"  # debug
-        shopt -u extglob
-        #if [[ $nvmemodel ]]; then echo "NVMe model:    ${nvmemodel}"; fi  # debug
-
-        nvmefw=$(cat "$path"/firmware_rev)
-        nvmefw=$(echo "$nvmefw" | xargs)  # trim leading and trailing white space
-        #if [[ $nvmefw ]]; then echo "NVMe firmware: ${nvmefw}"; fi  # debug
-
-        if [[ $nvmemodel ]] && [[ $nvmefw ]]; then
-            nvmelist+=("${nvmemodel},${nvmefw}")
-        fi
+# Check nvmes array isn't empty
+if [[ ${#nvmes[@]} -eq "0" ]]; then
+    echo -e "No NVMe drives found\n"
+else    
+    echo "NVMe drive models found: ${#nvmes[@]}"
+    num="0"
+    while [[ $num -lt "${#nvmes[@]}" ]]; do
+        echo "${nvmes[num]}"
+        num=$((num +1))
     done
-
-    # Sort nvmelist array into new nvmes array to remove duplicates
-    if [[ ${#nvmelist[@]} -gt "0" ]]; then
-        while IFS= read -r -d '' x; do
-            nvmes+=("$x")
-        done < <(printf "%s\0" "${nvmelist[@]}" | sort -uz)
-    fi
-
-    # Check hdds array isn't empty
-    if [[ ${#nvmes[@]} -eq "0" ]]; then
-        echo -e "No NVMe drives found\n"
-    else    
-        echo "NVMe drive models found: ${#nvmes[@]}"
-        num="0"
-        while [[ $num -lt "${#nvmes[@]}" ]]; do
-            echo "${nvmes[num]}"
-            num=$((num +1))
-        done
-        echo
-    fi
+    echo
 fi
 
 
