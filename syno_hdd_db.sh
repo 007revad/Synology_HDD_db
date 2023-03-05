@@ -74,7 +74,7 @@ while getopts "sfn" option; do
         case ${option,,,} in
             s)
                 showedits=yes
-                echo showedits  # debug
+                #echo showedits  # debug
                 ;;
             n)
                 nodbupdate=yes  # For future use
@@ -168,7 +168,7 @@ for d in `cat /proc/partitions | awk '{print $4}'`; do
     case "$d" in
         hd*|sd*)
             if [[ $d =~ [hs]d[a-z]{1,2}$ ]]; then
-                echo -e "\n$d"  # debug
+                #echo -e "\n$d"  # debug
                 getModel "/dev/$d"
                 getFwVersion "/dev/$d"
                 if [[ $hdmodel ]] && [[ $fwrev ]]; then
@@ -178,7 +178,7 @@ for d in `cat /proc/partitions | awk '{print $4}'`; do
         ;;
         sas*|sata*)
             if [[ $d =~ (sas|sata)[0-9][0-9]?[0-9]?$ ]]; then
-                echo -e "\n$d"  # debug
+                #echo -e "\n$d"  # debug
                 getModel "/dev/$d"
                 getFwVersion "/dev/$d"
                 if [[ $hdmodel ]] && [[ $fwrev ]]; then
@@ -188,7 +188,7 @@ for d in `cat /proc/partitions | awk '{print $4}'`; do
         ;;
         nvme*)
             if [[ $d =~ nvme[0-9][0-9]?n[0-9][0-9]?$ ]]; then
-                echo -e "\n$d"  # debug
+                #echo -e "\n$d"  # debug
                 n=n$(printf "$d" | cut -d "n" -f 2)
                 getNVMeModel "/sys/class/nvme/$n"
                 getNVMeFwVersion "/sys/class/nvme/$n"
