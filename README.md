@@ -29,7 +29,7 @@ The script works in DSM 7 and DSM 6.
 
 ### When to run the script
 
-DSM updates wil almost certainly overwrite the drive-compatibility database files so you may need to run the script after every DSM update. You would also have to re-run the script after DSM downloads a newer version of the drive-compatibility database, which can happen between DSM updates. The best option is to run the script every time the Synology boots, and the best way to do that is to setup a scheduled task to run the the script at boot-up.
+You would need to re-run the script after a DSM update. If you have DSM set to auto update the best option is to run the script every time the Synology boots, and the best way to do that is to setup a scheduled task to run the the script at boot-up.
 
 **Note:** After you first run the script you may need to reboot the Synology to see the effect of the changes.
 
@@ -68,5 +68,5 @@ sudo /path-to-script/syno_hdd_db.sh -showedits
 
 **Credits**
 
-The idea for this script came from a comment made by Empyrealist on the Synology subreddit.
-Thanks for the assistance from Alex_of_Chaos on the Synology subreddit.
+- The idea for this script came from a comment made by Empyrealist on the Synology subreddit.
+- Thanks for the assistance from Alex_of_Chaos on the Synology subreddit.
