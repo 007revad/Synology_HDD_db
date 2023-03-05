@@ -5,7 +5,7 @@
 
 ### Description
 
-Add your HDD, SSD and NVMe drives to your Synology's compatible drive database.
+Add your HDD, SSD, SAS and NVMe drives to your Synology's compatible drive database.
 
 The script works in DSM 7 and DSM 6.
 
@@ -17,16 +17,28 @@ The script works in DSM 7 and DSM 6.
 * Backs up the database file if there is no backup already.
 * Checks if each drive is already in the Synology's compatible-drive database.
 * Adds any missing drives to the Synology's compatible-drive database.
+* Prevents DSM auto updating the drive database.
+* Optionally disable DSM's "support_disk_compatibility".
+* Reminds you that you may need to reboot the Synology after running the script.
 
 **Planned updates:** 
 * Detect any connected expansion units and get the model(s) and edit the correct expansion unit db files.
   * Or add support for users to specify their expansion unit model(s) as arguments.
   * Or maybe use the shotgun approach and update all expansion unit db files.
-* Add support for SAS drives? Are SAS drives listed as /dev/sata# or /dev/sas# ?
+* Add support for M.2 SATA and NVMe drives on a Synology PCIe card like the M2D17.
 
 ### When to run the script
 
 DSM updates wil almost certainly overwrite the drive-compatibility database files so you may need to run the script after every DSM update. You would also have to re-run the script after DSM downloads a newer version of the drive-compatibility database, which can happen between DSM updates. The best option is to run the script every time the Synology boots, and the best way to do that is to setup a scheduled task to run the the script at boot-up.
+
+**Note:** After you first run the script you may need to reboot the Synology to see the effect of the changes.
+
+### Options when running the script
+
+There are 2 optional flags you can use when running the script:
+* -showedits or -s to show you the changes it made to the Synology's compatible-drive database.
+* -force or -f to disable "support_disk_compatibility". This should be needed if any of your drives weren't detected.
+  * If you run the script without -force or -f it will re-eanble "support_disk_compatibility".
 
 ### Scheduling the script in Synology's Task Scheduler
 
@@ -57,3 +69,4 @@ sudo /path-to-script/syno_hdd_db.sh -showedits
 **Credits**
 
 The idea for this script came from a comment made by Empyrealist on the Synology subreddit.
+Thanks for the assistance from Alex_of_Chaos on the Synology subreddit.
