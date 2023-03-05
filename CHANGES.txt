@@ -1,6 +1,8 @@
-v1.1.8
+v1.1.9
 - Added support for SAS drives.
 - Now gets HDD/SSD/SAS drive model number with smartctl instead of hdparm.
+
+v1.1.8
 - Now prevents DSM auto updating the drive database.
 - Disable "support_disk_compatibility" (that was added in v1.0.6) is now optional.
   - Run script with -f or -force to disable "support_disk_compatibility".
