@@ -18,19 +18,35 @@
 # sudo /volume1/scripts/syno_hdd_db.sh
 #  or
 # sudo /volume1/scripts/syno_hdd_db.sh -showedits
+#  or
+# sudo /volume1/scripts/syno_hdd_db.sh -force -showedits
 #--------------------------------------------------------------------------------------------------
 
 # TODO
 # Detect if expansion unit(s) connected and get model(s) and edit expansion unit db files.
 #   Or add support for specifying user's expansion unit model(s) as arguments.
 #   Or maybe use the shotgun approach and update all expansion unit db files.
-# Add support for SAS drives? Are are listed as /dev/sata# or /dev/sas# ?
+#
+# Add support for M.2 SATA and NVMe drives on a M2D17 PCI card.
+#
+# Maybe also edit the other disk compatibility DB in synoboot, used during boot time.
+# It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Add support for SAS drives.
+#
+# Get HDD/SSD/SAS drive model number with smartctl instead of hdparm.
+#
+# Check if there is a newer script version available.
+#
 # Add support for NVMe drives.
+#
+# Prevent DSM auto updating the drive database.
+#
+# Optionally disable "support_disk_compatibility".
 
 
-scriptver="1.0.7"
+scriptver="1.1.8"
 
 # Check latest release with GitHub API
 get_latest_release() {
@@ -50,15 +66,35 @@ if [[ ${tag:1} > "$scriptver" ]]; then
 fi
 
 
-# Check for -s or -showedits flag
-if [[ ${1,,} == "-s" ]] || [[ ${1,,} == "-showedits" ]]; then showedits=yes; fi
+# Check for flags with getopts
+OPTERR=0
+while getopts "sfn" option; do
+    # Need to ensure any other long flags do not contain s, n, or f
+    if [[ ! ${#option} -gt "1" ]]; then
+        case ${option,,,} in
+            s)
+                showedits=yes
+                echo showedits  # debug
+                ;;
+            n)
+                nodbupdate=yes  # For future use
+                ;;
+            f)
+                force=yes
+                ;;
+            *)
+                ;;
+        esac
+    fi
+done
+
 
 model=$(cat /proc/sys/kernel/syno_hw_version)
 model=${model,,}  # convert to lower case
 
 # Check for -j after model - GitHub issue #2
 if [[ $model =~ '-j'$ ]]; then
-    model=${model%??}  # remove last to chars
+    model=${model%??}  # remove last two chars
 fi
 
 # Get DSM major version
@@ -129,7 +165,13 @@ express=$(cat /proc/devices | grep nvme)
 if [[ $express ]]; then
     for path in /sys/class/nvme/*; do
         nvmemodel=$(cat "$path"/model)
-        nvmemodel=$(echo "$nvmemodel" | xargs)  # trim leading and trailing white space
+
+        shopt -s extglob
+        nvmemodel=${nvmemodel/#*([[:space:]])}  # Remove leading spaces
+        #echo "$nvmemodel" "  Without leading spaces"  # debug
+        nvmemodel=${nvmemodel/%*([[:space:]])}  # Remove trailing spaces
+        #echo "$nvmemodel" "  Without trailing spaces"  # debug
+        shopt -u extglob
         #if [[ $nvmemodel ]]; then echo "NVMe model:    ${nvmemodel}"; fi  # debug
 
         nvmefw=$(cat "$path"/firmware_rev)
@@ -242,12 +284,67 @@ while [[ $num -lt "${#nvmes[@]}" ]]; do
     num=$((num +1))
 done
 
-# Brute force method just in case
+
+# Optionally disable "support_disk_compatibility"
 sdc=support_disk_compatibility
 setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
-if [[ $setting == "yes" ]]; then
-    sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/g" "/etc.defaults/synoinfo.conf"
+if [[ $force == "yes" ]]; then
+    if [[ $setting == "yes" ]]; then
+        # Disable support_disk_compatibility
+        sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/g" "/etc.defaults/synoinfo.conf"
+        setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
+        if [[ $setting == "no" ]]; then
+            echo -e "\nDisabled support disk compatibility."
+        fi
+    fi
+else
+    if [[ $setting == "no" ]]; then
+        # Enable support_disk_compatibility
+        sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/g" "/etc.defaults/synoinfo.conf"
+        setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
+        if [[ $setting == "yes" ]]; then
+            echo -e "\nRe-enabled support disk compatibility."
+        fi
+    fi
 fi
+
+
+# Edit synoinfo.conf to prevent DB updates
+#if [[ $nodbupdate == "yes" ]]; then  # For future use
+    file=/etc.defaults/synoinfo.conf
+    if [[ -f $file ]]; then
+        # Backup synoinfo.conf if needed
+        if [[ ! -f "$file.bak" ]]; then
+            if cp "$file" "$file.bak"; then
+                echo "Backed up synoinfo.conf to $(basename -- "${file}").bak"
+            else
+                echo -e "\e[41m ERROR:\e[0m Failed to backup $(basename -- "${file}")!"
+                exit 6
+            fi
+        fi
+
+        url=$(get_key_value "$file" drive_db_test_url)  # returns a linefeed if key doesn't exist
+        if [[ ! $url ]]; then
+            # Add drive_db_test_url=127.0.0.1
+            echo "drive_db_test_url=127.0.0.1" >> "$file"
+            disabled="yes"
+        elif [[ $url != "127.0.0.1" ]]; then
+            # Edit drive_db_test_url=
+            sed -i "s/drive_db_test_url=$url/drive_db_test_url=127.0.0.1/g" "$file"
+            disabled="yes"
+        fi
+
+        url=$(get_key_value "$file" drive_db_test_url)
+        if [[ $disabled == "yes" ]]; then
+            if [[ $url == "127.0.0.1" ]]; then
+                echo "Disabled drive db auto updates."
+            else
+                echo -e "\e[41m ERROR:\e[0m Failed to disable drive db auto updates!"
+            fi
+        fi
+    fi
+#fi
+
 
 # Show the changes
 if [[ ${showedits,,} == "yes" ]]; then
@@ -263,6 +360,7 @@ if [[ ${showedits,,} == "yes" ]]; then
 fi
 
 echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+
 
 exit
 
