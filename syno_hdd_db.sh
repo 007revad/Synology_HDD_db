@@ -18,27 +18,83 @@
 # sudo /volume1/scripts/syno_hdd_db.sh
 #  or
 # sudo /volume1/scripts/syno_hdd_db.sh -showedits
+#  or
+# sudo /volume1/scripts/syno_hdd_db.sh -force -showedits
 #--------------------------------------------------------------------------------------------------
 
 # TODO
 # Detect if expansion unit(s) connected and get model(s) and edit expansion unit db files.
 #   Or add support for specifying user's expansion unit model(s) as arguments.
 #   Or maybe use the shotgun approach and update all expansion unit db files.
-# Add support for SAS drives? Are are listed as /dev/sata# or /dev/sas# ?
+#
+# Add support for M.2 SATA and NVMe drives on a M2D17 PCI card.
+#
+# Maybe also edit the other disk compatibility DB in synoboot, used during boot time.
+# It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Add support for SAS drives.
+#
+# Get HDD/SSD/SAS drive model number with smartctl instead of hdparm.
+#
+# Check if there is a newer script version available.
+#
 # Add support for NVMe drives.
+#
+# Prevent DSM auto updating the drive database.
+#
+# Optionally disable "support_disk_compatibility".
 
 
-# Check for -s or -showedits flag
-if [[ ${1,,} == "-s" ]] || [[ ${1,,} == "-showedits" ]]; then showedits=yes; fi
+scriptver="1.1.9"
+
+# Check latest release with GitHub API
+get_latest_release() {
+    curl --silent "https://api.github.com/repos/$1/releases/latest" |
+    grep '"tag_name":' |          # Get tag line
+    sed -E 's/.*"([^"]+)".*/\1/'  # Pluck JSON value
+}
+
+tag=$(get_latest_release "007revad/Synology_HDD_db")
+
+if [[ ${tag:1} > "$scriptver" ]]; then
+    echo "There is a newer version of this script available."
+    echo -e "Current version: ${scriptver}\nLatest version:  ${tag:1}"
+    echo "https://github.com/007revad/Synology_HDD_db/releases/latest"
+    echo ""
+    sleep 10
+fi
+
+
+# Check for flags with getopts
+OPTERR=0
+while getopts "sfn" option; do
+    # Need to ensure any other long flags do not contain s, n, or f
+    if [[ ! ${#option} -gt "1" ]]; then
+        case ${option,,,} in
+            s)
+                showedits=yes
+                #echo showedits  # debug
+                ;;
+            n)
+                nodbupdate=yes  # For future use
+                ;;
+            f)
+                force=yes
+                ;;
+            *)
+                ;;
+        esac
+    fi
+done
+
 
 model=$(cat /proc/sys/kernel/syno_hw_version)
 model=${model,,}  # convert to lower case
 
 # Check for -j after model - GitHub issue #2
 if [[ $model =~ '-j'$ ]]; then
-    model=${model%??}  # remove last to chars
+    model=${model%??}  # remove last two chars
 fi
 
 # Get DSM major version
@@ -55,59 +111,108 @@ fi
 
 
 #------------------------------------------------------------------------------
-# Get list of installed HDDs and SATA SSDs
+# Get list of installed SATA, SAS and NVMe drives
 
-# SATA drives, sata1, sata2 etc
-for drive in /dev/sata*; do
-    if [[ $drive =~ /dev/sata[1-9][0-9]?[0-9]?$ ]]; then
-        tmp=$(hdparm -i "$drive" | grep Model)
-        hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
-        fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
-        if [[ $hdmodel ]] && [[ $fwrev ]]; then
-            hdparm+=("${hdmodel},${fwrev}")
-        fi
-    
-        # Add extra model without "WDC " to fix issue #1
-        if [[ $hdmodel =~ ^WDC.* ]]; then
-            hdmodel2=${hdmodel#"WDC "}  # Remove "WDC " from start
-            #echo "$hdmodel2" "  Without 'WDC ' brand"  # debug
-            shopt -s extglob
-            hdmodel2=${hdmodel2/#*([[:space:]])}  # Remove leading spaces
-            #echo "$hdmodel2" "  Without leading spaces"  # debug
-            shopt -u extglob
-            if [[ $hdmodel2 ]] && [[ $fwrev ]]; then
-                hdparm+=("${hdmodel2},${fwrev}")
-            fi
-        fi
-
+getModel() {
+    hdmodel=$(smartctl -i "$1" | grep -i "Device Model:" | awk '{print $3 $4 $5}')
+    if [[ ! $hdmodel ]]; then
+        hdmodel=$(smartctl -i "$1" | grep -i "Product:" | awk '{print $2 $3 $4}')
     fi
+    #echo "Model:    $hdmodel"  # debug
+
+    # Brands that return "BRAND <model>" and need "BRAND " removed.
+    hdmodel=${hdmodel#"WDC "}       # Remove "WDC " from start of model name
+    hdmodel=${hdmodel#"HGST "}      # Remove "HGST " from start of model name
+    hdmodel=${hdmodel#"TOSHIBA "}   # Remove "TOSHIBA " from start of model name
+
+    # Old drive brands
+    hdmodel=${hdmodel#"Hitachi "}   # Remove "Hitachi " from start of model name
+    hdmodel=${hdmodel#"SAMSUNG "}   # Remove "SAMSUNG " from start of model name
+    hdmodel=${hdmodel#"FUJISTU "}   # Remove "FUJISTU " from start of model name
+    hdmodel=${hdmodel#"APPLE HDD "} # Remove "APPLE HDD " from start of model name
+
+    shopt -s extglob
+    hdmodel=${hdmodel/#*([[:space:]])}  # Remove leading spaces
+    hdmodel=${hdmodel/%*([[:space:]])}  # Remove trailing spaces
+    shopt -u extglob
+    #echo "Model:    $hdmodel"  # debug
+}
+
+getFwVersion() {
+    if [[ $2 == "sas" ]]; then
+        # hdparm does not work with some SAS drives
+        fwrev=$(smartctl -i "$1" | grep -i "Firmware Version:" | awk '{print $3}')
+        if [[ ! $hdmodel ]]; then
+            fwrev=$(smartctl -i "$1" | grep -i "Revision:" | awk '{print $2}')
+        fi
+    else
+        tmp=$(hdparm -i "$1" | grep Model)
+        fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
+    fi
+    #echo "Firmware: $fwrev"  # debug
+}
+
+getNVMeModel() {
+    nvmemodel=$(cat $1/model)
+    shopt -s extglob
+    nvmemodel=${nvmemodel/#*([[:space:]])}  # Remove leading spaces
+    nvmemodel=${nvmemodel/%*([[:space:]])}  # Remove trailing spaces
+    shopt -u extglob
+    #echo "NVMe Model:    $nvmemodel"  # debug
+}
+
+getNVMeFwVersion() {
+    nvmefw=$(cat $1/firmware_rev)
+    nvmefw=$(echo "$nvmefw" | xargs)  # trim leading and trailing white space
+    #echo "NVMe Firmware: $nvmefw"  # debug
+}
+
+
+for d in `cat /proc/partitions | awk '{print $4}'`; do
+    if [ ! -e /dev/$d ]; then
+        continue;
+    fi
+    #echo $d  # debug
+    case "$d" in
+        hd*|sd*)
+            if [[ $d =~ [hs]d[a-z]{1,2}$ ]]; then
+                #echo -e "\n$d"  # debug
+                getModel "/dev/$d"
+                getFwVersion "/dev/$d"
+                if [[ $hdmodel ]] && [[ $fwrev ]]; then
+                    hdparm+=("${hdmodel},${fwrev}")
+                fi
+            fi
+        ;;
+        sas*|sata*)
+            if [[ $d =~ (sas|sata)[0-9][0-9]?[0-9]?$ ]]; then
+                #echo -e "\n$d"  # debug
+                getModel "/dev/$d"
+                if [[ $d =~ (sas)[0-9][0-9]?[0-9]?$ ]]; then
+                    # hdparm does not work with some SAS drives
+                    getFwVersion "/dev/$d" "sas"
+                else
+                    getFwVersion "/dev/$d"
+                fi
+                if [[ $hdmodel ]] && [[ $fwrev ]]; then
+                    hdparm+=("${hdmodel},${fwrev}")
+                fi
+            fi
+        ;;
+        nvme*)
+            if [[ $d =~ nvme[0-9][0-9]?n[0-9][0-9]?$ ]]; then
+                #echo -e "\n$d"  # debug
+                n=n$(printf "$d" | cut -d "n" -f 2)
+                getNVMeModel "/sys/class/nvme/$n"
+                getNVMeFwVersion "/sys/class/nvme/$n"
+                if [[ $nvmemodel ]] && [[ $nvmefw ]]; then
+                    nvmelist+=("${nvmemodel},${nvmefw}")
+                fi
+            fi
+        ;;
+    esac
 done
 
-# SATA drives sda, sdb etc
-for drive in /dev/sd*; do
-    if [[ $drive =~ /dev/sd[a-z]{1,3}$ ]]; then
-        tmp=$(hdparm -i "$drive" | grep Model)
-        hdmodel=$(printf %s "$tmp" | cut -d"," -f 1 | cut -d"=" -f 2)
-        fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
-        if [[ $hdmodel ]] && [[ $fwrev ]]; then
-            hdparm+=("${hdmodel},${fwrev}")
-        fi
-        
-        # Add extra model without "WDC " to fix issue #1
-        if [[ $hdmodel =~ ^WDC.* ]]; then
-            hdmodel2=${hdmodel#"WDC "}  # Remove "WDC " from start
-            #echo "$hdmodel2" "  Without 'WDC ' brand"  # debug
-            shopt -s extglob
-            hdmodel2=${hdmodel2/#*([[:space:]])}  # Remove leading spaces
-            #echo "$hdmodel2" "  Without leading spaces"  # debug
-            shopt -u extglob
-            if [[ $hdmodel2 ]] && [[ $fwrev ]]; then
-                hdparm+=("${hdmodel2},${fwrev}")
-            fi
-        fi
-
-    fi
-done
 
 # Sort hdparm array into new hdds array to remove duplicates
 if [[ ${#hdparm[@]} -gt "0" ]]; then
@@ -130,44 +235,24 @@ else
 fi
 
 
-#------------------------------------------------------------------------------
-# Get list of installed NVMe drives
+# Sort nvmelist array into new nvmes array to remove duplicates
+if [[ ${#nvmelist[@]} -gt "0" ]]; then
+    while IFS= read -r -d '' x; do
+        nvmes+=("$x")
+    done < <(printf "%s\0" "${nvmelist[@]}" | sort -uz)
+fi
 
-express=$(cat /proc/devices | grep nvme)
-if [[ $express ]]; then
-    for path in /sys/class/nvme/*; do
-        nvmemodel=$(cat "$path"/model)
-        nvmemodel=$(echo "$nvmemodel" | xargs)  # trim leading and trailing white space
-        #if [[ $nvmemodel ]]; then echo "NVMe model:    ${nvmemodel}"; fi  # debug
-
-        nvmefw=$(cat "$path"/firmware_rev)
-        nvmefw=$(echo "$nvmefw" | xargs)  # trim leading and trailing white space
-        #if [[ $nvmefw ]]; then echo "NVMe firmware: ${nvmefw}"; fi  # debug
-
-        if [[ $nvmemodel ]] && [[ $nvmefw ]]; then
-            nvmelist+=("${nvmemodel},${nvmefw}")
-        fi
+# Check nvmes array isn't empty
+if [[ ${#nvmes[@]} -eq "0" ]]; then
+    echo -e "No NVMe drives found\n"
+else    
+    echo "NVMe drive models found: ${#nvmes[@]}"
+    num="0"
+    while [[ $num -lt "${#nvmes[@]}" ]]; do
+        echo "${nvmes[num]}"
+        num=$((num +1))
     done
-
-    # Sort nvmelist array into new nvmes array to remove duplicates
-    if [[ ${#nvmelist[@]} -gt "0" ]]; then
-        while IFS= read -r -d '' x; do
-            nvmes+=("$x")
-        done < <(printf "%s\0" "${nvmelist[@]}" | sort -uz)
-    fi
-
-    # Check hdds array isn't empty
-    if [[ ${#nvmes[@]} -eq "0" ]]; then
-        echo -e "No NVMe drives found\n"
-    else    
-        echo "NVMe drive models found: ${#nvmes[@]}"
-        num="0"
-        while [[ $num -lt "${#nvmes[@]}" ]]; do
-            echo "${nvmes[num]}"
-            num=$((num +1))
-        done
-        echo
-    fi
+    echo
 fi
 
 
@@ -251,22 +336,81 @@ while [[ $num -lt "${#nvmes[@]}" ]]; do
 done
 
 
+# Optionally disable "support_disk_compatibility"
+sdc=support_disk_compatibility
+setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
+if [[ $force == "yes" ]]; then
+    if [[ $setting == "yes" ]]; then
+        # Disable support_disk_compatibility
+        sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/g" "/etc.defaults/synoinfo.conf"
+        setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
+        if [[ $setting == "no" ]]; then
+            echo -e "\nDisabled support disk compatibility."
+        fi
+    fi
+else
+    if [[ $setting == "no" ]]; then
+        # Enable support_disk_compatibility
+        sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/g" "/etc.defaults/synoinfo.conf"
+        setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
+        if [[ $setting == "yes" ]]; then
+            echo -e "\nRe-enabled support disk compatibility."
+        fi
+    fi
+fi
+
+
+# Edit synoinfo.conf to prevent DB updates
+#if [[ $nodbupdate == "yes" ]]; then  # For future use
+    file=/etc.defaults/synoinfo.conf
+    if [[ -f $file ]]; then
+        # Backup synoinfo.conf if needed
+        if [[ ! -f "$file.bak" ]]; then
+            if cp "$file" "$file.bak"; then
+                echo "Backed up synoinfo.conf to $(basename -- "${file}").bak"
+            else
+                echo -e "\e[41m ERROR:\e[0m Failed to backup $(basename -- "${file}")!"
+                exit 6
+            fi
+        fi
+
+        url=$(get_key_value "$file" drive_db_test_url)  # returns a linefeed if key doesn't exist
+        if [[ ! $url ]]; then
+            # Add drive_db_test_url=127.0.0.1
+            echo "drive_db_test_url=127.0.0.1" >> "$file"
+            disabled="yes"
+        elif [[ $url != "127.0.0.1" ]]; then
+            # Edit drive_db_test_url=
+            sed -i "s/drive_db_test_url=$url/drive_db_test_url=127.0.0.1/g" "$file"
+            disabled="yes"
+        fi
+
+        url=$(get_key_value "$file" drive_db_test_url)
+        if [[ $disabled == "yes" ]]; then
+            if [[ $url == "127.0.0.1" ]]; then
+                echo "Disabled drive db auto updates."
+            else
+                echo -e "\e[41m ERROR:\e[0m Failed to disable drive db auto updates!"
+            fi
+        fi
+    fi
+#fi
+
+
 # Show the changes
 if [[ ${showedits,,} == "yes" ]]; then
     lines=$(((db2Edits *12) +4))
     if [[ $db1Edits -gt "0" ]]; then
-        #echo -e "\nChanges to $(basename -- "$db1")"
         echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
-        #jq . "$db1"  # nice colorized json format but displays whole file
         jq . "$db1" | tail -n "$lines"  # show last 20 lines per edit
     fi
     if [[ $db2Edits -gt "0" ]]; then
-        #echo -e "\nChanges to $(basename -- "$db2")"
         echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
-        #jq . "$db2" | tail -n $((db2Edits *16))  # show last 20 lines per edit
         jq . "$db2" | tail -n "$lines"  # show last 20 lines per edit
     fi
 fi
+
+echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
 
 
 exit
