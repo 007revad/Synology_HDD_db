@@ -32,7 +32,7 @@
 # Maybe also edit the other disk compatibility DB in synoboot, used during boot time.
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 #
-# Changed SAS drive firmware version detection to use smartctl to support SAS drives that hdparm doesn't work with.
+# Change SAS drive firmware version detection to use smartctl to support SAS drives that hdparm doesn't work with.
 
 # DONE
 # Make DSM recheck disk compatability so reboot not needed (DSM 7 only).
