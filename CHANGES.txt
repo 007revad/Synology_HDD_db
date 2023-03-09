@@ -1,5 +1,5 @@
 v1.1.10
-- Now makes DSM recheck disk compatability so reboot not needed (DSM 7 only).
+- Now makes DSM recheck disk compatibility so reboot not needed (DSM 7 only).
 - Fixed DSM 6 bug when DSM 6 used the old db file format.
 
 v1.1.9
