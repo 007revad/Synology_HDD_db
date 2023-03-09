@@ -35,6 +35,8 @@
 # Changed SAS drive firmware version detection to use smartctl to support SAS drives that hdparm doesn't work with.
 
 # DONE
+# Make DSM recheck disk compatability so reboot not needed (DSM 7 only).
+#
 # Fixed DSM6 bug when DSM6 used the old db file format.
 #
 # Add support for SAS drives.
