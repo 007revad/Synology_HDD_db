@@ -33,6 +33,15 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Force DSM to check disk compatability so reboot not needed (DSM 6 may still need a reboot).
+#
+# Changed SAS drive firmware version detection to use smartctl to support SAS drives that hdparm doesn't work with.
+#
+# Fixed DSM 6 issue when DSM 6 has the old db file format.
+#
+# Removed error message and aborting if *.db.new not found (clean DSM installs don't have a *.db.new).
+#
+#
 # Add support for SAS drives.
 #
 # Get HDD/SSD/SAS drive model number with smartctl instead of hdparm.
@@ -46,7 +55,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="1.1.9"
+scriptver="1.1.11"
 
 # Check latest release with GitHub API
 get_latest_release() {
@@ -74,7 +83,6 @@ while getopts "sfn" option; do
         case ${option,,,} in
             s)
                 showedits=yes
-                #echo showedits  # debug
                 ;;
             n)
                 nodbupdate=yes  # For future use
@@ -105,7 +113,7 @@ fi
 
 # Check script is running as root
 if [[ $( whoami ) != "root" ]]; then
-    echo -e "\e[41m ERROR:\e[0m This script must be run as root or sudo!"
+    echo -e "\e[41m ERROR \e[0m This script must be run as root or sudo!"
     exit 1
 fi
 
@@ -121,6 +129,7 @@ getModel() {
     #echo "Model:    $hdmodel"  # debug
 
     # Brands that return "BRAND <model>" and need "BRAND " removed.
+    # Smartmontools database in /var/lib/smartmontools/drivedb.db
     hdmodel=${hdmodel#"WDC "}       # Remove "WDC " from start of model name
     hdmodel=${hdmodel#"HGST "}      # Remove "HGST " from start of model name
     hdmodel=${hdmodel#"TOSHIBA "}   # Remove "TOSHIBA " from start of model name
@@ -139,7 +148,7 @@ getModel() {
 }
 
 getFwVersion() {
-    if [[ $2 == "sas" ]]; then
+    if smartctl -i "$1" | grep -i sas >/dev/null; then
         # hdparm does not work with some SAS drives
         fwrev=$(smartctl -i "$1" | grep -i "Firmware Version:" | awk '{print $3}')
         if [[ ! $hdmodel ]]; then
@@ -153,7 +162,7 @@ getFwVersion() {
 }
 
 getNVMeModel() {
-    nvmemodel=$(cat $1/model)
+    nvmemodel=$(cat "$1"/model)
     shopt -s extglob
     nvmemodel=${nvmemodel/#*([[:space:]])}  # Remove leading spaces
     nvmemodel=${nvmemodel/%*([[:space:]])}  # Remove trailing spaces
@@ -162,14 +171,14 @@ getNVMeModel() {
 }
 
 getNVMeFwVersion() {
-    nvmefw=$(cat $1/firmware_rev)
+    nvmefw=$(cat "$1"/firmware_rev)
     nvmefw=$(echo "$nvmefw" | xargs)  # trim leading and trailing white space
     #echo "NVMe Firmware: $nvmefw"  # debug
 }
 
 
-for d in `cat /proc/partitions | awk '{print $4}'`; do
-    if [ ! -e /dev/$d ]; then
+for d in $(cat /proc/partitions | awk '{print $4}'); do
+    if [ ! -e /dev/"$d" ]; then
         continue;
     fi
     #echo $d  # debug
@@ -188,12 +197,7 @@ for d in `cat /proc/partitions | awk '{print $4}'`; do
             if [[ $d =~ (sas|sata)[0-9][0-9]?[0-9]?$ ]]; then
                 #echo -e "\n$d"  # debug
                 getModel "/dev/$d"
-                if [[ $d =~ (sas)[0-9][0-9]?[0-9]?$ ]]; then
-                    # hdparm does not work with some SAS drives
-                    getFwVersion "/dev/$d" "sas"
-                else
-                    getFwVersion "/dev/$d"
-                fi
+                getFwVersion "/dev/$d"
                 if [[ $hdmodel ]] && [[ $fwrev ]]; then
                     hdparm+=("${hdmodel},${fwrev}")
                 fi
@@ -202,7 +206,7 @@ for d in `cat /proc/partitions | awk '{print $4}'`; do
         nvme*)
             if [[ $d =~ nvme[0-9][0-9]?n[0-9][0-9]?$ ]]; then
                 #echo -e "\n$d"  # debug
-                n=n$(printf "$d" | cut -d "n" -f 2)
+                n=n$(printf "%s" "$d" | cut -d "n" -f 2)
                 getNVMeModel "/sys/class/nvme/$n"
                 getNVMeFwVersion "/sys/class/nvme/$n"
                 if [[ $nvmemodel ]] && [[ $nvmefw ]]; then
@@ -223,7 +227,7 @@ fi
 
 # Check hdds array isn't empty
 if [[ ${#hdds[@]} -eq "0" ]]; then
-    echo -e "\e[41m ERROR:\e[0m No drives found!" && exit 2
+    echo -e "\e[41m ERROR \e[0m No drives found!" && exit 2
 else
     echo "HDD/SSD models found: ${#hdds[@]}"
     num="0"
@@ -262,8 +266,23 @@ fi
 db1="/var/lib/disk-compatibility/${model}_host${version}.db"
 db2="/var/lib/disk-compatibility/${model}_host${version}.db.new"
 
-if [[ ! -f "$db1" ]]; then echo -e "\e[41m ERROR:\e[0m $db1 not found!" && exit 3; fi
-if [[ ! -f "$db2" ]]; then echo -e "\e[41m ERROR:\e[0m $db2 not found!" && exit 4; fi
+if [[ ! -f "$db1" ]]; then echo -e "\e[41m ERROR \e[0m $db1 not found!" && exit 3; fi
+#if [[ ! -f "$db2" ]]; then echo -e "\e[41m ERROR \e[0m $db2 not found!" && exit 4; fi
+# new installs don't have a .db.new file
+
+
+# Detect drive db type
+if grep -F '{"disk_compatbility_info":' "$db1" >/dev/null; then
+    # DSM 7 drive db files start with {"disk_compatbility_info":
+    dbtype=7
+elif grep -F '{"success":1,"list":[' "$db1" >/dev/null; then
+    # DSM 6 drive db files start with {"success":1,"list":[
+    dbtype=6
+else
+    echo -e "\e[41m ERROR \e[0m Unknown database type $(basename -- "${db1}")!"
+    exit 7
+fi
+#echo "dbtype: $dbtype"  # debug
 
 
 # Backup database file if needed
@@ -271,7 +290,7 @@ if [[ ! -f "$db1.bak" ]]; then
     if cp "$db1" "$db1.bak"; then
         echo -e "Backed up database to $(basename -- "${db1}").bak\n"
     else
-        echo -e "\e[41m ERROR:\e[0m Failed to backup $(basename -- "${db1}")!"
+        echo -e "\e[41m ERROR \e[0m Failed to backup $(basename -- "${db1}")!"
         exit 5
     fi
 fi
@@ -280,6 +299,7 @@ fi
 # Shell Colors
 Yellow='\e[0;33m'
 Cyan='\e[0;36m'
+Red='\e[0;31m'
 Off=$'\e[0m'
 
 function updatedb() {
@@ -294,27 +314,52 @@ function updatedb() {
     if grep "$hdmodel" "$2" >/dev/null; then
         echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}"
     else
-        # Don't need to add firmware version?
-        fwstrng=\"$fwrev\"
-        fwstrng="$fwstrng":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
-        fwstrng="$fwstrng":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]},
+        if [[ $dbtype -gt "6" ]];then
+            # Don't need to add firmware version?
+            fwstrng=\"$fwrev\"
+            fwstrng="$fwstrng":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
+            fwstrng="$fwstrng":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]},
 
-        default=\"default\"
-        default="$default":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
-        default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]}}}
+            default=\"default\"
+            default="$default":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
+            default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]}}}
 
-        #if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/g" "$2"; then  # Don't need to add firmware version?
-        if sed -i "s/}}}/}},\"$hdmodel\":{$default/g" "$2"; then
-            #echo "Added $hdmodel to $(basename -- "$2")"
-            echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
-            if [[ $2 == "$db1" ]]; then
-                db1Edits=$((db1Edits +1))
-            elif [[ $2 == "$db2" ]]; then
-                db2Edits=$((db2Edits +1))
+            #if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # Don't need to add firmware version?
+            if sed -i "s/}}}/}},\"$hdmodel\":{$default/" "$2"; then
+                echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+                if [[ $2 == "$db1" ]]; then
+                    db1Edits=$((db1Edits +1))
+                elif [[ $2 == "$db2" ]]; then
+                    db2Edits=$((db2Edits +1))
+                fi
+            else
+                echo -e "\n\e[41m ERROR \e[0m Failed to update v7 $(basename -- "$2")${Off}"
+                exit 6
             fi
         else
-            echo -e "\n\e[41m ERROR: Failed to update $(basename -- "$2")${Off}"
-            exit 6
+            # example:
+            # {"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
+            string="{\"model\":\"${hdmodel}\",\"firmware\":\"${fwrev}\",\"rec_intvl\":\[1\]},"
+            # {"success":1,"list":[
+            startstring="{\"success\":1,\"list\":\["
+
+            #echo "$startstring"  # debug
+            #echo "$string"       # debug
+            #echo                 # debug
+
+            # example:
+            # {"success":1,"list":[{"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
+            if sed -ir "s/$startstring/$startstring$string/" "$2"; then
+                echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+                if [[ $2 == "$db1" ]]; then
+                    db1Edits=$((db1Edits +1))
+                elif [[ $2 == "$db2" ]]; then
+                    db2Edits=$((db2Edits +1))
+                fi
+            else
+                echo -e "\n\e[41m ERROR \e[0m Failed to update $(basename -- "$2")${Off}"
+                exit 8
+            fi
         fi
     fi
 }
@@ -323,7 +368,9 @@ function updatedb() {
 num="0"
 while [[ $num -lt "${#hdds[@]}" ]]; do
     updatedb "${hdds[$num]}" "$db1"
-    updatedb "${hdds[$num]}" "$db2"
+    if [[ -f "$db2" ]]; then
+        updatedb "${hdds[$num]}" "$db2"
+    fi
     num=$((num +1))
 done
 
@@ -331,7 +378,9 @@ done
 num="0"
 while [[ $num -lt "${#nvmes[@]}" ]]; do
     updatedb "${nvmes[$num]}" "$db1"
-    updatedb "${nvmes[$num]}" "$db2"
+    if [[ -f "$db2" ]]; then
+        updatedb "${nvmes[$num]}" "$db2"
+    fi
     num=$((num +1))
 done
 
@@ -342,7 +391,7 @@ setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
 if [[ $force == "yes" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_disk_compatibility
-        sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/g" "/etc.defaults/synoinfo.conf"
+        sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/" "/etc.defaults/synoinfo.conf"
         setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support disk compatibility."
@@ -351,7 +400,7 @@ if [[ $force == "yes" ]]; then
 else
     if [[ $setting == "no" ]]; then
         # Enable support_disk_compatibility
-        sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/g" "/etc.defaults/synoinfo.conf"
+        sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/" "/etc.defaults/synoinfo.conf"
         setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support disk compatibility."
@@ -369,7 +418,7 @@ fi
             if cp "$file" "$file.bak"; then
                 echo "Backed up synoinfo.conf to $(basename -- "${file}").bak"
             else
-                echo -e "\e[41m ERROR:\e[0m Failed to backup $(basename -- "${file}")!"
+                echo -e "\e[41m ERROR \e[0m Failed to backup $(basename -- "${file}")!"
                 exit 6
             fi
         fi
@@ -381,7 +430,7 @@ fi
             disabled="yes"
         elif [[ $url != "127.0.0.1" ]]; then
             # Edit drive_db_test_url=
-            sed -i "s/drive_db_test_url=$url/drive_db_test_url=127.0.0.1/g" "$file"
+            sed -i "s/drive_db_test_url=$url/drive_db_test_url=127.0.0.1/" "$file"
             disabled="yes"
         fi
 
@@ -390,7 +439,7 @@ fi
             if [[ $url == "127.0.0.1" ]]; then
                 echo "Disabled drive db auto updates."
             else
-                echo -e "\e[41m ERROR:\e[0m Failed to disable drive db auto updates!"
+                echo -e "\e[41m ERROR \e[0m Failed to disable drive db auto updates!"
             fi
         fi
     fi
@@ -399,18 +448,48 @@ fi
 
 # Show the changes
 if [[ ${showedits,,} == "yes" ]]; then
-    lines=$(((db2Edits *12) +4))
-    if [[ $db1Edits -gt "0" ]]; then
-        echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
-        jq . "$db1" | tail -n "$lines"  # show last 20 lines per edit
-    fi
-    if [[ $db2Edits -gt "0" ]]; then
-        echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
-        jq . "$db2" | tail -n "$lines"  # show last 20 lines per edit
+    if [[ $dbtype -gt "6" ]];then
+        # Show last 12 lines per drive + 4
+        lines=$(((db1Edits *12) +4))
+        if [[ $db1Edits -gt "0" ]]; then
+            echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
+            jq . "$db1" | tail -n "$lines"
+        fi
+        if [[ $db2Edits -gt "0" ]]; then
+            echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
+            jq . "$db2" | tail -n "$lines"
+        fi
+    else
+        # Show first 8 lines per drive + 2
+        lines=$(((db1Edits *8) +2))
+        if [[ $db1Edits -gt "0" ]]; then
+            echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
+            jq . "$db1" | head -n "$lines"
+        fi
+        if [[ $db2Edits -gt "0" ]]; then
+            echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
+            jq . "$db2" | head -n "$lines"
+        fi
     fi
 fi
 
-echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+
+# Make Synology check disk compatability
+/usr/syno/sbin/synostgdisk --check-all-disks-compatibility
+status=$?
+if [[ $status -eq "0" ]]; then
+    echo -e "\nDSM successfully checked disk compatibility."
+else
+    # Ignore DSM 6 as it returns 255 for "synostgdisk --check-all-disks-compatibility"
+    if [[ $dsm -gt "6" ]]; then
+        echo -e "\nDSM ${Red}failed${Off} to check disk compatibility with exit code $status"
+        echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+    fi
+fi
+
+if [[ $dsm -eq "6" ]]; then
+    echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+fi
 
 
 exit
