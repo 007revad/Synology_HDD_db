@@ -151,7 +151,7 @@ getFwVersion() {
     if smartctl -i "$1" | grep -i sas >/dev/null; then
         # hdparm does not work with some SAS drives
         fwrev=$(smartctl -i "$1" | grep -i "Firmware Version:" | awk '{print $3}')
-        if [[ ! $hdmodel ]]; then
+        if [[ ! $fwrev ]]; then
             fwrev=$(smartctl -i "$1" | grep -i "Revision:" | awk '{print $2}')
         fi
     else
