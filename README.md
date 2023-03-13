@@ -5,7 +5,7 @@
 
 ### Description
 
-Add your HDD, SSD, SAS and NVMe drives to your Synology's compatible drive database.
+Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 cache drives to your Synology's compatible drive databases.
 
 The script works in DSM 7 and DSM 6.
 
@@ -23,24 +23,24 @@ The script works in DSM 7 and DSM 6.
 * Reminds you that you may need to reboot the Synology after running the script (DSM 6 only).
 
 **Planned updates:** 
-* Fix SAS drive firmware version detection.
+* Bypass unsupported M.2 drives for use as volumes in DSM 7.2 (for models that supported M.2 volumes).
 * Detect any connected expansion units and get the model(s) and edit the correct expansion unit db files.
   * Or add support for users to specify their expansion unit model(s) as arguments.
   * Or maybe use the shotgun approach and update all expansion unit db files.
-* Add support for M.2 SATA and NVMe drives on a Synology PCIe card like the M2D17.
 
 ### When to run the script
 
 You would need to re-run the script after a DSM update. If you have DSM set to auto update the best option is to run the script every time the Synology boots, and the best way to do that is to setup a scheduled task to run the the script at boot-up.
 
-**Note:** After you first run the script you may need to reboot the Synology to see the effect of the changes.
+**Note:** For DSM 6, after you first run the script you may need to reboot the Synology to see the effect of the changes.
 
 ### Options when running the script
 
-There are 2 optional flags you can use when running the script:
+There are 3 optional flags you can use when running the script:
 * -showedits or -s to show you the changes it made to the Synology's compatible-drive database.
 * -force or -f to disable "support_disk_compatibility". This should be needed if any of your drives weren't detected.
   * If you run the script without -force or -f it will re-eanble "support_disk_compatibility".
+* -m2 or -m to prevent processing M.2 drives.
 
 ### Scheduling the script in Synology's Task Scheduler
 
