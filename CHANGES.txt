@@ -1,0 +1,49 @@
+v1.1.11
+- Added support for M.2 SATA drives.
+- Can now skip processing M.2 drives by running script with the -m2 flag.
+- Changed method of getting drive and firmware version so script is faster and easier to maintain. No longer using smartctl or hdparm.
+- Changed SAS drive firmware version detection to support SAS drives that hdparm doesn't work with.
+- Removed error message and aborting if *.db.new not found (clean DSM installs don't have a *.db.new).
+
+v1.1.10
+- Now makes DSM recheck disk compatibility so reboot not needed (DSM 7 only).
+- Fixed DSM 6 bug when DSM 6 used the old db file format.
+
+v1.1.9
+- Added support for SAS drives.
+- Now gets HDD/SSD/SAS drive model number with smartctl instead of hdparm.
+
+v1.1.8
+- Now prevents DSM auto updating the drive database.
+- Disable "support_disk_compatibility" (that was added in v1.0.6) is now optional.
+  - Run script with -f or -force to disable "support_disk_compatibility".
+  - If run without -f or -force "support_disk_compatibility" is re-enabled.
+
+v1.0.7
+Added message if newer script version is available.
+
+v1.0.6
+Added 2nd method of disabling disk compatibility to solve issue #1 and #4 for the few people where the original method didn't work.
+
+v1.0.5
+Changed to avoid issue #2
+
+v1.0.4
+Now backs up the database file if there is no backup already.
+
+v1.0.3
+Changed to avoid avoid error messages from previous change to search for sda and sata# drives in DSM 6 and DSM 7.
+- /dev/sata*: No such file or directory
+- /dev/sd*: No such file or directory
+
+v1.0.2
+Improved formatting when listing found drives.
+
+v1.0.1
+Fixed issue where drives weren't detected if:
+- NAS had been updated from DSM 6 to DSM 7 and still used sda, sdb etc.
+- Models like the DVA3219 that use sata# even in DSM 6.
+
+v1.0.0
+Initial release.
+
