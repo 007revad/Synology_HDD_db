@@ -44,7 +44,6 @@
 #
 # Removed error message and aborting if *.db.new not found (clean DSM installs don't have a *.db.new).
 #
-#
 # Force DSM to check disk compatibility so reboot not needed (DSM 6 may still need a reboot).
 #
 # Fixed DSM 6 issue when DSM 6 has the old db file format.
