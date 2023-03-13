@@ -5,7 +5,7 @@
 
 ### Description
 
-Add your HDD, SSD and NVMe drives to your Synology's compatible drive database.
+Add your HDD, SSD and M.2 drives to your Synology's compatible drive database.
 
 The script works in DSM 7 and DSM 6.
 
