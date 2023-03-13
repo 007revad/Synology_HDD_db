@@ -63,7 +63,8 @@ get_latest_release() {
 
 tag=$(get_latest_release "007revad/Synology_HDD_db")
 
-if [[ ${tag:1} > "$scriptver" ]]; then
+if ! printf "%s\n%s\n" "$tag" "$scriptver" |
+        sort --check --version-sort &> /dev/null ; then
     echo "There is a newer version of this script available."
     echo -e "Current version: ${scriptver}\nLatest version:  ${tag:1}"
     echo "https://github.com/007revad/Synology_HDD_db/releases/latest"
