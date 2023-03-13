@@ -1,3 +1,6 @@
+v1.1.12
+- Added check that M.2 volume support is enabled.
+
 v1.1.11
 - Added support for M.2 SATA drives.
 - Can now skip processing M.2 drives by running script with the -m2 flag.
