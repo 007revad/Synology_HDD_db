@@ -62,7 +62,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="1.1.10"
+scriptver="1.1.11"
 
 # Check latest release with GitHub API
 get_latest_release() {
@@ -450,8 +450,7 @@ if [[ ${showedits,,} == "yes" ]]; then
         if [[ $db1Edits -gt "0" ]]; then
             echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
             jq . "$db1" | tail -n "$lines"
-        fi
-        if [[ $db2Edits -gt "0" ]]; then
+        elif [[ $db2Edits -gt "0" ]]; then
             echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
             jq . "$db2" | tail -n "$lines"
         fi
@@ -461,8 +460,7 @@ if [[ ${showedits,,} == "yes" ]]; then
         if [[ $db1Edits -gt "0" ]]; then
             echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
             jq . "$db1" | head -n "$lines"
-        fi
-        if [[ $db2Edits -gt "0" ]]; then
+        elif [[ $db2Edits -gt "0" ]]; then
             echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
             jq . "$db2" | head -n "$lines"
         fi
