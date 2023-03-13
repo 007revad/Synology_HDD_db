@@ -35,12 +35,12 @@
 # DONE
 # Added support for M.2 SATA drives.
 #
+# Can now skip processing M.2 drives by running script with the -m2 flag.
+#
 # Changed method of getting drive and firmware version so script is faster and easier to maintain.
 # - No longer using smartctl or hdparm.
 #
-# Changed to skip M.2 drives if run with the -m2 flag.
-#
-# Changed SAS drive firmware version detection to use smartctl to support SAS drives that hdparm doesn't work with.
+# Changed SAS drive firmware version detection to support SAS drives that hdparm doesn't work with.
 #
 # Removed error message and aborting if *.db.new not found (clean DSM installs don't have a *.db.new).
 #
@@ -138,14 +138,14 @@ for d in /sys/block/*; do
 #        continue;
 #    fi
     #echo $d  # debug
-    case "$d" in
+    case "$(basename -- "${d}")" in
         sd*|hd*)
             if [[ $d =~ [hs]d[a-z]$ ]]; then
-                hdmodel=$(cat "/sys/block/$d/device/model")
+                hdmodel=$(cat "$d/device/model")
                 hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
                 #echo "Model:    '$hdmodel'"  # debug
 
-                fwrev=$(cat "/sys/block/$d/device/rev")
+                fwrev=$(cat "$d/device/rev")
                 fwrev=$(printf "%s" "$fwrev" | xargs)  # trim leading and trailing white space
                 #echo "Firmware: '$fwrev'"  # debug
 
@@ -154,13 +154,13 @@ for d in /sys/block/*; do
                 fi
             fi
         ;;
-        sas*|sata*)
+        sata*|sas*)
             if [[ $d =~ (sas|sata)[0-9][0-9]?[0-9]?$ ]]; then
-                hdmodel=$(cat "/sys/block/$d/device/model")
+                hdmodel=$(cat "$d/device/model")
                 hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
                 #echo "Model:    '$hdmodel'"  # debug
 
-                fwrev=$(cat "/sys/block/$d/device/rev")
+                fwrev=$(cat "$d/device/rev")
                 fwrev=$(printf "%s" "$fwrev" | xargs)  # trim leading and trailing white space
                 #echo "Firmware: '$fwrev'"  # debug
 
@@ -172,11 +172,11 @@ for d in /sys/block/*; do
         nvme*)
             if [[ $d =~ nvme[0-9][0-9]?n[0-9][0-9]?$ ]]; then
                 if [[ $m2 != "no" ]]; then
-                    nvmemodel=$(cat "/sys/block/$d/device/model")
+                    nvmemodel=$(cat "$d/device/model")
                     nvmemodel=$(printf "%s" "$nvmemodel" | xargs)  # trim leading and trailing white space
                     #echo "NVMe Model:    '$nvmemodel'"  # debug
 
-                    nvmefw=$(cat "/sys/block/$d/device/firmware_rev")
+                    nvmefw=$(cat "$d/device/firmware_rev")
                     nvmefw=$(printf "%s" "$nvmefw" | xargs)  # trim leading and trailing white space
                     #echo "NVMe Firmware: '$nvmefw'"  # debug
 
@@ -190,12 +190,12 @@ for d in /sys/block/*; do
             #if [[ $d =~ nvc[0-9][0-9]?p[0-9][0-9]?$ ]]; then
             if [[ $d =~ nvc[0-9][0-9]?$ ]]; then
                 if [[ $m2 != "no" ]]; then
-                    nvmemodel=$(cat "/sys/block/$d/device/model")
+                    nvmemodel=$(cat "$d/device/model")
                     nvmemodel=$(printf "%s" "$nvmemodel" | xargs)  # trim leading and trailing white space
                     #echo "M.2 SATA Model:    '$nvmemodel'"  # debug
 
-                    #nvmefw=$(cat "/sys/block/$d/device/firmware_rev")
-                    nvmefw=$(cat "/sys/block/$d/device/rev")
+                    #nvmefw=$(cat "$d/device/firmware_rev")
+                    nvmefw=$(cat "$d/device/rev")
                     nvmefw=$(printf "%s" "$nvmefw" | xargs)  # trim leading and trailing white space
                     #echo "M.2 SATA Firmware: '$nvmefw'"  # debug
 
@@ -240,10 +240,10 @@ fi
 # Check nvmes array isn't empty
 if [[ ${#nvmes[@]} -eq "0" ]]; then
     if [[ $m2 != "no" ]]; then
-        echo -e "No M.2 NVMe/SATA drives found\n"
+        echo -e "No M.2 drives found\n"
     fi
 else    
-    echo "M.2 NVMe/SATA drive models found: ${#nvmes[@]}"
+    echo "M.2 drive models found: ${#nvmes[@]}"
     num="0"
     while [[ $num -lt "${#nvmes[@]}" ]]; do
         echo "${nvmes[num]}"
