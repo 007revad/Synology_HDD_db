@@ -63,7 +63,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="1.1.12"
+scriptver="v1.1.12"
 
 # Check latest release with GitHub API
 get_latest_release() {
@@ -402,10 +402,11 @@ fi
 
 
 # Check m2 volume support enabled
-setting="$(get_key_value /etc.defaults/synoinfo.conf support_m2_pool)"
+smp=support_m2_pool
+setting="$(get_key_value /etc.defaults/synoinfo.conf ${smp})"
 if [[ $setting == "no" ]]; then
-    sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/" "/etc.defaults/synoinfo.conf"
-    setting="$(get_key_value /etc.defaults/synoinfo.conf support_m2_pool)"
+    sed -i "s/${smp}=\"no\"/${smp}=\"yes\"/" "/etc.defaults/synoinfo.conf"
+    setting="$(get_key_value /etc.defaults/synoinfo.conf ${smp})"
     if [[ $setting == "yes" ]]; then
         echo -e "\nEnabled M.2 volume support."
     fi
