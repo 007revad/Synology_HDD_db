@@ -19,6 +19,7 @@ The script works in DSM 7 and DSM 6.
 * Adds any missing drives to the Synology's compatible-drive database.
 * Prevents DSM auto updating the drive database.
 * Optionally disable DSM's "support_disk_compatibility".
+* Checks that M.2 volume support is enabled (on supported models).
 * Makes DSM recheck disk compatibility so rebooting is not needed (DSM 7 only).
 * Reminds you that you may need to reboot the Synology after running the script (DSM 6 only).
 
