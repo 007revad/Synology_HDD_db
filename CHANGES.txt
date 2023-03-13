@@ -1,3 +1,11 @@
+v1.1.11
+- Added support for M.2 SATA drives.
+- Can now skip processing M.2 drives by running script with the -m2 flag.
+- Changed method of getting drive and firmware version so script is faster and easier to maintain. No longer using smartctl or hdparm.
+- Changed SAS drive firmware version detection to support SAS drives that hdparm doesn't work with.
+- Removed error message and aborting if *.db.new not found (clean DSM installs don't have a *.db.new).
+- Fixed script version check introduced in 1.0.7.
+
 v1.1.10
 - Now makes DSM recheck disk compatibility so reboot not needed (DSM 7 only).
 - Fixed DSM 6 bug when DSM 6 used the old db file format.
