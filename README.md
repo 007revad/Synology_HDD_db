@@ -24,7 +24,7 @@ The script works in DSM 7 and DSM 6.
 * Reminds you that you may need to reboot the Synology after running the script (DSM 6 only).
 
 **Planned updates:** 
-* Bypass unsupported M.2 drives for use as volumes in DSM 7.2 (for models that supported M.2 volumes).
+* Allow unsupported M.2 drives for use as volumes in DSM 7.2 (for models that supported M.2 volumes).
 * Detect any connected expansion units and get the model(s) and edit the correct expansion unit db files.
   * Or add support for users to specify their expansion unit model(s) as arguments.
   * Or maybe use the shotgun approach and update all expansion unit db files.
