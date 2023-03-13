@@ -1,5 +1,4 @@
 v1.1.11
-v1.1.11
 - Added support for M.2 SATA drives.
 - Can now skip processing M.2 drives by running script with the -m2 flag.
 - Changed method of getting drive and firmware version so script is faster and easier to maintain. No longer using smartctl or hdparm.
