@@ -33,6 +33,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Added check that M.2 volume support is enabled.
+#
 # Added support for M.2 SATA drives.
 #
 # Can now skip processing M.2 drives by running script with the -m2 flag.
@@ -61,7 +63,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="1.1.11"
+scriptver="1.1.12"
 
 # Check latest release with GitHub API
 get_latest_release() {
@@ -74,7 +76,7 @@ tag=$(get_latest_release "007revad/Synology_HDD_db")
 
 if ! printf "%s\n%s\n" "$tag" "$scriptver" |
         sort --check --version-sort &> /dev/null ; then
-    echo "There is a newer version of this script available."
+    echo -e "\e[0;36mThere is a newer version of this script available.\e[0m"
     echo -e "Current version: ${scriptver}\nLatest version:  $tag"
     echo "https://github.com/007revad/Synology_HDD_db/releases/latest"
     echo ""
@@ -131,12 +133,7 @@ fi
 #------------------------------------------------------------------------------
 # Get list of installed SATA, SAS and M.2 NVMe/SATA drives
 
-#for d in $(ls /sys/block); do
 for d in /sys/block/*; do
-#    if [ ! -e /dev/"$d" ]; then
-#        echo "Found /dev/$d"  # debug
-#        continue;
-#    fi
     #echo $d  # debug
     case "$(basename -- "${d}")" in
         sd*|hd*)
@@ -400,6 +397,17 @@ else
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support disk compatibility."
         fi
+    fi
+fi
+
+
+# Check m2 volume support enabled
+setting="$(get_key_value /etc.defaults/synoinfo.conf support_m2_pool)"
+if [[ $setting == "no" ]]; then
+    sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/" "/etc.defaults/synoinfo.conf"
+    setting="$(get_key_value /etc.defaults/synoinfo.conf support_m2_pool)"
+    if [[ $setting == "yes" ]]; then
+        echo -e "\nEnabled M.2 volume support."
     fi
 fi
 
