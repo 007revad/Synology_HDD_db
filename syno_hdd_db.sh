@@ -63,7 +63,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.1.13"
+scriptver="v1.1.14"
 
 # Check latest release with GitHub API
 get_latest_release() {
