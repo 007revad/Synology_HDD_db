@@ -29,6 +29,10 @@ The script works in DSM 7 and DSM 6.
   * Or add support for users to specify their expansion unit model(s) as arguments.
   * Or maybe use the shotgun approach and update all expansion unit db files.
 
+### Download the script
+
+See <a href=how_to_download.md/>How to download the script</a>
+
 ### When to run the script
 
 You would need to re-run the script after a DSM update. If you have DSM set to auto update the best option is to run the script every time the Synology boots, and the best way to do that is to setup a scheduled task to run the the script at boot-up.
