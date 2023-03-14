@@ -31,7 +31,7 @@ The script works in DSM 7 and DSM 6.
 
 ### Download the script
 
-See <a href=images/how_to_download.png/>How to download the script</a>
+See <a href=images/how_to_download.png/>How to download the script</a> for the easiest way to download the script.
 
 ### When to run the script
 
