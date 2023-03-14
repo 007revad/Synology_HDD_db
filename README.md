@@ -5,7 +5,7 @@
 
 ### Description
 
-Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 cache drives to your Synology's compatible drive databases.
+Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 drives to your Synology's compatible drive databases.
 
 The script works in DSM 7 and DSM 6.
 
