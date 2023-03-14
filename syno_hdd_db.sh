@@ -23,16 +23,35 @@
 #--------------------------------------------------------------------------------------------------
 
 # TODO
+# Bypass M.2 volume lock for unsupported M.2 drives.
+#
 # Detect if expansion unit(s) connected and get model(s) and edit expansion unit db files.
 #   Or add support for specifying user's expansion unit model(s) as arguments.
 #   Or maybe use the shotgun approach and update all expansion unit db files.
 #
 # Add support for M.2 SATA and NVMe drives on a M2D17 PCI card.
 #
-# Maybe also edit the other disk compatibility DB in synoboot, used during boot time.
+# Maybe also edit the other disk compatibility db in synoboot, used during boot time.
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Added check that M.2 volume support is enabled (on supported models).
+#
+# Added support for M.2 SATA drives.
+#
+# Can now skip processing M.2 drives by running script with the -m2 flag.
+#
+# Changed method of getting drive and firmware version so script is faster and easier to maintain.
+# - No longer using smartctl or hdparm.
+#
+# Changed SAS drive firmware version detection to support SAS drives that hdparm doesn't work with.
+#
+# Removed error message and aborting if *.db.new not found (clean DSM installs don't have a *.db.new).
+#
+# Force DSM to check disk compatibility so reboot not needed (DSM 6 may still need a reboot).
+#
+# Fixed DSM 6 issue when DSM 6 has the old db file format.
+#
 # Add support for SAS drives.
 #
 # Get HDD/SSD/SAS drive model number with smartctl instead of hdparm.
@@ -46,7 +65,20 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="1.1.9"
+scriptver="v1.1.14"
+
+# Shell Colors
+Black='\e[0;30m'
+Red='\e[0;31m'
+Green='\e[0;32m'
+Yellow='\e[0;33m'
+Blue='\e[0;34m'
+Purple='\e[0;35m'
+Cyan='\e[0;36m'
+White='\e[0;37m'
+Error='\e[41m'
+Off='\e[0m'
+
 
 # Check latest release with GitHub API
 get_latest_release() {
@@ -57,9 +89,10 @@ get_latest_release() {
 
 tag=$(get_latest_release "007revad/Synology_HDD_db")
 
-if [[ ${tag:1} > "$scriptver" ]]; then
-    echo "There is a newer version of this script available."
-    echo -e "Current version: ${scriptver}\nLatest version:  ${tag:1}"
+if ! printf "%s\n%s\n" "$tag" "$scriptver" |
+        sort --check --version-sort &> /dev/null ; then
+    echo -e "${Cyan}There is a newer version of this script available.${Off}"
+    echo -e "Current version: ${scriptver}\nLatest version:  $tag"
     echo "https://github.com/007revad/Synology_HDD_db/releases/latest"
     echo ""
     sleep 10
@@ -68,19 +101,21 @@ fi
 
 # Check for flags with getopts
 OPTERR=0
-while getopts "sfn" option; do
+while getopts "sfnm" option; do
     # Need to ensure any other long flags do not contain s, n, or f
     if [[ ! ${#option} -gt "1" ]]; then
         case ${option,,,} in
             s)
                 showedits=yes
-                #echo showedits  # debug
                 ;;
             n)
                 nodbupdate=yes  # For future use
                 ;;
+            m)
+                m2=no  # Don't add M.2 drives to db files
+                ;;
             f)
-                force=yes
+                force=yes  # Disable "support_disk_compatibility"
                 ;;
             *)
                 ;;
@@ -105,95 +140,110 @@ fi
 
 # Check script is running as root
 if [[ $( whoami ) != "root" ]]; then
-    echo -e "\e[41m ERROR:\e[0m This script must be run as root or sudo!"
+    echo -e "${Error}ERROR${Off} This script must be run as root or sudo!"
     exit 1
 fi
 
 
 #------------------------------------------------------------------------------
-# Get list of installed SATA, SAS and NVMe drives
+# Get list of installed SATA, SAS and M.2 NVMe/SATA drives
 
-getModel() {
-    hdmodel=$(smartctl -i "$1" | grep -i "Device Model:" | awk '{print $3 $4 $5}')
-    if [[ ! $hdmodel ]]; then
-        hdmodel=$(smartctl -i "$1" | grep -i "Product:" | awk '{print $2 $3 $4}')
-    fi
-    #echo "Model:    $hdmodel"  # debug
-
-    # Brands that return "BRAND <model>" and need "BRAND " removed.
-    hdmodel=${hdmodel#"WDC "}       # Remove "WDC " from start of model name
-    hdmodel=${hdmodel#"HGST "}      # Remove "HGST " from start of model name
-    hdmodel=${hdmodel#"TOSHIBA "}   # Remove "TOSHIBA " from start of model name
-
-    # Old drive brands
-    hdmodel=${hdmodel#"Hitachi "}   # Remove "Hitachi " from start of model name
-    hdmodel=${hdmodel#"SAMSUNG "}   # Remove "SAMSUNG " from start of model name
-    hdmodel=${hdmodel#"FUJISTU "}   # Remove "FUJISTU " from start of model name
-    hdmodel=${hdmodel#"APPLE HDD "} # Remove "APPLE HDD " from start of model name
-
-    shopt -s extglob
-    hdmodel=${hdmodel/#*([[:space:]])}  # Remove leading spaces
-    hdmodel=${hdmodel/%*([[:space:]])}  # Remove trailing spaces
-    shopt -u extglob
-    #echo "Model:    $hdmodel"  # debug
-}
-
-getFwVersion() {
-    tmp=$(hdparm -i "$1" | grep Model)
-    fwrev=$(printf %s "$tmp" | cut -d"," -f 2 | cut -d"=" -f 2)
-    #echo "Firmware: $fwrev"  # debug
-}
-
-getNVMeModel() {
-    nvmemodel=$(cat $1/model)
-    shopt -s extglob
-    nvmemodel=${nvmemodel/#*([[:space:]])}  # Remove leading spaces
-    nvmemodel=${nvmemodel/%*([[:space:]])}  # Remove trailing spaces
-    shopt -u extglob
-    #echo "NVMe Model:    $nvmemodel"  # debug
-}
-
-getNVMeFwVersion() {
-    nvmefw=$(cat $1/firmware_rev)
-    nvmefw=$(echo "$nvmefw" | xargs)  # trim leading and trailing white space
-    #echo "NVMe Firmware: $nvmefw"  # debug
-}
-
-
-for d in `cat /proc/partitions | awk '{print $4}'`; do
-    if [ ! -e /dev/$d ]; then
-        continue;
-    fi
+for d in /sys/block/*; do
     #echo $d  # debug
-    case "$d" in
-        hd*|sd*)
-            if [[ $d =~ [hs]d[a-z]{1,2}$ ]]; then
-                #echo -e "\n$d"  # debug
-                getModel "/dev/$d"
-                getFwVersion "/dev/$d"
+    case "$(basename -- "${d}")" in
+        sd*|hd*)
+            if [[ $d =~ [hs]d[a-z][a-z]?$ ]]; then
+                hdmodel=$(cat "$d/device/model")
+                hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
+                #echo "Model:    '$hdmodel'"  # debug
+
+                fwrev=$(cat "$d/device/rev")
+                fwrev=$(printf "%s" "$fwrev" | xargs)  # trim leading and trailing white space
+                #echo "Firmware: '$fwrev'"  # debug
+
                 if [[ $hdmodel ]] && [[ $fwrev ]]; then
-                    hdparm+=("${hdmodel},${fwrev}")
+                    hdlist+=("${hdmodel},${fwrev}")
                 fi
             fi
         ;;
-        sas*|sata*)
+        sata*|sas*)
             if [[ $d =~ (sas|sata)[0-9][0-9]?[0-9]?$ ]]; then
-                #echo -e "\n$d"  # debug
-                getModel "/dev/$d"
-                getFwVersion "/dev/$d"
+                hdmodel=$(cat "$d/device/model")
+                hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
+                #echo "Model:    '$hdmodel'"  # debug
+
+                fwrev=$(cat "$d/device/rev")
+                fwrev=$(printf "%s" "$fwrev" | xargs)  # trim leading and trailing white space
+                #echo "Firmware: '$fwrev'"  # debug
+
                 if [[ $hdmodel ]] && [[ $fwrev ]]; then
-                    hdparm+=("${hdmodel},${fwrev}")
+                    hdlist+=("${hdmodel},${fwrev}")
                 fi
             fi
         ;;
         nvme*)
             if [[ $d =~ nvme[0-9][0-9]?n[0-9][0-9]?$ ]]; then
-                #echo -e "\n$d"  # debug
-                n=n$(printf "$d" | cut -d "n" -f 2)
-                getNVMeModel "/sys/class/nvme/$n"
-                getNVMeFwVersion "/sys/class/nvme/$n"
-                if [[ $nvmemodel ]] && [[ $nvmefw ]]; then
-                    nvmelist+=("${nvmemodel},${nvmefw}")
+                if [[ $m2 != "no" ]]; then
+                    nvmemodel=$(cat "$d/device/model")
+                    nvmemodel=$(printf "%s" "$nvmemodel" | xargs)  # trim leading and trailing white space
+                    #echo "NVMe Model:    '$nvmemodel'"  # debug
+
+                    nvmefw=$(cat "$d/device/firmware_rev")
+                    nvmefw=$(printf "%s" "$nvmefw" | xargs)  # trim leading and trailing white space
+                    #echo "NVMe Firmware: '$nvmefw'"  # debug
+
+                    if [[ $nvmemodel ]] && [[ $nvmefw ]]; then
+                        nvmelist+=("${nvmemodel},${nvmefw}")
+                    fi
+
+                    #------------------------------------------------
+                    # Get M.2 card model
+                    cardmodel=$(synodisk --m2-card-model-get "/dev/$d")
+                    if [[ $cardmodel =~ M2D[0-9][0-9] ]]; then
+                        # M2 adaptor card
+                        m2carddblist+=("${model}_${cardmodel,,}${version}.db")  # M.2 card's db file
+                        m2cardlist+=("$cardmodel")                              # M.2 card
+                    elif [[ $cardmodel =~ E[0-9][0-9]+M.+ ]]; then
+                        # Ethernet + M2 adaptor card
+                        m2carddblist+=("${model}_${cardmodel,,}${version}.db")  # M.2 card's db file
+                        m2cardlist+=("$cardmodel")                              # M.2 card
+                    fi
+                    #------------------------------------------------
+
+                fi
+            fi
+        ;;
+        nvc*)  # M.2 SATA drives (in PCIe card only?)
+            #if [[ $d =~ nvc[0-9][0-9]?p[0-9][0-9]?$ ]]; then
+            if [[ $d =~ nvc[0-9][0-9]?$ ]]; then
+                if [[ $m2 != "no" ]]; then
+                    nvmemodel=$(cat "$d/device/model")
+                    nvmemodel=$(printf "%s" "$nvmemodel" | xargs)  # trim leading and trailing white space
+                    #echo "M.2 SATA Model:    '$nvmemodel'"  # debug
+
+                    #nvmefw=$(cat "$d/device/firmware_rev")
+                    nvmefw=$(cat "$d/device/rev")
+                    nvmefw=$(printf "%s" "$nvmefw" | xargs)  # trim leading and trailing white space
+                    #echo "M.2 SATA Firmware: '$nvmefw'"  # debug
+
+                    if [[ $nvmemodel ]] && [[ $nvmefw ]]; then
+                        nvmelist+=("${nvmemodel},${nvmefw}")
+                    fi
+
+                    #------------------------------------------------
+                    # Get M.2 card model
+                    cardmodel=$(synodisk --m2-card-model-get "/dev/$d")
+                    if [[ $cardmodel =~ M2D[0-9][0-9] ]]; then
+                        # M2 adaptor card
+                        m2carddblist+=("${model}_${cardmodel,,}${version}.db")  # M.2 card's db file
+                        m2cardlist+=("$cardmodel")                              # M.2 card
+                    elif [[ $cardmodel =~ E[0-9][0-9]+M.+ ]]; then
+                        # Ethernet + M2 adaptor card
+                        m2carddblist+=("${model}_${cardmodel,,}${version}.db")  # M.2 card's db file
+                        m2cardlist+=("$cardmodel")                              # M.2 card
+                    fi
+                    #------------------------------------------------
+
                 fi
             fi
         ;;
@@ -201,16 +251,16 @@ for d in `cat /proc/partitions | awk '{print $4}'`; do
 done
 
 
-# Sort hdparm array into new hdds array to remove duplicates
-if [[ ${#hdparm[@]} -gt "0" ]]; then
+# Sort hdlist array into new hdds array to remove duplicates
+if [[ ${#hdlist[@]} -gt "0" ]]; then
     while IFS= read -r -d '' x; do
         hdds+=("$x")
-    done < <(printf "%s\0" "${hdparm[@]}" | sort -uz)
+    done < <(printf "%s\0" "${hdlist[@]}" | sort -uz)
 fi
 
 # Check hdds array isn't empty
 if [[ ${#hdds[@]} -eq "0" ]]; then
-    echo -e "\e[41m ERROR:\e[0m No drives found!" && exit 2
+    echo -e "${Error}ERROR${Off} No drives found!" && exit 2
 else
     echo "HDD/SSD models found: ${#hdds[@]}"
     num="0"
@@ -231,9 +281,11 @@ fi
 
 # Check nvmes array isn't empty
 if [[ ${#nvmes[@]} -eq "0" ]]; then
-    echo -e "No NVMe drives found\n"
+    if [[ $m2 != "no" ]]; then
+        echo -e "No M.2 drives found\n"
+    fi
 else    
-    echo "NVMe drive models found: ${#nvmes[@]}"
+    echo "M.2 drive models found: ${#nvmes[@]}"
     num="0"
     while [[ $num -lt "${#nvmes[@]}" ]]; do
         echo "${nvmes[num]}"
@@ -243,35 +295,110 @@ else
 fi
 
 
+#------------------------------------------------
+
+#echo "M2 db list:   ${m2carddblist[@]}"  # debug
+#echo "M2 card list: ${m2cardlist[@]}"    # debug
+#echo                                     # debug
+
+# M.2 card db files
+# Sort m2carddblist array into new m2carddbs array to remove duplicates
+if [[ ${#m2carddblist[@]} -gt "0" ]]; then
+    while IFS= read -r -d '' x; do
+        m2carddbs+=("$x")
+    done < <(printf "%s\0" "${m2carddblist[@]}" | sort -uz)
+fi
+
+# M.2 cards
+# Sort m2cardlist array into new m2cards array to remove duplicates
+if [[ ${#m2cardlist[@]} -gt "0" ]]; then
+    while IFS= read -r -d '' x; do
+        m2cards+=("$x")
+    done < <(printf "%s\0" "${m2cardlist[@]}" | sort -uz)
+fi
+
+#echo "M2 dbs:   ${m2carddbs[@]}"  # debug
+#echo "M2 cards: ${m2cards[@]}"    # debug
+#echo                              # debug
+
+# Check m2cards array isn't empty
+if [[ ${#m2cards[@]} -gt "0" ]]; then
+    echo "M.2 card models found: ${#m2cards[@]}"
+    num="0"
+    while [[ $num -lt "${#m2cards[@]}" ]]; do
+        echo "${m2cards[num]}"
+        num=$((num +1))
+    done
+    echo
+fi
+#------------------------------------------------
+
+
 #------------------------------------------------------------------------------
 # Check database and add our drives if needed
 
 db1="/var/lib/disk-compatibility/${model}_host${version}.db"
 db2="/var/lib/disk-compatibility/${model}_host${version}.db.new"
-
-if [[ ! -f "$db1" ]]; then echo -e "\e[41m ERROR:\e[0m $db1 not found!" && exit 3; fi
-if [[ ! -f "$db2" ]]; then echo -e "\e[41m ERROR:\e[0m $db2 not found!" && exit 4; fi
+dbpath="/var/lib/disk-compatibility/"
 
 
-# Backup database file if needed
-if [[ ! -f "$db1.bak" ]]; then
-    if cp "$db1" "$db1.bak"; then
-        echo -e "Backed up database to $(basename -- "${db1}").bak\n"
-    else
-        echo -e "\e[41m ERROR:\e[0m Failed to backup $(basename -- "${db1}")!"
-        exit 5
+#------------------------------------------------
+if [[ -f "$(dirname -- "$0";)/syno_hdd_db.test" ]]; then  # In case I forget to remove the following
+    echo "Edit test db files? [y/n]:"
+    read -r answer
+    if [[ $answer == "y" ]]; then
+        if [[ $dsm -gt "6" ]]; then
+            x="72"                                                        # test
+        else
+            x="6"
+        fi
+        db1="/volume1/scripts/tmp/hdd/$x/${model}_host${version}.db"      # test
+        db2="/volume1/scripts/tmp/hdd/$x/${model}_host${version}.db.new"  # test
+        dbpath="/volume1/scripts/tmp/hdd/$x/"                             # test
     fi
 fi
+#------------------------------------------------
 
 
-# Shell Colors
-Yellow='\e[0;33m'
-Cyan='\e[0;36m'
-Off=$'\e[0m'
+if [[ ! -f "$db1" ]]; then echo -e "${Error}ERROR 3${Off} $db1 not found!" && exit 3; fi
+#if [[ ! -f "$db2" ]]; then echo -e "${Error}ERROR 4${Off} $db2 not found!" && exit 4; fi
+# new installs don't have a .db.new file
+
+
+# Detect drive db type
+if grep -F '{"disk_compatbility_info":' "$db1" >/dev/null; then
+    # DSM 7 drive db files start with {"disk_compatbility_info":
+    dbtype=7
+elif grep -F '{"success":1,"list":[' "$db1" >/dev/null; then
+    # DSM 6 drive db files start with {"success":1,"list":[
+    dbtype=6
+else
+    echo -e "${Error}ERROR${Off} Unknown database type $(basename -- "${db1}")!"
+    exit 7
+fi
+#echo "dbtype: $dbtype"  # debug
+
+
+function backupdb() {
+    # Backup database file if needed
+    if [[ ! -f "$1.bak" ]]; then
+        if cp "$1" "$1.bak"; then
+            echo -e "\nBacked up $(basename -- "${1}") database.\n"
+        else
+            echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${1}")!"
+            return 1
+        fi
+    fi
+}
+
+
+# Backup host database file if needed
+backupdb "$db1" || exit 5
+
 
 function updatedb() {
-    hdmodel=$(printf %s "$1" | cut -d"," -f 1)
-    fwrev=$(printf %s "$1" | cut -d"," -f 2)
+    hdmodel=$(printf "%s" "$1" | cut -d"," -f 1)
+    fwrev=$(printf "%s" "$1" | cut -d"," -f 2)
 
     #echo arg1 "$1"           # debug
     #echo arg2 "$2"           # debug
@@ -281,27 +408,60 @@ function updatedb() {
     if grep "$hdmodel" "$2" >/dev/null; then
         echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}"
     else
-        # Don't need to add firmware version?
-        fwstrng=\"$fwrev\"
-        fwstrng="$fwstrng":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
-        fwstrng="$fwstrng":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]},
+        if [[ $dbtype -gt "6" ]];then
+            # Don't need to add firmware version?
+            fwstrng=\"$fwrev\"
+            fwstrng="$fwstrng":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
+            fwstrng="$fwstrng":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]},
 
-        default=\"default\"
-        default="$default":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
-        default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]}}}
+            default=\"default\"
+            default="$default":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
+            default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]}}}
 
-        #if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/g" "$2"; then  # Don't need to add firmware version?
-        if sed -i "s/}}}/}},\"$hdmodel\":{$default/g" "$2"; then
-            #echo "Added $hdmodel to $(basename -- "$2")"
-            echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
-            if [[ $2 == "$db1" ]]; then
-                db1Edits=$((db1Edits +1))
-            elif [[ $2 == "$db2" ]]; then
-                db2Edits=$((db2Edits +1))
+            #if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # Don't need to add firmware version?
+            if sed -i "s/}}}/}},\"$hdmodel\":{$default/" "$2"; then
+                echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+
+                # Count drives added to host db files
+                if [[ $2 == "$db1" ]]; then
+                    db1Edits=$((db1Edits +1))
+                elif [[ $2 == "$db2" ]]; then
+                    db2Edits=$((db2Edits +1))
+                fi
+
+            else
+                echo -e "\n${Error}ERROR 6${Off} Failed to update v7 $(basename -- "$2")${Off}"
+                exit 6
             fi
         else
-            echo -e "\n\e[41m ERROR: Failed to update $(basename -- "$2")${Off}"
-            exit 6
+            # example:
+            # {"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
+            # Don't need to add firmware version?
+            #string="{\"model\":\"${hdmodel}\",\"firmware\":\"${fwrev}\",\"rec_intvl\":\[1\]},"
+            string="{\"model\":\"${hdmodel}\",\"firmware\":\"\",\"rec_intvl\":\[1\]},"
+            # {"success":1,"list":[
+            startstring="{\"success\":1,\"list\":\["
+
+            #echo "$startstring"  # debug
+            #echo "$string"       # debug
+            #echo                 # debug
+
+            # example:
+            # {"success":1,"list":[{"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
+            if sed -ir "s/$startstring/$startstring$string/" "$2"; then
+                echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+
+                # Count drives added to host db files
+                if [[ $2 == "$db1" ]]; then
+                    db1Edits=$((db1Edits +1))
+                elif [[ $2 == "$db2" ]]; then
+                    db2Edits=$((db2Edits +1))
+                fi
+
+            else
+                echo -e "\n${Error}ERROR 8${Off} Failed to update $(basename -- "$2")${Off}"
+                exit 8
+            fi
         fi
     fi
 }
@@ -310,15 +470,34 @@ function updatedb() {
 num="0"
 while [[ $num -lt "${#hdds[@]}" ]]; do
     updatedb "${hdds[$num]}" "$db1"
-    updatedb "${hdds[$num]}" "$db2"
+    if [[ -f "$db2" ]]; then
+        updatedb "${hdds[$num]}" "$db2"
+    fi
     num=$((num +1))
 done
 
-# NVMe drives
+# M.2 NVMe/SATA drives
 num="0"
 while [[ $num -lt "${#nvmes[@]}" ]]; do
     updatedb "${nvmes[$num]}" "$db1"
-    updatedb "${nvmes[$num]}" "$db2"
+    if [[ -f "$db2" ]]; then
+        updatedb "${nvmes[$num]}" "$db2"
+    fi
+
+    #------------------------------------------------
+    # M.2 adaptor cards
+    num2="0"
+    while [[ $num2 -lt "${#m2carddbs[@]}" ]]; do
+        if [[ -f "${dbpath}${m2carddbs[$num2]}" ]];then
+            backupdb "${dbpath}${m2carddbs[$num2]}" &&\
+                updatedb "${nvmes[$num]}" "${dbpath}${m2carddbs[$num2]}"
+        else
+            echo -e "${Error}ERROR 10${Off} ${m2carddbs[$num2]} not found!"
+        fi
+        num2=$((num2 +1))
+    done
+    #------------------------------------------------
+
     num=$((num +1))
 done
 
@@ -329,7 +508,7 @@ setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
 if [[ $force == "yes" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_disk_compatibility
-        sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/g" "/etc.defaults/synoinfo.conf"
+        sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/" "/etc.defaults/synoinfo.conf"
         setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support disk compatibility."
@@ -338,12 +517,26 @@ if [[ $force == "yes" ]]; then
 else
     if [[ $setting == "no" ]]; then
         # Enable support_disk_compatibility
-        sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/g" "/etc.defaults/synoinfo.conf"
+        sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/" "/etc.defaults/synoinfo.conf"
         setting="$(get_key_value /etc.defaults/synoinfo.conf $sdc)"
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support disk compatibility."
         fi
     fi
+fi
+
+
+# Check m2 volume support enabled
+smp=support_m2_pool
+setting="$(get_key_value /etc.defaults/synoinfo.conf ${smp})"
+if [[ $setting == "no" ]]; then
+    sed -i "s/${smp}=\"no\"/${smp}=\"yes\"/" "/etc.defaults/synoinfo.conf"
+    setting="$(get_key_value /etc.defaults/synoinfo.conf ${smp})"
+    if [[ $setting == "yes" ]]; then
+        echo -e "\nEnabled M.2 volume support."
+    fi
+elif [[ $setting == "yes" ]]; then
+    echo -e "\nM.2 volume support already enabled."
 fi
 
 
@@ -356,8 +549,8 @@ fi
             if cp "$file" "$file.bak"; then
                 echo "Backed up synoinfo.conf to $(basename -- "${file}").bak"
             else
-                echo -e "\e[41m ERROR:\e[0m Failed to backup $(basename -- "${file}")!"
-                exit 6
+                echo -e "${Error}ERROR 9${Off} Failed to backup $(basename -- "${file}")!"
+                exit 9
             fi
         fi
 
@@ -368,7 +561,7 @@ fi
             disabled="yes"
         elif [[ $url != "127.0.0.1" ]]; then
             # Edit drive_db_test_url=
-            sed -i "s/drive_db_test_url=$url/drive_db_test_url=127.0.0.1/g" "$file"
+            sed -i "s/drive_db_test_url=$url/drive_db_test_url=127.0.0.1/" "$file"
             disabled="yes"
         fi
 
@@ -377,7 +570,7 @@ fi
             if [[ $url == "127.0.0.1" ]]; then
                 echo "Disabled drive db auto updates."
             else
-                echo -e "\e[41m ERROR:\e[0m Failed to disable drive db auto updates!"
+                echo -e "${Error}ERROR${Off} Failed to disable drive db auto updates!"
             fi
         fi
     fi
@@ -386,18 +579,46 @@ fi
 
 # Show the changes
 if [[ ${showedits,,} == "yes" ]]; then
-    lines=$(((db2Edits *12) +4))
-    if [[ $db1Edits -gt "0" ]]; then
-        echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
-        jq . "$db1" | tail -n "$lines"  # show last 20 lines per edit
-    fi
-    if [[ $db2Edits -gt "0" ]]; then
-        echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
-        jq . "$db2" | tail -n "$lines"  # show last 20 lines per edit
+    if [[ $dbtype -gt "6" ]];then
+        # Show last 12 lines per drive + 4
+        lines=$(((db1Edits *12) +4))
+        if [[ $db1Edits -gt "0" ]]; then
+            echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
+            jq . "$db1" | tail -n "$lines"
+        elif [[ $db2Edits -gt "0" ]]; then
+            echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
+            jq . "$db2" | tail -n "$lines"
+        fi
+    else
+        # Show first 8 lines per drive + 2
+        lines=$(((db1Edits *8) +2))
+        if [[ $db1Edits -gt "0" ]]; then
+            echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
+            jq . "$db1" | head -n "$lines"
+        elif [[ $db2Edits -gt "0" ]]; then
+            echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
+            jq . "$db2" | head -n "$lines"
+        fi
     fi
 fi
 
-echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+
+# Make Synology check disk compatibility
+/usr/syno/sbin/synostgdisk --check-all-disks-compatibility
+status=$?
+if [[ $status -eq "0" ]]; then
+    echo -e "\nDSM successfully checked disk compatibility."
+else
+    # Ignore DSM 6 as it returns 255 for "synostgdisk --check-all-disks-compatibility"
+    if [[ $dsm -gt "6" ]]; then
+        echo -e "\nDSM ${Red}failed${Off} to check disk compatibility with exit code $status"
+        echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+    fi
+fi
+
+if [[ $dsm -eq "6" ]]; then
+    echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+fi
 
 
 exit
