@@ -430,11 +430,11 @@ fi
         url=$(get_key_value "$file" drive_db_test_url)  # returns a linefeed if key doesn't exist
         if [[ ! $url ]]; then
             # Add drive_db_test_url=127.0.0.1
-            echo "drive_db_test_url=127.0.0.1" >> "$file"
+            echo 'drive_db_test_url="127.0.0.1"' >> "$file"
             disabled="yes"
         elif [[ $url != "127.0.0.1" ]]; then
             # Edit drive_db_test_url=
-            sed -i "s/drive_db_test_url=$url/drive_db_test_url=127.0.0.1/" "$file"
+            sed -i "s/drive_db_test_url=.*/drive_db_test_url=\"127.0.0.1\"/" "$file"
             disabled="yes"
         fi
 
