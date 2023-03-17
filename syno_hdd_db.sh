@@ -40,6 +40,8 @@
 # Can now download the latest script version for you (if you have user home service enabled in DSM).
 #
 # Now adds 'support_m2_pool="yes"' line for models that don't have support_m2_pool in synoinfo.conf
+#   to (hopefully) prevent losing your SSH created M2 volume when running this script on models 
+#   that DSM 7.2 Beta does not list as supported for creating M2 volumes.
 #
 # Changed Synology model detection to be more reliable (for models that came in different variations).
 #
