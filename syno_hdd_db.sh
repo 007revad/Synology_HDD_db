@@ -33,7 +33,7 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
-# Added support for M.2 drives on a PCI card, M2Dxx and E10G18-T1 etc.
+# Added support for M.2 drives on a PCI card (M2Dxx and E10G18-T1 and future models).
 #
 # Improved flags/options checking and added usage help.
 #
@@ -97,20 +97,38 @@ Off='\e[0m'
 
 
 usage(){
-    echo -e "\nUsage: $(basename $0) [options]\n"
-    echo "Options:"
-    echo " -s, --showedits  Show the edits made to host db file(s)"
-    echo " -n, --noupdate   Prevent DSM updating the compatible drive databases"
-    echo " -m, --m2         Don't process M.2 drives"
-    echo " -f, --force      Force DSM to not check drive compatibility"
-    echo " -r, --ram        Disable memory compatibility checking"
-    echo -e " -h, --help       Show this help message\n"
-    exit
+    cat <<EOF
+$script $scriptver - by 007revad
+
+Usage: $(basename "$0") [options]
+
+Options:
+  -s, --showedits  Show the edits made to host db file(s)
+  -n, --noupdate   Prevent DSM updating the compatible drive databases
+  -m, --m2         Don't process M.2 drives
+  -f, --force      Force DSM to not check drive compatibility
+  -r, --ram        Disable memory compatibility checking
+  -h, --help       Show this help message
+  -v, --version    Show the version
+  
+EOF
+exit 0
 }
+
+
+scriptversion(){
+    cat <<EOF
+$script $scriptver
+by 007revad
+https://github.com/$repo
+EOF
+exit 0
+}
+
 
 # Check for flags with getopt
 options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
-    -l showedits,noupdate,m2,force,ram,help -- "$@")"
+    -l showedits,noupdate,m2,force,ram,help,version -- "$@")"
 if [[ $? -eq "0" ]]; then
     eval set -- "$options"
     while true; do
@@ -128,10 +146,13 @@ if [[ $? -eq "0" ]]; then
                 force=yes
                 ;;
             -r|--ram)           # Include memory compatibility
-                ram=yes
+                ram=yes         # for future use
                 ;;
             -h|--help)          # Show usage options
                 usage
+                ;;
+            -v|--version)       # Show script version
+                scriptversion
                 ;;
             --)
                 shift
@@ -160,13 +181,22 @@ if [[ $dsm -gt "6" ]]; then
 fi
 
 # Get Synology model
-model=$(cat /proc/sys/kernel/syno_hw_version)
-model=${model,,}  # convert to lower case
+model=$(cat /proc/sys/kernel/syno_hw_version)  # not always the actual model number
 
-# Check for -j after model - GitHub issue #2
-if [[ $model =~ '-j'$ ]]; then
-    model=${model%??}  # remove last two chars
+modeltype=$(printf "%s" "$model" | sed 's/[0-9].*//')  # DS, RS etc
+
+unique=$(get_key_value /etc/synoinfo.conf unique | cut -d'_' -f3)  # 920+ etc
+
+# Remove extra text from end, like DS213pv10-j and DS1817+-j
+#[[ $model =~ ([0-9]{3,}) ]] && modelnum=${BASH_REMATCH[1]}
+[[ $model =~ ([0-9]{3,}(RP\+|RPxs|RP|\+II|xsII|xs\+|xs|\+|j|slim|play|se|air|D)?) ]] &&\
+    modelnum=${BASH_REMATCH[1]}
+
+if [[ $modelnum != "$unique" ]]; then
+    model="$modeltype$unique"
 fi
+
+model=${model,,}  # convert to lower case
 
 
 #------------------------------------------------------------------------------
