@@ -1,3 +1,12 @@
+v1.1.15
+- Added support for M.2 drives on a PCI card (M2Dxx and E10G18-T1 and future models).
+- Improved flags/options checking and added usage help.
+- Can now download the latest script version for you (if you have user home service enabled in DSM).
+- Now adds 'support_m2_pool="yes"' line for models that don't have support_m2_pool in synoinfo.conf
+  - To (hopefully) prevent losing your SSH created M2 volume when running this script on models that DSM 7.2 Beta does not list as supported for creating M2 volumes.
+- Changed Synology model detection to be more reliable (for models that came in different variations).
+- Changed checking drive_db_test_url setting to be more durable.
+
 v1.1.14
 - Minor bug fix.
 
