@@ -47,6 +47,8 @@
 #
 # Changed checking drive_db_test_url setting to be more durable.
 #
+# Fixed bug where removable drives were being detected and added to drive database.
+#
 #
 # Added check that M.2 volume support is enabled (on supported models).
 #
@@ -263,15 +265,19 @@ fi
 # Get list of installed SATA, SAS and M.2 NVMe/SATA drives
 
 getdriveinfo() {
-    # Get drive model and firmware version
-    hdmodel=$(cat "$1/device/model")
-    hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
+    # Skip removable drives (USB drives)
+    removable=$(cat "$1/removable")
+    if [[ $removable == "0" ]]; then
+        # Get drive model and firmware version
+        hdmodel=$(cat "$1/device/model")
+        hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
 
-    fwrev=$(cat "$1/device/rev")
-    fwrev=$(printf "%s" "$fwrev" | xargs)  # trim leading and trailing white space
+        fwrev=$(cat "$1/device/rev")
+        fwrev=$(printf "%s" "$fwrev" | xargs)  # trim leading and trailing white space
 
-    if [[ $hdmodel ]] && [[ $fwrev ]]; then
-        hdlist+=("${hdmodel},${fwrev}")
+        if [[ $hdmodel ]] && [[ $fwrev ]]; then
+            hdlist+=("${hdmodel},${fwrev}")
+        fi
     fi
 }
 
