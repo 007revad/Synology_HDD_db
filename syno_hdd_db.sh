@@ -3,7 +3,7 @@
 #--------------------------------------------------------------------------------------------------
 # Github: https://github.com/007revad/Synology_HDD_db
 # Script verified at https://www.shellcheck.net/
-# Tested on DSM 7.1.1 and DSM 6.2.4
+# Tested on DSM 7.2 beta, 7.1.1 and DSM 6.2.4
 #
 # Easiest solution:
 # Edit /etc.defaults/synoinfo.conf and change support_disk_compatibility="yes" to "no" and reboot.
@@ -33,7 +33,7 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
-# Added support for M.2 drives on a PCI card (M2Dxx and E10G18-T1 and future models).
+# Added support for M.2 drives on a PCI card (M2Dxx and E10M20-T1 and future models).
 #
 # Improved flags/options checking and added usage help.
 #
