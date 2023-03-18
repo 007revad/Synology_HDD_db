@@ -84,6 +84,7 @@ scriptver="v1.1.15"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
+#echo -e "bash version: $(bash --version | head -1 | cut -d' ' -f4)\n"  # debug
 
 # Shell Colors
 #Black='\e[0;30m'
@@ -297,16 +298,18 @@ getm2info() {
 }
 
 getcardmodel() {
-    # Get M.2 card model
-    cardmodel=$(synodisk --m2-card-model-get "$1")
-    if [[ $cardmodel =~ M2D[0-9][0-9] ]]; then
-        # M2 adaptor card
-        m2carddblist+=("${model}_${cardmodel,,}${version}.db")  # M.2 card's db file
-        m2cardlist+=("$cardmodel")                              # M.2 card
-    elif [[ $cardmodel =~ E[0-9][0-9]+M.+ ]]; then
-        # Ethernet + M2 adaptor card
-        m2carddblist+=("${model}_${cardmodel,,}${version}.db")  # M.2 card's db file
-        m2cardlist+=("$cardmodel")                              # M.2 card
+    # Get M.2 card model (if M.2 drives found)
+    if [[ ${#nvmelist[@]} -gt "0" ]]; then
+        cardmodel=$(synodisk --m2-card-model-get "$1")
+        if [[ $cardmodel =~ M2D[0-9][0-9] ]]; then
+            # M2 adaptor card
+            m2carddblist+=("${model}_${cardmodel,,}${version}.db")  # M.2 card's db file
+            m2cardlist+=("$cardmodel")                              # M.2 card
+        elif [[ $cardmodel =~ E[0-9][0-9]+M.+ ]]; then
+            # Ethernet + M2 adaptor card
+            m2carddblist+=("${model}_${cardmodel,,}${version}.db")  # M.2 card's db file
+            m2cardlist+=("$cardmodel")                              # M.2 card
+        fi
     fi
 }
 
@@ -348,21 +351,12 @@ for d in /sys/block/*; do
 done
 
 
-sortarray(){
-    # Sort $1 array into new $2 array to remove duplicates
-    local -n inarray=$1
-    outarray=()
-    if [[ ${#inarray[@]} -gt "0" ]]; then
-        while IFS= read -r -d '' x; do
-            outarray+=("$x")
-        done < <(printf "%s\0" "${inarray[@]}" | sort -uz)        
-    fi
-}
-
-
 # Sort hdlist array into new hdds array to remove duplicates
-sortarray "hdlist"
-hdds=${outarray[*]}
+if [[ ${#hdlist[@]} -gt "0" ]]; then
+    while IFS= read -r -d '' x; do
+        hdds+=("$x")
+    done < <(printf "%s\0" "${hdlist[@]}" | sort -uz)        
+fi
 
 # Check hdds array isn't empty
 if [[ ${#hdds[@]} -eq "0" ]]; then
@@ -379,8 +373,11 @@ fi
 
 
 # Sort nvmelist array into new nvmes array to remove duplicates
-sortarray "nvmelist"
-nvmes=${outarray[*]}
+if [[ ${#nvmelist[@]} -gt "0" ]]; then
+    while IFS= read -r -d '' x; do
+        nvmes+=("$x")
+    done < <(printf "%s\0" "${nvmelist[@]}" | sort -uz)        
+fi
 
 # Check nvmes array isn't empty
 if [[ ${#nvmes[@]} -eq "0" ]]; then
@@ -400,13 +397,19 @@ fi
 
 # M.2 card db files
 # Sort m2carddblist array into new m2carddbs array to remove duplicates
-sortarray "m2carddblist"
-m2carddbs=${outarray[*]}
+if [[ ${#m2carddblist[@]} -gt "0" ]]; then
+    while IFS= read -r -d '' x; do
+        m2carddbs+=("$x")
+    done < <(printf "%s\0" "${m2carddblist[@]}" | sort -uz)        
+fi
 
 # M.2 cards
 # Sort m2cardlist array into new m2cards array to remove duplicates
-sortarray "m2cardlist"
-m2cards=${outarray[*]}
+if [[ ${#m2cardlist[@]} -gt "0" ]]; then
+    while IFS= read -r -d '' x; do
+        m2cards+=("$x")
+    done < <(printf "%s\0" "${m2cardlist[@]}" | sort -uz)        
+fi
 
 # Check m2cards array isn't empty
 if [[ ${#m2cards[@]} -gt "0" ]]; then
