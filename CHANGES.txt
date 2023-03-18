@@ -7,6 +7,7 @@ v1.1.15
 - Changed Synology NAS model detection to be more reliable (for models that came in different variations and report extra text after model).
 - Changed checking drive_db_test_url setting to be more durable.
 - Fixed bug where removable drives were being added to the drive database.
+- Fixed bug where "M.2 volume support already enabled" message appeared when NAS had no M.2 drives.
 
 v1.1.14
 - Minor bug fix.
