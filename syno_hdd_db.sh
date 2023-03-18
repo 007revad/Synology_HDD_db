@@ -49,6 +49,8 @@
 #
 # Fixed bug where removable drives were being detected and added to drive database.
 #
+# Fixed bug where "M.2 volume support already enabled" message appeared when NAS had no M.2 drives.
+#
 #
 # Added check that M.2 volume support is enabled (on supported models).
 #
@@ -380,18 +382,19 @@ if [[ ${#nvmelist[@]} -gt "0" ]]; then
 fi
 
 # Check nvmes array isn't empty
-if [[ ${#nvmes[@]} -eq "0" ]]; then
-    if [[ $m2 != "no" ]]; then
+if [[ $m2 != "no" ]]; then
+    if [[ ${#nvmes[@]} -eq "0" ]]; then
         echo -e "No M.2 drives found\n"
+    else    
+        m2exists="yes"
+        echo "M.2 drive models found: ${#nvmes[@]}"
+        num="0"
+        while [[ $num -lt "${#nvmes[@]}" ]]; do
+            echo "${nvmes[num]}"
+            num=$((num +1))
+        done
+        echo
     fi
-else    
-    echo "M.2 drive models found: ${#nvmes[@]}"
-    num="0"
-    while [[ $num -lt "${#nvmes[@]}" ]]; do
-        echo "${nvmes[num]}"
-        num=$((num +1))
-    done
-    echo
 fi
 
 
@@ -608,29 +611,34 @@ else
 fi
 
 
-# Check m2 volume support enabled
-smp=support_m2_pool
-setting="$(get_key_value $synoinfo ${smp})"
-enabled=""
-if [[ ! $setting ]]; then
-    # Add support_m2_pool"yes"
-    echo 'support_m2_pool="yes"' >> "$synoinfo"
-    enabled="yes"
-elif [[ $setting == "no" ]]; then
-    # Change support_m2_pool"no" to "yes"
-    sed -i "s/${smp}=\"no\"/${smp}=\"yes\"/" "$synoinfo"
-    enabled="yes"
-elif [[ $setting == "yes" ]]; then
-    echo -e "\nM.2 volume support already enabled."
-fi
+# Enable m2 volume support
+if [[ $m2 != "no" ]]; then
+    if [[ $m2exists == "yes" ]]; then
+        # Check if m2 volume support is enabled
+        smp=support_m2_pool
+        setting="$(get_key_value $synoinfo ${smp})"
+        enabled=""
+        if [[ ! $setting ]]; then
+            # Add support_m2_pool"yes"
+            echo 'support_m2_pool="yes"' >> "$synoinfo"
+            enabled="yes"
+        elif [[ $setting == "no" ]]; then
+            # Change support_m2_pool"no" to "yes"
+            sed -i "s/${smp}=\"no\"/${smp}=\"yes\"/" "$synoinfo"
+            enabled="yes"
+        elif [[ $setting == "yes" ]]; then
+            echo -e "\nM.2 volume support already enabled."
+        fi
 
-# Check if we enabled m2 volume support
-setting="$(get_key_value $synoinfo ${smp})"
-if [[ $enabled == "yes" ]]; then
-    if [[ $setting == "yes" ]]; then
-        echo -e "\nEnabled M.2 volume support."
-    else
-        echo -e "${Error}ERROR${Off} Failed to enable m2 volume support!"
+        # Check if we enabled m2 volume support
+        setting="$(get_key_value $synoinfo ${smp})"
+        if [[ $enabled == "yes" ]]; then
+            if [[ $setting == "yes" ]]; then
+                echo -e "\nEnabled M.2 volume support."
+            else
+                echo -e "${Error}ERROR${Off} Failed to enable m2 volume support!"
+            fi
+        fi
     fi
 fi
 
