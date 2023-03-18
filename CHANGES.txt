@@ -1,5 +1,5 @@
 v1.1.15
-- Added support for M.2 drives on a PCI card (M2Dxx and E10G18-T1 and future models).
+- Added support for M.2 drives on a PCI card (M2Dxx and E10M20-T1 and future models).
 - Improved flags/options checking and added usage help (-h or --help) and version info (-v or --version).
 - Can now download the latest script version for you (if you have 'user home service' enabled in DSM).
 - Now adds 'support_m2_pool="yes"' line for models that don't have support_m2_pool in synoinfo.conf
