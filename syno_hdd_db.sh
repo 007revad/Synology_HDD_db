@@ -185,23 +185,9 @@ if [[ $dsm -gt "6" ]]; then
     version="_v$dsm"
 fi
 
-# Get Synology model
-model=$(cat /proc/sys/kernel/syno_hw_version)  # not always the actual model number
-
-modeltype=$(printf "%s" "$model" | sed 's/[0-9].*//')  # DS, RS etc
-
-unique=$(get_key_value /etc/synoinfo.conf unique | cut -d'_' -f3)  # 920+ etc
-
-# Remove extra text from end, like DS213pv10-j and DS1817+-j
-#[[ $model =~ ([0-9]{3,}) ]] && modelnum=${BASH_REMATCH[1]}
-[[ $model =~ ([0-9]{3,}(RP\+|RPxs|RP|\+II|xsII|xs\+|xs|\+|j|slim|play|se|air|D)?) ]] &&\
-    modelnum=${BASH_REMATCH[1]}
-
-if [[ $modelnum != "$unique" ]]; then
-    model="$modeltype$unique"
-fi
-
-model=${model,,}  # convert to lower case
+# Get Synology model from host db file
+model=$(ls -lh /var/lib/disk-compatibility | grep -E ".*host(_v7)?\.db$" |\
+    rev | cut -d" " -f1 | rev | cut -d"_" -f1)
 
 
 #------------------------------------------------------------------------------
