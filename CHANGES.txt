@@ -1,3 +1,16 @@
+v1.2.15
+- Now finds your expansion units' model numbers and adds your drives to their db files.
+- Now adds your M.2 drives to your M.2 PCI card's db files (supports M2Dxx and E10M20-T1 and future models with similar model names).
+- Improved flags/options checking and added usage help (-h or --help) and version info (-v or --version).
+- Can now download the latest script version for you (if you have 'user home service' enabled in DSM).
+- Now adds 'support_m2_pool="yes"' line for models that don't have support_m2_pool in synoinfo.conf
+  - To (hopefully) prevent losing your SSH created M2 volume when running this script on models that DSM 7.2 Beta does not list as supported for creating M2 volumes.
+- Added removal of " 00Y" from end of Samsung/Lenovo SSDs to fix issue #13.
+- Changed Synology NAS model detection to be more reliable (for models that came in different variations and report extra text after model). issue #2 and issue #10
+- Changed checking drive_db_test_url setting to be more durable.
+- Fixed bug where removable drives were being added to the drive database.
+- Fixed bug where "M.2 volume support already enabled" message appeared when NAS had no M.2 drives.
+
 v1.1.14
 - Minor bug fix.
 

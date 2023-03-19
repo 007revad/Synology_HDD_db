@@ -5,7 +5,7 @@
 
 ### Description
 
-Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 drives to your Synology's compatible drive databases.
+Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 drives to your Synology's compatible drive databases, including your M.2 card and Expansion Unit databases. 
 
 The script works in DSM 7 and DSM 6.
 
@@ -14,7 +14,7 @@ The script works in DSM 7 and DSM 6.
 * Gets the Synology NAS model and DSM version (so it knows which db files to edit).
 * Gets a list of the HDD, SSD, SAS and NVMe drives installed in your Synology NAS.
 * Gets each drive's model number and firmware version.
-* Backs up the database file if there is no backup already.
+* Backs up the database files if there is no backup already.
 * Checks if each drive is already in the Synology's compatible-drive database.
 * Adds any missing drives to the Synology's compatible-drive database.
 * Prevents DSM auto updating the drive database.
@@ -25,9 +25,6 @@ The script works in DSM 7 and DSM 6.
 
 **Planned updates:** 
 * Allow unsupported M.2 drives for use as volumes in DSM 7.2 (for models that supported M.2 volumes).
-* Detect any connected expansion units and get the model(s) and edit the correct expansion unit db files.
-  * Or add support for users to specify their expansion unit model(s) as arguments.
-  * Or maybe use the shotgun approach and update all expansion unit db files.
 
 ### Download the script
 
