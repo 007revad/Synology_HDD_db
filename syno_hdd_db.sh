@@ -187,7 +187,7 @@ fi
 
 # Get Synology model
 model=$(find /var/lib/disk-compatibility -regextype egrep -regex ".*host(_v7)?\.db$" |\
-    rev | cut -d"/" -f1 | rev | cut -d"_" -f1)
+    cut -d"/" -f5 | cut -d"_" -f1 | uniq)
 
 
 #------------------------------------------------------------------------------
