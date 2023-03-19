@@ -82,7 +82,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.15"
+scriptver="v1.2.16"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -192,7 +192,22 @@ fi
 #    cut -d"/" -f5 | cut -d"_" -f1 | uniq)
 
 model=$(cat /proc/sys/kernel/syno_hw_version)
-model=${model,,}  # convert to lower case
+
+
+# Show script version
+echo "$script $scriptver"
+#echo "github.com/$repo"
+
+# Show NAS info
+productversion=$(get_key_value /etc.defaults/VERSION productversion)
+buildphase=$(get_key_value /etc.defaults/VERSION buildphase)
+if [[ $buildphase == GM ]]; then buildphase=""; fi
+echo "$model DSM $productversion $buildphase"
+echo ""
+
+
+# Convert model to lower case
+model=${model,,}
 
 # Check for dodgy characters after model number
 if [[ $model =~ 'pv10-j'$ ]]; then  # GitHub issue #10

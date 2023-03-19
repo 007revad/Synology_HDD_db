@@ -1,3 +1,6 @@
+v1.2.16
+- Changed to show the script version, Synology model and DSM version on each run to make it easier to debug any user's issues.
+
 v1.2.15
 - Now finds your expansion units' model numbers and adds your drives to their db files.
 - Now adds your M.2 drives to your M.2 PCI card's db files (supports M2Dxx and E10M20-T1 and future models with similar model names).
