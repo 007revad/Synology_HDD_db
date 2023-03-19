@@ -1,5 +1,5 @@
 v1.2.16
-- Changed to show the script version and DSM version on each run to make it easier to debug any user's issues.
+- Changed to show the script version, Synology model and DSM version on each run to make it easier to debug any user's issues.
 
 v1.2.15
 - Now finds your expansion units' model numbers and adds your drives to their db files.
