@@ -186,8 +186,20 @@ if [[ $dsm -gt "6" ]]; then
 fi
 
 # Get Synology model
-model=$(find /var/lib/disk-compatibility -regextype egrep -regex ".*host(_v7)?\.db$" |\
-    cut -d"/" -f5 | cut -d"_" -f1 | uniq)
+
+# This doesn't work for drives migrated from different model
+#model=$(find /var/lib/disk-compatibility -regextype egrep -regex ".*host(_v7)?\.db$" |\
+#    cut -d"/" -f5 | cut -d"_" -f1 | uniq)
+
+model=$(cat /proc/sys/kernel/syno_hw_version)
+model=${model,,}  # convert to lower case
+
+# Check for dodgy characters after model number
+if [[ $model =~ 'pv10-j'$ ]]; then  # GitHub issue #10
+    model=${model%??????}+  # replace last 6 chars with +
+elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
+    model=${model%??}  # remove last 2 chars
+fi
 
 
 #------------------------------------------------------------------------------
