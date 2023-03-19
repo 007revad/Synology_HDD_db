@@ -74,3 +74,4 @@ sudo /path-to-script/syno_hdd_db.sh -showedits
 
 - The idea for this script came from a comment made by Empyrealist on the Synology subreddit.
 - Thanks for the assistance from Alex_of_Chaos on the Synology subreddit.
+- Thanks to dwabraxus and aferende for help detecting connected expansion units.
