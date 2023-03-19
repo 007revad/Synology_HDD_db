@@ -25,15 +25,13 @@
 # TODO
 # Bypass M.2 volume lock for unsupported M.2 drives.
 #
-# Detect if expansion unit(s) connected and get model(s) and edit expansion unit db files.
-#   Or add support for specifying user's expansion unit model(s) as arguments.
-#   Or maybe use the shotgun approach and update all expansion unit db files.
-#
 # Maybe also edit the other disk compatibility db in synoboot, used during boot time.
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
-# Added support for M.2 drives on a PCI card (M2Dxx and E10M20-T1 and future models).
+# Now finds your expansion units' model numbers and adds your drives to their db files.
+#
+# Now adds your M.2 drives to your M.2 PCI cards db files (M2Dxx and E10M20-T1 and future models).
 #
 # Improved flags/options checking and added usage help.
 #
@@ -46,6 +44,8 @@
 # Changed Synology model detection to be more reliable (for models that came in different variations).
 #
 # Changed checking drive_db_test_url setting to be more durable.
+#
+# Added removal of " 00Y" from end of Samsung/Lenovo SSDs to fix issue #13.
 #
 # Fixed bug where removable drives were being detected and added to drive database.
 #
@@ -82,7 +82,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.1.15"
+scriptver="v1.2.15"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -123,18 +123,17 @@ exit 0
 
 scriptversion(){
     cat <<EOF
-$script $scriptver
-by 007revad
-https://github.com/$repo
+$script $scriptver - by 007revad
+
+See https://github.com/$repo
 EOF
 exit 0
 }
 
 
 # Check for flags with getopt
-options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
-    -l showedits,noupdate,m2,force,ram,help,version -- "$@")"
-if [[ $? -eq "0" ]]; then
+if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
+    -l showedits,noupdate,m2,force,ram,help,version -- "$@")"; then
     eval set -- "$options"
     while true; do
         case "${1,,}" in
@@ -151,6 +150,7 @@ if [[ $? -eq "0" ]]; then
                 force=yes
                 ;;
             -r|--ram)           # Include memory compatibility
+                # shellcheck disable=SC2034
                 ram=yes         # for future use
                 ;;
             -h|--help)          # Show usage options
@@ -185,9 +185,9 @@ if [[ $dsm -gt "6" ]]; then
     version="_v$dsm"
 fi
 
-# Get Synology model from host db file
-model=$(ls -lh /var/lib/disk-compatibility | grep -E ".*host(_v7)?\.db$" |\
-    rev | cut -d" " -f1 | rev | cut -d"_" -f1)
+# Get Synology model
+model=$(find /var/lib/disk-compatibility -regextype egrep -regex ".*host(_v7)?\.db$" |\
+    rev | cut -d"/" -f1 | rev | cut -d"_" -f1)
 
 
 #------------------------------------------------------------------------------
@@ -251,7 +251,16 @@ fi
 
 
 #------------------------------------------------------------------------------
-# Get list of installed SATA, SAS and M.2 NVMe/SATA drives
+# Get list of installed SATA, SAS and M.2 NVMe/SATA drives,
+# PCIe M.2 cards and connected Expansion Units.
+
+fixdrivemodel(){
+    # Remove " 00Y" from end of Samsung/Lenovo SSDs
+    # To fix issue #13
+    if [[ $1 =~ MZ.*" 00Y" ]]; then
+        hdmodel=$(printf "%s" "$1" | sed 's/ 00Y.*//')
+    fi
+}
 
 getdriveinfo() {
     # Skip removable drives (USB drives)
@@ -260,6 +269,9 @@ getdriveinfo() {
         # Get drive model and firmware version
         hdmodel=$(cat "$1/device/model")
         hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
+
+        # Fix dodgy model numbers
+        fixdrivemodel "$hdmodel"
 
         fwrev=$(cat "$1/device/rev")
         fwrev=$(printf "%s" "$fwrev" | xargs)  # trim leading and trailing white space
@@ -412,6 +424,36 @@ if [[ ${#m2cards[@]} -gt "0" ]]; then
 fi
 
 
+# Expansion units
+# Get list of connected expansion units (aka eunit/ebox)
+path="/var/log/diskprediction"
+# shellcheck disable=SC2012
+file=$(ls $path | tail -n1) 
+# shellcheck disable=SC2207
+eunitlist=($(grep -Eow "([FRD]XD?[0-9]{3,4})(RP|II|sas){0,2}" "$path/$file" | uniq))
+
+# Sort eunitlist array into new eunits array to remove duplicates
+if [[ ${#eunitlist[@]} -gt "0" ]]; then
+    while IFS= read -r -d '' x; do
+        eunits+=("$x")
+    done < <(printf "%s\0" "${eunitlist[@]}" | sort -uz)        
+fi
+
+# Check eunits array isn't empty
+if [[ ${#eunits[@]} -eq "0" ]]; then
+    echo -e "No Expansion Units found\n"
+else    
+    #eunitexists="yes"
+    echo "Expansion Unit models found: ${#eunits[@]}"
+    num="0"
+    while [[ $num -lt "${#eunits[@]}" ]]; do
+        echo "${eunits[num]}"
+        num=$((num +1))
+    done
+    echo
+fi
+
+
 #------------------------------------------------------------------------------
 # Check databases and add our drives if needed
 
@@ -427,27 +469,29 @@ if [[ ! -f "$db1" ]]; then echo -e "${Error}ERROR 3${Off} $db1 not found!" && ex
 # new installs don't have a .db.new file
 
 
-# Detect drive db type
-if grep -F '{"disk_compatbility_info":' "$db1" >/dev/null; then
-    # DSM 7 drive db files start with {"disk_compatbility_info":
-    dbtype=7
-elif grep -F '{"success":1,"list":[' "$db1" >/dev/null; then
-    # DSM 6 drive db files start with {"success":1,"list":[
-    dbtype=6
-else
-    echo -e "${Error}ERROR${Off} Unknown database type $(basename -- "${db1}")!"
-    exit 7
-fi
-#echo "dbtype: $dbtype"  # debug
+getdbtype(){
+    # Detect drive db type
+    if grep -F '{"disk_compatbility_info":' "$1" >/dev/null; then
+        # DSM 7 drive db files start with {"disk_compatbility_info":
+        dbtype=7
+    elif grep -F '{"success":1,"list":[' "$1" >/dev/null; then
+        # DSM 6 drive db files start with {"success":1,"list":[
+        dbtype=6
+    else
+        echo -e "${Error}ERROR${Off} Unknown database type $(basename -- "${1}")!" >&2
+        dbtype=1
+    fi
+    #echo "db type: $dbtype" >&2  # debug
+}
 
 
 backupdb() {
     # Backup database file if needed
     if [[ ! -f "$1.bak" ]]; then
         if cp "$1" "$1.bak"; then
-            echo -e "\nBacked up $(basename -- "${1}") database.\n"
+            echo -e "Backed up $(basename -- "${1}")" >&2
         else
-            echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${1}")!"
+            echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${1}")!" >&2
             return 1
         fi
     fi
@@ -457,9 +501,6 @@ backupdb() {
 # Backup host database file if needed
 backupdb "$db1" || exit 5
 
-# Backup synoinfo.conf if needed
-backupdb "$synoinfo" || exit 9
-
 
 #------------------------------------------------------------------------------
 # Edit db files
@@ -468,14 +509,17 @@ updatedb() {
     hdmodel=$(printf "%s" "$1" | cut -d"," -f 1)
     fwrev=$(printf "%s" "$1" | cut -d"," -f 2)
 
-    #echo arg1 "$1"           # debug
-    #echo arg2 "$2"           # debug
-    #echo hdmodel "$hdmodel"  # debug
-    #echo fwrev "$fwrev"      # debug
+    #echo arg1 "$1" >&2           # debug
+    #echo arg2 "$2" >&2           # debug
+    #echo hdmodel "$hdmodel" >&2  # debug
+    #echo fwrev "$fwrev" >&2      # debug
 
     if grep "$hdmodel" "$2" >/dev/null; then
-        echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}"
+        echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
     else
+        # Check if db file is new or old style
+        getdbtype "$2"
+
         if [[ $dbtype -gt "6" ]];then
             # Don't need to add firmware version?
             fwstrng=\"$fwrev\"
@@ -501,7 +545,7 @@ updatedb() {
                 echo -e "\n${Error}ERROR 6${Off} Failed to update v7 $(basename -- "$2")${Off}"
                 exit 6
             fi
-        else
+        elif [[ $dbtype -eq "6" ]];then
             # example:
             # {"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
             # Don't need to add firmware version?
@@ -510,9 +554,9 @@ updatedb() {
             # {"success":1,"list":[
             startstring="{\"success\":1,\"list\":\["
 
-            #echo "$startstring"  # debug
-            #echo "$string"       # debug
-            #echo                 # debug
+            #echo "$startstring" >&2  # debug
+            #echo "$string" >&2       # debug
+            #echo >&2                 # debug
 
             # example:
             # {"success":1,"list":[{"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
@@ -527,7 +571,7 @@ updatedb() {
                 fi
 
             else
-                echo -e "\n${Error}ERROR 8${Off} Failed to update $(basename -- "$2")${Off}"
+                echo -e "\n${Error}ERROR 8${Off} Failed to update $(basename -- "$2")${Off}" >&2
                 exit 8
             fi
         fi
@@ -541,6 +585,22 @@ while [[ $num -lt "${#hdds[@]}" ]]; do
     if [[ -f "$db2" ]]; then
         updatedb "${hdds[$num]}" "$db2"
     fi
+
+    #------------------------------------------------
+    # Expansion Units
+    num2="0"
+    while [[ $num2 -lt "${#eunits[@]}" ]]; do
+        eudb="${dbpath}${eunits[$num2],,}${version}.db"
+        if [[ -f "$eudb" ]];then
+            backupdb "$eudb" &&\
+                updatedb "${hdds[$num]}" "$eudb"
+        else
+            echo -e "${Error}ERROR 11${Off} $eudb not found!"
+        fi
+        num2=$((num2 +1))
+    done
+    #------------------------------------------------
+
     num=$((num +1))
 done
 
@@ -572,6 +632,10 @@ done
 
 #------------------------------------------------------------------------------
 # Edit /etc.defaults/synoinfo.conf
+
+# Backup synoinfo.conf if needed
+echo ""
+backupdb "$synoinfo" || exit 9
 
 # Optionally disable "support_disk_compatibility"
 sdc=support_disk_compatibility
@@ -676,6 +740,7 @@ fi
 
 # Show the changes
 if [[ ${showedits,,} == "yes" ]]; then
+    getdbtype "$db1"
     if [[ $dbtype -gt "6" ]];then
         # Show last 12 lines per drive + 4
         lines=$(((db1Edits *12) +4))
@@ -686,7 +751,7 @@ if [[ ${showedits,,} == "yes" ]]; then
             echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
             jq . "$db2" | tail -n "$lines"
         fi
-    else
+    elif [[ $dbtype -eq "6" ]];then
         # Show first 8 lines per drive + 2
         lines=$(((db1Edits *8) +2))
         if [[ $db1Edits -gt "0" ]]; then
