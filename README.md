@@ -23,6 +23,8 @@ The script works in DSM 7 and DSM 6.
 * Checks that M.2 volume support is enabled (on supported models).
 * Makes DSM recheck disk compatibility so rebooting is not needed (DSM 7 only).
 * Reminds you that you may need to reboot the Synology after running the script (DSM 6 only).
+* Checks if there is a newer version of this script and offers to download it for you.
+  * The new version available messages time out so they don't prevent the script running if it is scheduled to run unattended.
 
 **Planned updates:** 
 * Allow unsupported M.2 drives for use as volumes in DSM 7.2 (for models that supported M.2 volumes).
