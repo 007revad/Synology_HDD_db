@@ -82,7 +82,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.16"
+scriptver="v1.2.17"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -150,8 +150,7 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
                 force=yes
                 ;;
             -r|--ram)           # Include memory compatibility
-                # shellcheck disable=SC2034
-                ram=yes         # for future use
+                ram=yes
                 ;;
             -h|--help)          # Show usage options
                 usage
@@ -683,6 +682,30 @@ else
         setting="$(get_key_value "$synoinfo" $sdc)"
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support disk compatibility."
+        fi
+    fi
+fi
+
+
+# Optionally disable "support_memory_compatibility"
+smc=support_memory_compatibility
+setting="$(get_key_value $synoinfo $smc)"
+if [[ $ram == "yes" ]]; then
+    if [[ $setting == "yes" ]]; then
+        # Disable support_memory_compatibility
+        sed -i "s/${smc}=\"yes\"/${smc}=\"no\"/" "$synoinfo"
+        setting="$(get_key_value "$synoinfo" $smc)"
+        if [[ $setting == "no" ]]; then
+            echo -e "\nDisabled support memory compatibility."
+        fi
+    fi
+else
+    if [[ $setting == "no" ]]; then
+        # Enable support_memory_compatibility
+        sed -i "s/${smc}=\"no\"/${smc}=\"yes\"/" "$synoinfo"
+        setting="$(get_key_value "$synoinfo" $smc)"
+        if [[ $setting == "yes" ]]; then
+            echo -e "\nRe-enabled support memory compatibility."
         fi
     fi
 fi
