@@ -49,6 +49,8 @@ There are 4 optional flags you can use when running the script:
   * If you run the script without --ram or -r it will re-eanble "support_memory_compatibility".
 * --m2 or -m to prevent processing M.2 drives.
 
+<p align="leftr"><img src="images/syno_hdd_db_help.png"></p>
+
 ### Scheduling the script in Synology's Task Scheduler
 
 See <a href=how_to_schedule.md/>How to schedule a script in Synology Task Manager</a>
