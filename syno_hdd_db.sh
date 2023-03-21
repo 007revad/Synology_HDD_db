@@ -29,6 +29,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Added option to disable incompatible memory notifications.
+#
 # Now finds your expansion units' model numbers and adds your drives to their db files.
 #
 # Now adds your M.2 drives to your M.2 PCI cards db files (M2Dxx and E10M20-T1 and future models).
@@ -82,7 +84,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.17"
+scriptver="v1.2.18"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -149,7 +151,7 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
             -f|--force)         # Disable "support_disk_compatibility"
                 force=yes
                 ;;
-            -r|--ram)           # Include memory compatibility
+            -r|--ram)           # Disable "support_memory_compatibility"
                 ram=yes
                 ;;
             -h|--help)          # Show usage options
@@ -514,6 +516,9 @@ getdbtype(){
 backupdb() {
     # Backup database file if needed
     if [[ ! -f "$1.bak" ]]; then
+        if [[ $(basename "$1") == "synoinfo.conf" ]]; then
+            echo "" >&2
+        fi
         if cp "$1" "$1.bak"; then
             echo -e "Backed up $(basename -- "${1}")" >&2
         else
@@ -660,7 +665,6 @@ done
 # Edit /etc.defaults/synoinfo.conf
 
 # Backup synoinfo.conf if needed
-echo ""
 backupdb "$synoinfo" || exit 9
 
 # Optionally disable "support_disk_compatibility"
@@ -736,7 +740,7 @@ if [[ $m2 != "no" ]]; then
             if [[ $setting == "yes" ]]; then
                 echo -e "\nEnabled M.2 volume support."
             else
-                echo -e "${Error}ERROR${Off} Failed to enable m2 volume support!"
+                echo -e "\n${Error}ERROR${Off} Failed to enable m2 volume support!"
             fi
         fi
     fi
@@ -764,7 +768,7 @@ if [[ $nodbupdate == "yes" ]]; then
         if [[ $url == "127.0.0.1" ]]; then
             echo -e "\nDisabled drive db auto updates."
         else
-            echo -e "${Error}ERROR${Off} Failed to disable drive db auto updates!"
+            echo -e "\n${Error}ERROR${Off} Failed to disable drive db auto updates!"
         fi
     fi
 else
