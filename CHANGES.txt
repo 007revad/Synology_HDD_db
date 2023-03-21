@@ -1,3 +1,6 @@
+v2.2.18
+- Minor shell output formatting fix.
+
 v1.2.17
 - Added disable support memory compatibility option --ram or -r
 
