@@ -63,7 +63,7 @@ sudo /path-to-script/syno_hdd_db.sh
 
 **Note:** Replace /path-to-script/ with the actual path to the script on your Synology.
 
-<p align="leftr"><img src="images/syno_hdd_db2.png"></p>
+<p align="leftr"><img src="images/syno_hdd_db1.png"></p>
 
 If you run the script with the -showedits flag it will show you the changes it made to the Synology's compatible-drive database. Obviously this is only useful if you run the script in a shell.
 
