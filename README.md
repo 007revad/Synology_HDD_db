@@ -41,13 +41,14 @@ You would need to re-run the script after a DSM update. If you have DSM set to a
 
 ### Options when running the script
 
-There are 4 optional flags you can use when running the script:
+There are optional flags you can use when running the script:
 * --showedits or -s to show you the changes it made to the Synology's compatible-drive database.
+* --noupdate or -n to prevent DSM updating the compatible drive databases.
+* --m2 or -m to prevent processing M.2 drives.
 * --force or -f to disable "support_disk_compatibility". This should only be needed if any of your drives weren't detected.
   * If you run the script without --force or -f it will re-eanble "support_disk_compatibility".
 * --ram or -r to disable "support_memory_compatibility".
   * If you run the script without --ram or -r it will re-eanble "support_memory_compatibility".
-* --m2 or -m to prevent processing M.2 drives.
 
 <p align="leftr"><img src="images/syno_hdd_db_help.png"></p>
 
