@@ -84,7 +84,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.18"
+scriptver="v1.2.19"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -227,7 +227,7 @@ get_latest_release() {
     sed -E 's/.*"([^"]+)".*/\1/'  # Pluck JSON value
 }
 
-tag=$(get_latest_release "007revad/Synology_HDD_db")
+tag=$(get_latest_release "$repo")
 shorttag="${tag:1}"
 
 if [[ $HOME =~ /var/services/* ]]; then
