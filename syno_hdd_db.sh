@@ -29,6 +29,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Added a timeouts when checking for newer script version in case github is down or slow.
+#
 # Added option to disable incompatible memory notifications.
 #
 # Now finds your expansion units' model numbers and adds your drives to their db files.
@@ -84,7 +86,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.19"
+scriptver="v1.2.20"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -204,7 +206,6 @@ productversion=$(get_key_value /etc.defaults/VERSION productversion)
 buildphase=$(get_key_value /etc.defaults/VERSION buildphase)
 if [[ $buildphase == GM ]]; then buildphase=""; fi
 echo "$model DSM $productversion $buildphase"
-echo ""
 
 
 # Convert model to lower case
@@ -213,16 +214,22 @@ model=${model,,}
 # Check for dodgy characters after model number
 if [[ $model =~ 'pv10-j'$ ]]; then  # GitHub issue #10
     model=${model%??????}+  # replace last 6 chars with +
+    echo "Using model: $model"
 elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
     model=${model%??}  # remove last 2 chars
+    echo "Using model: $model"
 fi
+
+echo ""  # To keep output readable
 
 
 #------------------------------------------------------------------------------
 # Check latest release with GitHub API
 
 get_latest_release() {
-    curl --silent "https://api.github.com/repos/$1/releases/latest" |
+    # Curl timeout options:
+    # https://unix.stackexchange.com/questions/94604/does-curl-have-a-timeout
+    curl --silent -m 10 --connect-timeout 5 "https://api.github.com/repos/$1/releases/latest" |
     grep '"tag_name":' |          # Get tag line
     sed -E 's/.*"([^"]+)".*/\1/'  # Pluck JSON value
 }
@@ -252,7 +259,8 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
         echo -e "${Cyan}Do you want to download $tag now?${Off} {y/n]"
         read -r -t 30 reply
         if [[ ${reply,,} == "y" ]]; then
-            if ! curl -LJO "https://github.com/$repo/archive/refs/tags/$tag.tar.gz"; then
+            if ! curl -LJO -m 30 --connect-timeout 5 "https://github.com/$repo/archive/refs/tags/$tag.tar.gz";
+            then
                 echo -e "${Error}ERROR ${Off} Failed to download $script-$shorttag.tar.gz!"
             else
                 if [[ -f $HOME/$script-$shorttag.tar.gz ]]; then
