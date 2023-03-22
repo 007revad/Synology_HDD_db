@@ -1,3 +1,6 @@
+v2.1.19
+- Minor change to check new version code.
+
 v2.2.18
 - Minor shell output formatting fix.
 
