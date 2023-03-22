@@ -1,5 +1,8 @@
+v1.2.21
+- Reinstated removing brand from start of drive model to fix issue #24.
+
 v1.2.20
-- Added a timeouts when checking for newer script version in case github is down or slow.
+- Added a timeouts when checking for newer script version in case github is down or slow to fix issue #25.
 - Fixed change log (v1.2.19 and v1.2.18 were listed as v2.2.19 and v2.2.19).
 
 v1.2.19
