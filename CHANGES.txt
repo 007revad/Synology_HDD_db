@@ -1,7 +1,11 @@
-v2.1.19
+v1.2.20
+- Added a timeouts when checking for newer script version in case github is down or slow.
+- Fixed change log (v1.2.19 and v1.2.18 were listed as v2.2.19 and v2.2.19).
+
+v1.2.19
 - Minor change to check new version code.
 
-v2.2.18
+v1.2.18
 - Minor shell output formatting fix.
 
 v1.2.17
