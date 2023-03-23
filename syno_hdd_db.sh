@@ -29,6 +29,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Changed latest version check to download to /tmp and extract files to the script's location.
+#
 # Added a timeouts when checking for newer script version in case github is down or slow.
 #
 # Added option to disable incompatible memory notifications.
@@ -86,7 +88,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.21"
+scriptver="v1.2.22"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -229,57 +231,66 @@ echo ""  # To keep output readable
 get_latest_release() {
     # Curl timeout options:
     # https://unix.stackexchange.com/questions/94604/does-curl-have-a-timeout
-    curl --silent -m 10 --connect-timeout 5 "https://api.github.com/repos/$1/releases/latest" |
+    curl --silent -m 10 --connect-timeout 5 \
+        "https://api.github.com/repos/$1/releases/latest" |
     grep '"tag_name":' |          # Get tag line
     sed -E 's/.*"([^"]+)".*/\1/'  # Pluck JSON value
 }
 
 tag=$(get_latest_release "$repo")
 shorttag="${tag:1}"
-
-if [[ $HOME =~ /var/services/* ]]; then
-    shorthome=${HOME:14}
-else
-    shorthome="$HOME"
-fi
+scriptpath=$(dirname -- "$0")
 
 if ! printf "%s\n%s\n" "$tag" "$scriptver" |
         sort --check --version-sort &> /dev/null ; then
     echo -e "${Cyan}There is a newer version of this script available.${Off}"
     echo -e "Current version: ${scriptver}\nLatest version:  $tag"
-    if [[ ! -d $HOME ]]; then
-        # Can't download to home
+    if [[ -f $scriptpath/$script-$shorttag.tar.gz ]]; then
+        # They have the latest version tar.gz downloaded but are using older version
         echo "https://github.com/$repo/releases/latest"
         sleep 10
-    elif [[ -f $HOME/$script-$shorttag.tar.gz ]]; then
-        # Latest version tar.gz in home but they're using older version
+    elif [[ -d $scriptpath/$script-$shorttag ]]; then
+        # They have the latest version extracted but are using older version
         echo "https://github.com/$repo/releases/latest"
         sleep 10
     else
         echo -e "${Cyan}Do you want to download $tag now?${Off} {y/n]"
         read -r -t 30 reply
         if [[ ${reply,,} == "y" ]]; then
-            if ! curl -LJO -m 30 --connect-timeout 5 "https://github.com/$repo/archive/refs/tags/$tag.tar.gz";
-            then
-                echo -e "${Error}ERROR ${Off} Failed to download $script-$shorttag.tar.gz!"
-            else
-                if [[ -f $HOME/$script-$shorttag.tar.gz ]]; then
-                    if ! tar -xf "$HOME/$script-$shorttag.tar.gz"; then
-                        echo -e "${Error}ERROR ${Off} Failed to extract $script-$shorttag.tar.gz!"
-                    else
-                        if ! rm "$HOME/$script-$shorttag.tar.gz"; then
-                            echo -e "${Error}ERROR ${Off} Failed to delete downloaded $script-$shorttag.tar.gz!"
-                        else
-                            echo -e "\n$tag and changes.txt are in ${Cyan}$shorthome/$script-$shorttag${Off}"
-                            echo -e "${Cyan}Do you want to stop this script so you can run the new one?${Off} {y/n]"
-                            read -r -t 30 reply
-                            if [[ ${reply,,} == "y" ]]; then exit; fi
-                        fi
-                    fi
+            if cd /tmp; then
+                url="https://github.com/$repo/archive/refs/tags/$tag.tar.gz"
+                if ! curl -LJO -m 30 --connect-timeout 5 "$url";
+                then
+                    echo -e "${Error}ERROR ${Off} Failed to download"\
+                        "$script-$shorttag.tar.gz!"
                 else
-                    echo -e "${Error}ERROR ${Off} $shorthome/$script-$shorttag.tar.gz not found!"
-                    #ls $HOME/ | grep "$script"  # debug
+                    if [[ -f /tmp/$script-$shorttag.tar.gz ]]; then
+                        # Extract tar file to script location
+                        if ! tar -xf "/tmp/$script-$shorttag.tar.gz" -C "$scriptpath";
+                        then
+                            echo -e "${Error}ERROR ${Off} Failed to"\
+                                "extract $script-$shorttag.tar.gz!"
+                        else
+                            if ! rm "/tmp/$script-$shorttag.tar.gz"; then
+                                echo -e "${Error}ERROR ${Off} Failed to delete"\
+                                    "downloaded $script-$shorttag.tar.gz!"
+                            else
+                                echo -e "\n$tag and changes.txt are in "\
+                                    "${Cyan}$scriptpath/$script-$shorttag${Off}"
+                                echo -e "${Cyan}Do you want to stop this script"\
+                                    "so you can run the new one?${Off} {y/n]"
+                                read -r -t 30 reply
+                                if [[ ${reply,,} == "y" ]]; then exit; fi
+                            fi
+                        fi
+                    else
+                        echo -e "${Error}ERROR ${Off}"\
+                            "/tmp/$script-$shorttag.tar.gz not found!"
+                        #ls /tmp | grep "$script"  # debug
+                    fi
                 fi
+            else
+                echo -e "${Error}ERROR ${Off} Failed to cd to /tmp!"
             fi
         fi
     fi

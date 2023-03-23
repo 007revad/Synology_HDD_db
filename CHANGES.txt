@@ -1,3 +1,6 @@
+v1.2.22
+- Changed 'latest version check' to download to /tmp and extract files to the script's location to fix issue #27.
+
 v1.2.21
 - Reinstated removing brand from start of drive model to fix issue #24.
 
