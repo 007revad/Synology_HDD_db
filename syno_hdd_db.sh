@@ -29,6 +29,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Changed to show if no M.2 cards were found, if M.2 drives were found.
+#
 # Changed latest version check to download to /tmp and extract files to the script's location.
 #
 # Added a timeouts when checking for newer script version in case github is down or slow.
@@ -56,7 +58,6 @@
 # Fixed bug where removable drives were being detected and added to drive database.
 #
 # Fixed bug where "M.2 volume support already enabled" message appeared when NAS had no M.2 drives.
-#
 #
 # Added check that M.2 volume support is enabled (on supported models).
 #
@@ -88,7 +89,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.22"
+scriptver="v1.2.23"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -114,7 +115,7 @@ $script $scriptver - by 007revad
 Usage: $(basename "$0") [options]
 
 Options:
-  -s, --showedits  Show the edits made to host db file(s)
+  -s, --showedits  Show edits made to <model>_host db and db.new file(s)
   -n, --noupdate   Prevent DSM updating the compatible drive databases
   -m, --m2         Don't process M.2 drives
   -f, --force      Force DSM to not check drive compatibility
@@ -474,14 +475,18 @@ if [[ ${#m2cardlist[@]} -gt "0" ]]; then
 fi
 
 # Check m2cards array isn't empty
-if [[ ${#m2cards[@]} -gt "0" ]]; then
-    echo "M.2 card models found: ${#m2cards[@]}"
-    num="0"
-    while [[ $num -lt "${#m2cards[@]}" ]]; do
-        echo "${m2cards[num]}"
-        num=$((num +1))
-    done
-    echo
+if [[ $m2 != "no" ]]; then
+    if [[ ${#m2cards[@]} -eq "0" ]]; then
+        echo -e "No M.2 cards found\n"
+    else    
+        echo "M.2 card models found: ${#m2cards[@]}"
+        num="0"
+        while [[ $num -lt "${#m2cards[@]}" ]]; do
+            echo "${m2cards[num]}"
+            num=$((num +1))
+        done
+        echo
+    fi
 fi
 
 
