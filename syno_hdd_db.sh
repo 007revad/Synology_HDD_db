@@ -326,8 +326,8 @@ fixdrivemodel(){
 
 getdriveinfo() {
     # Skip removable drives (USB drives)
-    removable=$(cat "$1/removable")
-    if [[ $removable == "0" ]]; then
+    removable=$(cat "$1/removable")  # Some DSM 7 RS models return 1 for internal drives!
+    if [[ $removable == "0" ]] || [[ $dsm -gt "6" ]]; then
         # Get drive model and firmware version
         hdmodel=$(cat "$1/device/model")
         hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
