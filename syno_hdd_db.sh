@@ -89,7 +89,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.23"
+scriptver="v1.2.24"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
