@@ -1,3 +1,6 @@
+v1.2.24
+- Bug fix. Ignoring removable drives was ignoring all drives in DSM 7 on a RS2421rp+. Fix issue #23.
+
 v1.2.23
 - Changed to show if no M.2 cards were found, if M.2 drives were found.
 
