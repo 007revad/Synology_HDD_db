@@ -1,3 +1,6 @@
+v1.2.25
+- Minor bug fix.
+
 v1.2.24
 - Bug fix. Ignoring removable drives was ignoring all drives in DSM 7 on a RS2421rp+. Fix issue #23.
 
@@ -71,16 +74,16 @@ v1.1.8
   - If run without -f or -force "support_disk_compatibility" is re-enabled.
 
 v1.0.7
-Added message if newer script version is available.
+- Added message if newer script version is available.
 
 v1.0.6
-Added 2nd method of disabling disk compatibility to solve issue #1 and #4 for the few people where the original method didn't work.
+- Added 2nd method of disabling disk compatibility to solve issue #1 and #4 for the few people where the original method didn't work.
 
 v1.0.5
-Changed to avoid issue #2
+- Changed to avoid issue #2
 
 v1.0.4
-Now backs up the database file if there is no backup already.
+- Now backs up the database file if there is no backup already.
 
 v1.0.3
 Changed to avoid avoid error messages from previous change to search for sda and sata# drives in DSM 6 and DSM 7.
@@ -88,13 +91,13 @@ Changed to avoid avoid error messages from previous change to search for sda and
 - /dev/sd*: No such file or directory
 
 v1.0.2
-Improved formatting when listing found drives.
+- Improved formatting when listing found drives.
 
 v1.0.1
-Fixed issue where drives weren't detected if:
-- NAS had been updated from DSM 6 to DSM 7 and still used sda, sdb etc.
-- Models like the DVA3219 that use sata# even in DSM 6.
+- Fixed issue where drives weren't detected if:
+  - NAS had been updated from DSM 6 to DSM 7 and still used sda, sdb etc.
+  - Models like the DVA3219 that use sata# even in DSM 6.
 
 v1.0.0
-Initial release.
+- Initial release.
 
