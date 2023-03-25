@@ -1,6 +1,3 @@
-v1.2.26
-- Added -ff option to pvcreate to prevent issues.
-
 v1.2.25
 - Minor bug fix.
 
