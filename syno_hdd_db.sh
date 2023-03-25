@@ -89,7 +89,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.24"
+scriptver="v1.2.25"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -276,11 +276,11 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                 echo -e "${Error}ERROR ${Off} Failed to delete"\
                                     "downloaded $script-$shorttag.tar.gz!"
                             else
-                                echo -e "\n$tag and changes.txt are in "\
-                                    "${Cyan}$scriptpath/$script-$shorttag${Off}"
+                                echo -e "\n$tag and changes.txt downloaded to:"\
+                                    "$scriptpath"
                                 echo -e "${Cyan}Do you want to stop this script"\
                                     "so you can run the new one?${Off} {y/n]"
-                                read -r -t 30 reply
+                                read -r reply
                                 if [[ ${reply,,} == "y" ]]; then exit; fi
                             fi
                         fi
