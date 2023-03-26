@@ -413,7 +413,7 @@ for d in /sys/block/*; do
                 if [[ $m2 != "no" ]]; then
                     getm2info "$d" "nvme"
                     # Get M.2 card model if in M.2 card
-                    getcardmodel "/dev/$d"
+                    getcardmodel "/dev/$(basename -- "${d}")"
                 fi
             fi
         ;;
@@ -423,7 +423,7 @@ for d in /sys/block/*; do
                 if [[ $m2 != "no" ]]; then
                     getm2info "$d" "nvc"
                     # Get M.2 card model if in M.2 card
-                    getcardmodel "/dev/$d"
+                    getcardmodel "/dev/$(basename -- "${d}")"
                 fi
             fi
         ;;
