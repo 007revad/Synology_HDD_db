@@ -344,6 +344,7 @@ fixdrivemodel(){
 
 getdriveinfo() {
     # Skip removable drives (USB drives)
+    # $1 is /sys/block/sata1 etc
     removable=$(cat "$1/removable")  # Some DSM 7 RS models return 1 for internal drives!
     if [[ $removable == "0" ]] || [[ $dsm -gt "6" ]]; then
         # Get drive model and firmware version
@@ -363,6 +364,7 @@ getdriveinfo() {
 }
 
 getm2info() {
+    # $1 is /sys/block/nvme0n1 etc
     nvmemodel=$(cat "$1/device/model")
     nvmemodel=$(printf "%s" "$nvmemodel" | xargs)  # trim leading and trailing white space
     if [[ $2 == "nvme" ]]; then
@@ -379,6 +381,7 @@ getm2info() {
 
 getcardmodel() {
     # Get M.2 card model (if M.2 drives found)
+    # $1 is /dev/nvme0n1 etc
 
     if [[ $debug == "yes" ]]; then echo "debug 2: getcardmodel"; fi  # debug
 
@@ -413,6 +416,7 @@ getcardmodel() {
 
 
 for d in /sys/block/*; do
+    # $d is /sys/block/sata1 etc
     case "$(basename -- "${d}")" in
         sd*|hd*)
             if [[ $d =~ [hs]d[a-z][a-z]?$ ]]; then
@@ -434,7 +438,7 @@ for d in /sys/block/*; do
 
                     if [[ $debug == "yes" ]]; then echo "debug 1: $d nvme"; fi  # debug
 
-                    getcardmodel "/dev/$d"
+                    getcardmodel "/dev/$(basename -- "${d}")"
                 fi
             fi
         ;;
@@ -447,7 +451,7 @@ for d in /sys/block/*; do
 
                     if [[ $debug == "yes" ]]; then echo "debug 1: $d SATA M.2 "; fi  # debug
 
-                    getcardmodel "/dev/$d"
+                    getcardmodel "/dev/$(basename -- "${d}")"
                 fi
             fi
         ;;
