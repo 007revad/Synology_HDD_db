@@ -1,4 +1,4 @@
-v1.2.26
+v1.2.27
 - Changed 'latest version check' to download and extract to /tmp then copy only the syno_hdd_db.sh and readme.txt files to the currrently running script's location.
 - Minor tweaks to the shell output.
 
