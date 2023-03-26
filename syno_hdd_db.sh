@@ -31,7 +31,8 @@
 # DONE
 # Changed to show if no M.2 cards were found, if M.2 drives were found.
 #
-# Changed latest version check to download to /tmp and extract files to the script's location.
+# Changed latest version check to download to /tmp and extract files to the script's location,
+# replacing the existing .sh and readme.txt files.
 #
 # Added a timeouts when checking for newer script version in case github is down or slow.
 #
@@ -89,7 +90,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.25"
+scriptver="v1.2.26"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -121,10 +122,10 @@ Options:
   -f, --force      Force DSM to not check drive compatibility
   -r, --ram        Disable memory compatibility checking
   -h, --help       Show this help message
-  -v, --version    Show the version
+  -v, --version    Show the script version
   
 EOF
-exit 0
+    exit 0
 }
 
 
@@ -134,13 +135,13 @@ $script $scriptver - by 007revad
 
 See https://github.com/$repo
 EOF
-exit 0
+    exit 0
 }
 
 
 # Check for flags with getopt
 if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
-    -l showedits,noupdate,m2,force,ram,help,version -- "$@")"; then
+    -l showedits,noupdate,m2,force,ram,help,version,debug -- "$@")"; then
     eval set -- "$options"
     while true; do
         case "${1,,}" in
@@ -164,6 +165,9 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
                 ;;
             -v|--version)       # Show script version
                 scriptversion
+                ;;
+            --debug)            # Show and log debug info
+                debug=yes
                 ;;
             --)
                 shift
@@ -201,14 +205,15 @@ model=$(cat /proc/sys/kernel/syno_hw_version)
 
 
 # Show script version
+#echo -e "$script $scriptver\ngithub.com/$repo\n"
 echo "$script $scriptver"
-#echo "github.com/$repo"
 
-# Show NAS info
+# Show DSM full version
 productversion=$(get_key_value /etc.defaults/VERSION productversion)
 buildphase=$(get_key_value /etc.defaults/VERSION buildphase)
+buildnumber=$(get_key_value /etc.defaults/VERSION buildnumber)
 if [[ $buildphase == GM ]]; then buildphase=""; fi
-echo "$model DSM $productversion $buildphase"
+echo "$model DSM $productversion-$buildnumber $buildphase"
 
 
 # Convert model to lower case
@@ -255,7 +260,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
         echo "https://github.com/$repo/releases/latest"
         sleep 10
     else
-        echo -e "${Cyan}Do you want to download $tag now?${Off} {y/n]"
+        echo -e "${Cyan}Do you want to download $tag now?${Off} [y/n]"
         read -r -t 30 reply
         if [[ ${reply,,} == "y" ]]; then
             if cd /tmp; then
@@ -267,19 +272,32 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                 else
                     if [[ -f /tmp/$script-$shorttag.tar.gz ]]; then
                         # Extract tar file to script location
-                        if ! tar -xf "/tmp/$script-$shorttag.tar.gz" -C "$scriptpath";
+                         if ! tar -xf "/tmp/$script-$shorttag.tar.gz" -C "/tmp"; 
                         then
                             echo -e "${Error}ERROR ${Off} Failed to"\
                                 "extract $script-$shorttag.tar.gz!"
                         else
+                            # Copy new files to script location
+                            cp "/tmp/$script-$shorttag/CHANGES.txt" "$scriptpath"
+                            cp "/tmp/$script-$shorttag/"*.sh "$scriptpath"
+
+                            # Delete downloaded .tar.gz file
                             if ! rm "/tmp/$script-$shorttag.tar.gz"; then
+                                delerr=1
                                 echo -e "${Error}ERROR ${Off} Failed to delete"\
-                                    "downloaded $script-$shorttag.tar.gz!"
-                            else
+                                    "download /tmp/$script-$shorttag.tar.gz!"
+                            fi
+                            # Delete extracted tmp files
+                            if ! rm -r "/tmp/$script-$shorttag"; then
+                                delerr=1
+                                echo -e "${Error}ERROR ${Off} Failed to delete"\
+                                    "download /tmp/$script-$shorttag!"
+                            fi
+                            if [[ $delerr != 1 ]]; then
                                 echo -e "\n$tag and changes.txt downloaded to:"\
                                     "$scriptpath"
                                 echo -e "${Cyan}Do you want to stop this script"\
-                                    "so you can run the new one?${Off} {y/n]"
+                                    "so you can run the new one?${Off} [y/n]"
                                 read -r reply
                                 if [[ ${reply,,} == "y" ]]; then exit; fi
                             fi
