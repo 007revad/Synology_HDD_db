@@ -1,3 +1,6 @@
+v1.2.29
+- Bug fix. v1.2.28 had v1.2.27 in the sh file so it always wanted to update!
+
 v1.2.28
 - Fixed bug in getting the M.2 card model.
 
