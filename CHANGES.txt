@@ -1,3 +1,6 @@
+v1.2.30
+- Fixed "download new version" failing if script was run via symlink or ./<scriptname>
+
 v1.2.29
 - Bug fix. v1.2.28 had v1.2.27 in the sh file so it always wanted to update!
 

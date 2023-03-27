@@ -29,6 +29,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Fixed "download new version" failing if script was run via symlink or ./<scriptname>
+#
 # Changed to show if no M.2 cards were found, if M.2 drives were found.
 #
 # Changed latest version check to download to /tmp and extract files to the script's location,
@@ -90,7 +92,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.29"
+scriptver="v1.2.30"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -166,7 +168,7 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
             -v|--version)       # Show script version
                 scriptversion
                 ;;
-            --debug)            # Show and log debug info
+            -d|--debug)         # Show and log debug info
                 debug=yes
                 ;;
             --)
@@ -245,7 +247,20 @@ get_latest_release() {
 
 tag=$(get_latest_release "$repo")
 shorttag="${tag:1}"
-scriptpath=$(dirname -- "$0")
+#scriptpath=$(dirname -- "$0")
+
+# Get script location
+source=${BASH_SOURCE[0]}
+while [ -L "$source" ]; do # Resolve $source until the file is no longer a symlink
+    scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
+    source=$(readlink "$source")
+    # If $source was a relative symlink, we need to resolve it 
+    # relative to the path where the symlink file was located
+    [[ $source != /* ]] && source=$scriptpath/$source
+done
+scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
+#echo "Script location: $scriptpath"  # debug
+
 
 if ! printf "%s\n%s\n" "$tag" "$scriptver" |
         sort --check --version-sort &> /dev/null ; then
@@ -271,29 +286,55 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                         "$script-$shorttag.tar.gz!"
                 else
                     if [[ -f /tmp/$script-$shorttag.tar.gz ]]; then
-                        # Extract tar file to script location
-                         if ! tar -xf "/tmp/$script-$shorttag.tar.gz" -C "/tmp"; 
-                        then
+                        # Extract tar file to /tmp/<script-name>
+                        if ! tar -xf "/tmp/$script-$shorttag.tar.gz" -C "/tmp"; then
                             echo -e "${Error}ERROR ${Off} Failed to"\
                                 "extract $script-$shorttag.tar.gz!"
                         else
-                            # Copy new files to script location
-                            cp "/tmp/$script-$shorttag/CHANGES.txt" "$scriptpath"
-                            cp "/tmp/$script-$shorttag/"*.sh "$scriptpath"
+                            # Copy new script sh files to script location
+                            if ! cp -p "/tmp/$script-$shorttag/"*.sh "$scriptpath"; then
+                                copyerr=1
+                                echo -e "${Error}ERROR ${Off} Failed to copy"\
+                                    "$script-$shorttag .sh file(s) to:\n $scriptpath"
+                            else                   
+                                # Set permsissions on CHANGES.txt
+                                if ! chmod 744 "$scriptpath/"*.sh ; then
+                                    permerr=1
+                                    echo -e "${Error}ERROR ${Off} Failed to set permissions on:"
+                                    echo "$scriptpath *.sh file(s)"
+                                fi
+                            fi
+
+                            # Copy new CHANGES.txt file to script location
+                            if ! cp -p "/tmp/$script-$shorttag/CHANGES.txt" "$scriptpath"; then
+                                copyerr=1
+                                echo -e "${Error}ERROR ${Off} Failed to copy"\
+                                    "$script-$shorttag/CHANGES.txt to:\n $scriptpath"
+                            else                   
+                                # Set permsissions on CHANGES.txt
+                                if ! chmod 744 "$scriptpath/CHANGES.txt"; then
+                                    permerr=1
+                                    echo -e "${Error}ERROR ${Off} Failed to set permissions on:"
+                                    echo "$scriptpath/CHANGES.txt"
+                                fi
+                            fi
 
                             # Delete downloaded .tar.gz file
                             if ! rm "/tmp/$script-$shorttag.tar.gz"; then
                                 delerr=1
                                 echo -e "${Error}ERROR ${Off} Failed to delete"\
-                                    "download /tmp/$script-$shorttag.tar.gz!"
+                                    "downloaded /tmp/$script-$shorttag.tar.gz!"
                             fi
+
                             # Delete extracted tmp files
                             if ! rm -r "/tmp/$script-$shorttag"; then
                                 delerr=1
                                 echo -e "${Error}ERROR ${Off} Failed to delete"\
-                                    "download /tmp/$script-$shorttag!"
+                                    "downloaded /tmp/$script-$shorttag!"
                             fi
-                            if [[ $delerr != 1 ]]; then
+
+                            # Notify of success (if there were no errors)
+                            if [[ $copyerr != 1 ]] && [[ $permerr != 1 ]]; then
                                 echo -e "\n$tag and changes.txt downloaded to:"\
                                     "$scriptpath"
                                 echo -e "${Cyan}Do you want to stop this script"\
@@ -344,6 +385,7 @@ fixdrivemodel(){
 
 getdriveinfo() {
     # Skip removable drives (USB drives)
+    # $1 is /sys/block/sata1 etc
     removable=$(cat "$1/removable")  # Some DSM 7 RS models return 1 for internal drives!
     if [[ $removable == "0" ]] || [[ $dsm -gt "6" ]]; then
         # Get drive model and firmware version
@@ -363,6 +405,7 @@ getdriveinfo() {
 }
 
 getm2info() {
+    # $1 is /sys/block/nvme0n1 etc
     nvmemodel=$(cat "$1/device/model")
     nvmemodel=$(printf "%s" "$nvmemodel" | xargs)  # trim leading and trailing white space
     if [[ $2 == "nvme" ]]; then
@@ -379,6 +422,7 @@ getm2info() {
 
 getcardmodel() {
     # Get M.2 card model (if M.2 drives found)
+    # $1 is /dev/nvme0n1 etc
     if [[ ${#nvmelist[@]} -gt "0" ]]; then
         cardmodel=$(synodisk --m2-card-model-get "$1")
         if [[ $cardmodel =~ M2D[0-9][0-9] ]]; then
@@ -395,6 +439,7 @@ getcardmodel() {
 
 
 for d in /sys/block/*; do
+    # $d is /sys/block/sata1 etc
     case "$(basename -- "${d}")" in
         sd*|hd*)
             if [[ $d =~ [hs]d[a-z][a-z]?$ ]]; then
