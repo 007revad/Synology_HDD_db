@@ -143,14 +143,14 @@ EOF
 
 # Check for flags with getopt
 if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
-    -l showedits,noupdate,m2,force,ram,help,version,debug -- "$@")"; then
+    -l showedits,noupdate,nodbupdate,m2,force,ram,help,version,debug -- "$@")"; then
     eval set -- "$options"
     while true; do
         case "${1,,}" in
             -s|--showedits)     # Show edits done to host db file
                 showedits=yes
                 ;;
-            -n|--nodbupdate)    # Disable disk compatibility db updates
+            -n|--nodbupdate|--noupdate)    # Disable disk compatibility db updates
                 nodbupdate=yes
                 ;;
             -m|--m2)            # Don't add M.2 drives to db files
