@@ -1,5 +1,6 @@
 v1.2.31
 - Bug fix. The --noupdate option was coded as --nodbupdate. Now either will work.
+- Bug fix. Re-enable drive db updates wasn't working in some instances.
 
 v1.2.30
 - Fixed "download new version" failing if script was run via symlink or ./<scriptname>

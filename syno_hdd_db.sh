@@ -29,6 +29,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Fixed bug in re-enable drive db updates
+#
 # Fixed "download new version" failing if script was run via symlink or ./<scriptname>
 #
 # Changed to show if no M.2 cards were found, if M.2 drives were found.
@@ -250,6 +252,7 @@ shorttag="${tag:1}"
 #scriptpath=$(dirname -- "$0")
 
 # Get script location
+# https://stackoverflow.com/questions/59895/
 source=${BASH_SOURCE[0]}
 while [ -L "$source" ]; do # Resolve $source until the file is no longer a symlink
     scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
@@ -871,18 +874,23 @@ if [[ $nodbupdate == "yes" ]]; then
         else
             echo -e "\n${Error}ERROR${Off} Failed to disable drive db auto updates!"
         fi
+    else
+        echo -e "\nDrive db auto updates already disabled."
     fi
 else
     # Re-enable drive db updates
-    if [[ $url == "127.0.0.1" ]]; then
-        # Edit drive_db_test_url=
-        sed -z "s/drive_db_test_url=\"127\.0\.0\.1\"\n//" "$synoinfo" >/dev/null
-        #sed -i "s/drive_db_test_url=\"127\.0\.0\.1\"//" "$synoinfo"  # works but leaves line feed
+    #if [[ $url == "127.0.0.1" ]]; then
+    if [[ $url ]]; then
+        # Delete "drive_db_test_url=127.0.0.1" line (inc. line break)
+        #sed -i "/drive_db_test_url=\"127.0.0.1\"/d" "/etc.defaults/synoinfo.conf"
+        sed -i "/drive_db_test_url=*/d" "/etc.defaults/synoinfo.conf"
 
         # Check if we re-enabled drive db auto updates
         url="$(get_key_value $synoinfo drive_db_test_url)"
         if [[ $url != "127.0.0.1" ]]; then
             echo -e "\nRe-enabled drive db auto updates."
+        else
+            echo -e "\n${Error}ERROR${Off} Failed to enable drive db auto updates!"
         fi
     else
         echo -e "\nDrive db auto updates already enabled."
