@@ -230,7 +230,7 @@ smallfixnumber=$(get_key_value /etc.defaults/VERSION smallfixnumber)
 # Show DSM full version and model
 if [[ $buildphase == GM ]]; then buildphase=""; fi
 if [[ $smallfixnumber -gt "0" ]]; then smallfix="-$smallfixnumber"; fi
-echo -e "$model DSM $productversion-$buildnumber$smallfix $buildphase\n"
+echo "$model DSM $productversion-$buildnumber$smallfix $buildphase"
 
 
 # Convert model to lower case
@@ -239,13 +239,13 @@ model=${model,,}
 # Check for dodgy characters after model number
 if [[ $model =~ 'pv10-j'$ ]]; then  # GitHub issue #10
     model=${model%??????}+  # replace last 6 chars with +
-    echo "Using model: $model"
+    echo -e "\nUsing model: $model"
 elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
     model=${model%??}  # remove last 2 chars
-    echo "Using model: $model"
+    echo -e "\nUsing model: $model"
 fi
 
-echo ""  # To keep output readable
+#echo ""  # To keep output readable
 
 
 #------------------------------------------------------------------------------
@@ -280,7 +280,7 @@ scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
 
 if ! printf "%s\n%s\n" "$tag" "$scriptver" |
         sort --check --version-sort &> /dev/null ; then
-    echo -e "${Cyan}There is a newer version of this script available.${Off}"
+    echo -e "\n${Cyan}There is a newer version of this script available.${Off}"
     echo -e "Current version: ${scriptver}\nLatest version:  $tag"
     if [[ -f $scriptpath/$script-$shorttag.tar.gz ]]; then
         # They have the latest version tar.gz downloaded but are using older version
@@ -501,9 +501,9 @@ fi
 
 # Check hdds array isn't empty
 if [[ ${#hdds[@]} -eq "0" ]]; then
-    echo -e "${Error}ERROR${Off} No drives found!" && exit 2
+    echo -e "\n${Error}ERROR${Off} No drives found!" && exit 2
 else
-    echo "HDD/SSD models found: ${#hdds[@]}"
+    echo -e "\nHDD/SSD models found: ${#hdds[@]}"
     num="0"
     while [[ $num -lt "${#hdds[@]}" ]]; do
         echo "${hdds[num]}"
@@ -962,7 +962,8 @@ if [[ ${showedits,,} == "yes" ]]; then
     getdbtype "$db1"
     if [[ $dbtype -gt "6" ]];then
         # Show last 12 lines per drive + 4
-        lines=$(((db1Edits *12) +4))
+        #lines=$(((db1Edits *12) +4))  # without firmware version
+        lines=$(((db1Edits *21) +4))   # with firmware version
         if [[ $db1Edits -gt "0" ]]; then
             echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
             jq . "$db1" | tail -n "$lines"
