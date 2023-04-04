@@ -26,9 +26,6 @@ The script works in DSM 7 and DSM 6.
 * Checks if there is a newer version of this script and offers to download it for you.
   * The new version available messages time out so they don't prevent the script running if it is scheduled to run unattended.
 
-**Planned updates:** 
-* Allow unsupported M.2 drives for use as volumes in DSM 7.2 (for models that supported M.2 volumes).
-
 ### Download the script
 
 See <a href=images/how_to_download.png/>How to download the script</a> for the easiest way to download the script.
