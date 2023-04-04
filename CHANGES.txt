@@ -1,3 +1,9 @@
+v1.3.32
+- Changed to add drives' firmware version to the db files (to support data deduplication).
+    - See https://github.com/007revad/Synology_enable_Deduplication
+- Changed to be able to edit existing drive entries in the db files to add the firmware version.
+- Now supports editing db files that don't currently have any drives listed.
+
 v1.2.31
 - Bug fix. The --noupdate option was coded as --nodbupdate. Now either will work.
 - Bug fix. Re-enable drive db updates wasn't working in some instances.

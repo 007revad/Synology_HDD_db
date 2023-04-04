@@ -29,6 +29,15 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Changed to add drives' firmware version to the db files (to support data deduplication).
+#    See https://github.com/007revad/Synology_enable_Deduplication
+#
+# Changed to be able to edit existing drive entries in the db files to add the firmware version.
+#
+# Now supports editing db files that don't currently have any drives listed.
+#
+# Fixed bug where the --noupdate option was coded as --nodbupdate. Now either will work.
+#
 # Fixed bug in re-enable drive db updates
 #
 # Fixed "download new version" failing if script was run via symlink or ./<scriptname>
@@ -94,7 +103,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.31"
+scriptver="v1.3.32"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -212,12 +221,16 @@ model=$(cat /proc/sys/kernel/syno_hw_version)
 #echo -e "$script $scriptver\ngithub.com/$repo\n"
 echo "$script $scriptver"
 
-# Show DSM full version
+# Get DSM full version
 productversion=$(get_key_value /etc.defaults/VERSION productversion)
 buildphase=$(get_key_value /etc.defaults/VERSION buildphase)
 buildnumber=$(get_key_value /etc.defaults/VERSION buildnumber)
+smallfixnumber=$(get_key_value /etc.defaults/VERSION smallfixnumber)
+
+# Show DSM full version and model
 if [[ $buildphase == GM ]]; then buildphase=""; fi
-echo "$model DSM $productversion-$buildnumber $buildphase"
+if [[ $smallfixnumber -gt "0" ]]; then smallfix="-$smallfixnumber"; fi
+echo "$model DSM $productversion-$buildnumber$smallfix $buildphase"
 
 
 # Convert model to lower case
@@ -226,13 +239,13 @@ model=${model,,}
 # Check for dodgy characters after model number
 if [[ $model =~ 'pv10-j'$ ]]; then  # GitHub issue #10
     model=${model%??????}+  # replace last 6 chars with +
-    echo "Using model: $model"
+    echo -e "\nUsing model: $model"
 elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
     model=${model%??}  # remove last 2 chars
-    echo "Using model: $model"
+    echo -e "\nUsing model: $model"
 fi
 
-echo ""  # To keep output readable
+#echo ""  # To keep output readable
 
 
 #------------------------------------------------------------------------------
@@ -267,7 +280,7 @@ scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
 
 if ! printf "%s\n%s\n" "$tag" "$scriptver" |
         sort --check --version-sort &> /dev/null ; then
-    echo -e "${Cyan}There is a newer version of this script available.${Off}"
+    echo -e "\n${Cyan}There is a newer version of this script available.${Off}"
     echo -e "Current version: ${scriptver}\nLatest version:  $tag"
     if [[ -f $scriptpath/$script-$shorttag.tar.gz ]]; then
         # They have the latest version tar.gz downloaded but are using older version
@@ -488,9 +501,9 @@ fi
 
 # Check hdds array isn't empty
 if [[ ${#hdds[@]} -eq "0" ]]; then
-    echo -e "${Error}ERROR${Off} No drives found!" && exit 2
+    echo -e "\n${Error}ERROR${Off} No drives found!" && exit 2
 else
-    echo "HDD/SSD models found: ${#hdds[@]}"
+    echo -e "\nHDD/SSD models found: ${#hdds[@]}"
     num="0"
     while [[ $num -lt "${#hdds[@]}" ]]; do
         echo "${hdds[num]}"
@@ -640,6 +653,48 @@ backupdb "$db1" || exit 5
 #------------------------------------------------------------------------------
 # Edit db files
 
+editcount(){
+    # Count drives added to host db files
+    if [[ $1 == "$db1" ]]; then
+        db1Edits=$((db1Edits +1))
+    elif [[ $1 == "$db2" ]]; then
+        db2Edits=$((db2Edits +1))
+    fi
+}
+
+
+editdb7(){
+    if [[ $1 == "append" ]]; then  # model not in db file
+        if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # append
+            echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+            editcount "$2"
+        else
+            echo -e "\n${Error}ERROR 6a${Off} Failed to update $(basename -- "$2")${Off}"
+            #exit 6
+        fi
+
+    elif [[ $1 == "insert" ]]; then  # model and default exists
+        if sed -i "s/\"$hdmodel\":{/\"$hdmodel\":{$fwstrng/" "$2"; then  # insert firmware
+            echo -e "Updated ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+            #editcount "$2"
+        else
+            echo -e "\n${Error}ERROR 6b${Off} Failed to update $(basename -- "$2")${Off}"
+            #exit 6
+        fi
+
+    elif [[ $1 == "empty" ]]; then  # db file only contains {}
+        if sed -i "s/{}/{\"$hdmodel\":{$fwstrng${default}}/" "$2"; then  # empty
+            echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+            editcount "$2"
+        else
+            echo -e "\n${Error}ERROR 6c${Off} Failed to update $(basename -- "$2")${Off}"
+            #exit 6
+        fi
+
+    fi
+}
+
+
 updatedb() {
     hdmodel=$(printf "%s" "$1" | cut -d"," -f 1)
     fwrev=$(printf "%s" "$1" | cut -d"," -f 2)
@@ -649,13 +704,13 @@ updatedb() {
     #echo hdmodel "$hdmodel" >&2  # debug
     #echo fwrev "$fwrev" >&2      # debug
 
-    if grep "$hdmodel" "$2" >/dev/null; then
+    if grep "$hdmodel"'":{"'"$fwrev" "$2" >/dev/null; then
         echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
     else
         # Check if db file is new or old style
         getdbtype "$2"
 
-        if [[ $dbtype -gt "6" ]];then
+        if [[ $dbtype -gt "6" ]]; then
             # Don't need to add firmware version?
             fwstrng=\"$fwrev\"
             fwstrng="$fwstrng":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
@@ -665,21 +720,22 @@ updatedb() {
             default="$default":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
             default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]}}}
 
-            #if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # Don't need to add firmware version?
-            if sed -i "s/}}}/}},\"$hdmodel\":{$default/" "$2"; then
-                echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+            if grep '"disk_compatbility_info":{}' "$2" >/dev/null; then
+               # Replace  "disk_compatbility_info":{}  with  "disk_compatbility_info":{"WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}}
+                echo "Edit empty db file"
+                editdb7 "empty" "$2"
 
-                # Count drives added to host db files
-                if [[ $2 == "$db1" ]]; then
-                    db1Edits=$((db1Edits +1))
-                elif [[ $2 == "$db2" ]]; then
-                    db2Edits=$((db2Edits +1))
-                fi
+            elif grep '"WD40PURX-64GVNY0"' "$2" >/dev/null; then
+               # Replace  "WD40PURX-64GVNY0":{  with  "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},
+                echo "Insert firmware version"
+                editdb7 "insert" "$2"
 
             else
-                echo -e "\n${Error}ERROR 6${Off} Failed to update v7 $(basename -- "$2")${Off}"
-                exit 6
+               # Add  "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}
+                echo "Append drive and firmware"
+                editdb7 "append" "$2"
             fi
+
         elif [[ $dbtype -eq "6" ]];then
             # example:
             # {"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
@@ -906,7 +962,8 @@ if [[ ${showedits,,} == "yes" ]]; then
     getdbtype "$db1"
     if [[ $dbtype -gt "6" ]];then
         # Show last 12 lines per drive + 4
-        lines=$(((db1Edits *12) +4))
+        #lines=$(((db1Edits *12) +4))  # without firmware version
+        lines=$(((db1Edits *21) +4))   # with firmware version
         if [[ $db1Edits -gt "0" ]]; then
             echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
             jq . "$db1" | tail -n "$lines"
