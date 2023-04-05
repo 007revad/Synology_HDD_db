@@ -29,6 +29,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Fixed bug inserting firmware version for already existing model.
+#
 # Changed to add drives' firmware version to the db files (to support data deduplication).
 #    See https://github.com/007revad/Synology_enable_Deduplication
 #
@@ -103,7 +105,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.3.32"
+scriptver="v1.3.33"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -725,7 +727,7 @@ updatedb() {
                 echo "Edit empty db file"
                 editdb7 "empty" "$2"
 
-            elif grep '"WD40PURX-64GVNY0"' "$2" >/dev/null; then
+            elif grep '"'"$hdmodel"'":' "$2" >/dev/null; then
                # Replace  "WD40PURX-64GVNY0":{  with  "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},
                 echo "Insert firmware version"
                 editdb7 "insert" "$2"
