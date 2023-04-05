@@ -105,7 +105,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.3.33"
+scriptver="v1.3.34"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -189,12 +189,14 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
                 break
                 ;;
             *)                  # Show usage options
-                echo "Invalid option '$1'"
+                echo -e "Invalid option '$1'\n"
                 usage "$1"
                 ;;
         esac
         shift
     done
+else
+    usage
 fi
 
 
