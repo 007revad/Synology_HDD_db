@@ -1,3 +1,6 @@
+v1.3.34
+- Changed to show usage if invalid long option used instead of continuing.
+
 v1.3.33
 -  Fixed bug inserting firmware version for already existing model.
 
