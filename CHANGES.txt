@@ -1,3 +1,6 @@
+v1.3.33
+-  Fixed bug inserting firmware version for already existing model.
+
 v1.3.32
 - Changed to add drives' firmware version to the db files (to support data deduplication).
     - See https://github.com/007revad/Synology_enable_Deduplication
