@@ -23,12 +23,18 @@
 #--------------------------------------------------------------------------------------------------
 
 # TODO
-# Bypass M.2 volume lock for unsupported M.2 drives.
+# Bypass M.2 volume lock for unsupported M.2 drives. 
+#    See https://github.com/007revad/Synology_enable_M2_volume
 #
 # Maybe also edit the other disk compatibility db in synoboot, used during boot time.
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Now always shows your drive entries in the host db file if -s or --showedits used,
+#    instead of only db file was edited during that run.
+#
+# Changed to show usage if invalid long option used instead of continuing.
+#
 # Fixed bug inserting firmware version for already existing model.
 #
 # Changed to add drives' firmware version to the db files (to support data deduplication).
@@ -105,7 +111,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.3.33"
+scriptver="v1.3.34"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -189,12 +195,15 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
                 break
                 ;;
             *)                  # Show usage options
-                echo "Invalid option '$1'"
+                echo -e "Invalid option '$1'\n"
                 usage "$1"
                 ;;
         esac
         shift
     done
+else
+    echo
+    usage
 fi
 
 
@@ -963,27 +972,35 @@ fi
 if [[ ${showedits,,} == "yes" ]]; then
     getdbtype "$db1"
     if [[ $dbtype -gt "6" ]];then
-        # Show last 12 lines per drive + 4
-        #lines=$(((db1Edits *12) +4))  # without firmware version
-        lines=$(((db1Edits *21) +4))   # with firmware version
-        if [[ $db1Edits -gt "0" ]]; then
-            echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
-            jq . "$db1" | tail -n "$lines"
-        elif [[ $db2Edits -gt "0" ]]; then
-            echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
-            jq . "$db2" | tail -n "$lines"
-        fi
+        # Show 11 lines after hdmodel line
+        lines=11
     elif [[ $dbtype -eq "6" ]];then
-        # Show first 8 lines per drive + 2
-        lines=$(((db1Edits *8) +2))
-        if [[ $db1Edits -gt "0" ]]; then
-            echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
-            jq . "$db1" | head -n "$lines"
-        elif [[ $db2Edits -gt "0" ]]; then
-            echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
-            jq . "$db2" | head -n "$lines"
-        fi
+        # Show 2 lines after hdmodel line
+        lines=2
     fi
+
+    # HDDs/SSDs
+    if [[ ${#hdds[@]} -gt "0" ]]; then
+        num="0"
+        while [[ $num -lt "${#hdds[@]}" ]]; do
+            hdmodel=$(printf "%s" "${hdds[$num]}" | cut -d"," -f 1)
+            echo
+            jq . "$db1" | grep -A "$lines" "$hdmodel"
+            num=$((num +1))
+        done
+    fi
+
+    # NVMe drives
+    if [[ ${#nvmes[@]} -gt "0" ]]; then
+        num="0"
+        while [[ $num -lt "${#nvmes[@]}" ]]; do
+            nvmemodel=$(printf "%s" "${nvmes[$num]}" | cut -d"," -f 1)
+            echo
+            jq . "$db1" | grep -A "$lines" "$nvmemodel"
+            num=$((num +1))
+        done
+    fi
+
 fi
 
 
