@@ -1,4 +1,4 @@
-v1.3.34
+v1.3.34 
 - Now always shows your drive entries in the host db file if -s or --showedits used instead of only db file was edited during that run.
 - Changed to show usage if invalid long option used instead of continuing.
 
