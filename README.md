@@ -20,7 +20,8 @@ The script works in DSM 7 and DSM 6.
 * Prevents DSM auto updating the drive database.
 * Optionally disable DSM's "support_disk_compatibility".
 * Optionally disable DSM's "support_memory_compatibility" to prevent <a href=images/ram_wanring.png/>non-Synology memory notifications</a>.
-* Checks that M.2 volume support is enabled (on supported models).
+* Checks that M.2 volume support is enabled (on models that have M.2 slots or PCIe slots).
+* Enables creating M.2 storage pools and volumes from within Storage Manager.
 * Makes DSM recheck disk compatibility so rebooting is not needed (DSM 7 only).
 * Reminds you that you may need to reboot the Synology after running the script (DSM 6 only).
 * Checks if there is a newer version of this script and offers to download it for you.
@@ -58,7 +59,7 @@ See <a href=how_to_schedule.md/>How to schedule a script in Synology Task Manage
 You run the script in a shell with sudo -i or as root.
 
 ```YAML
-sudo -i /path-to-script/syno_hdd_db.sh
+sudo -i /path-to-script/syno_hdd_db.sh -nr
 ```
 
 **Note:** Replace /path-to-script/ with the actual path to the script on your Synology.
@@ -68,7 +69,7 @@ sudo -i /path-to-script/syno_hdd_db.sh
 If you run the script with the -showedits flag it will show you the changes it made to the Synology's compatible-drive database. Obviously this is only useful if you run the script in a shell.
 
 ```YAML
-sudo -i /path-to-script/syno_hdd_db.sh -showedits
+sudo -i /path-to-script/syno_hdd_db.sh -nr -showedits
 ```
 
 **Note:** Replace /path-to-script/ with the actual path to the script on your Synology.
@@ -81,3 +82,4 @@ sudo -i /path-to-script/syno_hdd_db.sh -showedits
 - Thanks for the assistance from Alex_of_Chaos on the Synology subreddit.
 - Thanks to dwabraxus and aferende for help detecting connected expansion units.
 - Thanks to bartoque on the Synology subreddit for the tip on making the script download the latest release from github.
+- Thanks to nicolerenee for pointing out the easiest way to enable creating M.2 storage pools and volumes in Storage Manager.
