@@ -81,3 +81,4 @@ sudo -i /path-to-script/syno_hdd_db.sh -showedits
 - Thanks for the assistance from Alex_of_Chaos on the Synology subreddit.
 - Thanks to dwabraxus and aferende for help detecting connected expansion units.
 - Thanks to bartoque on the Synology subreddit for the tip on making the script download the latest release from github.
+- Thanks to nicolerenee for pointing out the easiest way to enable creating M.2 storage pools and volumes in Storage Manager.
