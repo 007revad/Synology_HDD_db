@@ -1,3 +1,6 @@
+v2.0.35
+- Now allows creating M.2 storage pool and volume all from Storage Manager
+
 v1.3.34
 - Now always shows your drive entries in the host db file if -s or --showedits used instead of only db file was edited during that run.
 - Changed to show usage if invalid long option used instead of continuing.
