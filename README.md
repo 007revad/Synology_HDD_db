@@ -59,7 +59,7 @@ See <a href=how_to_schedule.md/>How to schedule a script in Synology Task Manage
 You run the script in a shell with sudo -i or as root.
 
 ```YAML
-sudo -i /path-to-script/syno_hdd_db.sh
+sudo -i /path-to-script/syno_hdd_db.sh -nr
 ```
 
 **Note:** Replace /path-to-script/ with the actual path to the script on your Synology.
@@ -69,7 +69,7 @@ sudo -i /path-to-script/syno_hdd_db.sh
 If you run the script with the -showedits flag it will show you the changes it made to the Synology's compatible-drive database. Obviously this is only useful if you run the script in a shell.
 
 ```YAML
-sudo -i /path-to-script/syno_hdd_db.sh -showedits
+sudo -i /path-to-script/syno_hdd_db.sh -nr -showedits
 ```
 
 **Note:** Replace /path-to-script/ with the actual path to the script on your Synology.
