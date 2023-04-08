@@ -30,6 +30,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Now allows creating M.2 storage pool and volume all from Storage Manager
+#
 # Now always shows your drive entries in the host db file if -s or --showedits used,
 #    instead of only db file was edited during that run.
 #
@@ -111,7 +113,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.3.34"
+scriptver="v2.0.35"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -486,6 +488,9 @@ for d in /sys/block/*; do
                     getm2info "$d" "nvme"
                     # Get M.2 card model if in M.2 card
                     getcardmodel "/dev/$(basename -- "${d}")"
+
+                    # Enable creating M.2 storage pool and volume in Storage Manager
+                    echo 1 > /run/synostorage/disks/$(basename -- "$d")/m2_pool_support
                 fi
             fi
         ;;
@@ -496,6 +501,9 @@ for d in /sys/block/*; do
                     getm2info "$d" "nvc"
                     # Get M.2 card model if in M.2 card
                     getcardmodel "/dev/$(basename -- "${d}")"
+
+                    # Enable creating M.2 storage pool and volume in Storage Manager
+                    echo 1 > /run/synostorage/disks/$(basename -- "$d")/m2_pool_support
                 fi
             fi
         ;;
