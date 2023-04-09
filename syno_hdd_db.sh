@@ -113,7 +113,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.0.35"
+scriptver="v2.0.36"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -160,6 +160,10 @@ See https://github.com/$repo
 EOF
     exit 0
 }
+
+
+# Save options used
+args="$@"
 
 
 # Check for flags with getopt
@@ -257,6 +261,9 @@ elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
     model=${model%??}  # remove last 2 chars
     echo -e "\nUsing model: $model"
 fi
+
+# Show options used
+echo "Using options: $args"
 
 #echo ""  # To keep output readable
 

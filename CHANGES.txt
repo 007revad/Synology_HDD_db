@@ -1,3 +1,6 @@
+v2.0.36
+- Show the options used.
+
 v2.0.35
 - Now allows creating M.2 storage pool and volume all from Storage Manager.
 
