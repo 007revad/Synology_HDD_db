@@ -21,6 +21,8 @@ The script works in DSM 7 and DSM 6.
 * Prevents DSM auto updating the drive database.
 * Optionally disable DSM's "support_disk_compatibility".
 * Optionally disable DSM's "support_memory_compatibility" to prevent <a href=images/ram_wanring.png/>non-Synology memory notifications</a>.
+* Optionally edits max supported memory to match the amount of memory installed, if installed memory is greater than the current max memory setting.
+- Minor improvements.
 * Checks that M.2 volume support is enabled (on models that have M.2 slots or PCIe slots).
 * Enables creating M.2 storage pools and volumes from within Storage Manager.
 * Makes DSM recheck disk compatibility so rebooting is not needed (DSM 7 only).
@@ -84,3 +86,8 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr -showedits
 - Thanks to dwabraxus and aferende for help detecting connected expansion units.
 - Thanks to bartoque on the Synology subreddit for the tip on making the script download the latest release from github.
 - Thanks to nicolerenee for pointing out the easiest way to enable creating M.2 storage pools and volumes in Storage Manager.
+
+**Donators**
+
+- A big thank you to Gummibando on reddit for their donation.
+
