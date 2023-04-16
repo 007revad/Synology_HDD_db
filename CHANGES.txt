@@ -1,5 +1,5 @@
 v2.1.37
-- Now edits max supported memory to match the amount of memory installed, if greater than the current max memory setting.
+- Now edits max supported memory to match the amount of memory installed, if installed memory is greater than the current max memory setting.
 - Minor improvements.
 
 v2.0.36
