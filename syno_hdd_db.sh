@@ -30,6 +30,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Now edits max supported memory to match the amount of memory installed, if greater than the current max memory setting.
+#
 # Now allows creating M.2 storage pool and volume all from Storage Manager
 #
 # Now always shows your drive entries in the host db file if -s or --showedits used,
@@ -113,7 +115,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.0.36"
+scriptver="v2.1.36"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -210,6 +212,12 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
 else
     echo
     usage
+fi
+
+
+if [[ $debug == "yes" ]]; then
+    # set -x
+    export PS4='`[[ $? == 0 ]] || echo "\e[1;31;40m($?)\e[m\n "`:.$LINENO:'
 fi
 
 
@@ -762,7 +770,7 @@ updatedb() {
                 editdb7 "append" "$2"
             fi
 
-        elif [[ $dbtype -eq "6" ]];then
+        elif [[ $dbtype -eq "6" ]]; then
             # example:
             # {"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
             # Don't need to add firmware version?
@@ -808,7 +816,7 @@ while [[ $num -lt "${#hdds[@]}" ]]; do
     num2="0"
     while [[ $num2 -lt "${#eunits[@]}" ]]; do
         eudb="${dbpath}${eunits[$num2],,}${version}.db"
-        if [[ -f "$eudb" ]];then
+        if [[ -f "$eudb" ]]; then
             backupdb "$eudb" &&\
                 updatedb "${hdds[$num]}" "$eudb"
         else
@@ -833,7 +841,7 @@ while [[ $num -lt "${#nvmes[@]}" ]]; do
     # M.2 adaptor cards
     num2="0"
     while [[ $num2 -lt "${#m2carddbs[@]}" ]]; do
-        if [[ -f "${dbpath}${m2carddbs[$num2]}" ]];then
+        if [[ -f "${dbpath}${m2carddbs[$num2]}" ]]; then
             backupdb "${dbpath}${m2carddbs[$num2]}" &&\
                 updatedb "${nvmes[$num]}" "${dbpath}${m2carddbs[$num2]}"
         else
@@ -859,7 +867,8 @@ setting="$(get_key_value $synoinfo $sdc)"
 if [[ $force == "yes" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_disk_compatibility
-        sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/" "$synoinfo"
+        #sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/" "$synoinfo"
+        synosetkeyvalue "$synoinfo" "$sdc" "no"
         setting="$(get_key_value "$synoinfo" $sdc)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support disk compatibility."
@@ -868,7 +877,8 @@ if [[ $force == "yes" ]]; then
 else
     if [[ $setting == "no" ]]; then
         # Enable support_disk_compatibility
-        sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/" "$synoinfo"
+        #sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/" "$synoinfo"
+        synosetkeyvalue "$synoinfo" "$sdc" "yes"
         setting="$(get_key_value "$synoinfo" $sdc)"
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support disk compatibility."
@@ -883,7 +893,8 @@ setting="$(get_key_value $synoinfo $smc)"
 if [[ $ram == "yes" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_memory_compatibility
-        sed -i "s/${smc}=\"yes\"/${smc}=\"no\"/" "$synoinfo"
+        #sed -i "s/${smc}=\"yes\"/${smc}=\"no\"/" "$synoinfo"
+        synosetkeyvalue "$synoinfo" "$smc" "no"
         setting="$(get_key_value "$synoinfo" $smc)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support memory compatibility."
@@ -892,10 +903,36 @@ if [[ $ram == "yes" ]]; then
 else
     if [[ $setting == "no" ]]; then
         # Enable support_memory_compatibility
-        sed -i "s/${smc}=\"no\"/${smc}=\"yes\"/" "$synoinfo"
+        #sed -i "s/${smc}=\"no\"/${smc}=\"yes\"/" "$synoinfo"
+        synosetkeyvalue "$synoinfo" "$smc" "yes"
         setting="$(get_key_value "$synoinfo" $smc)"
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support memory compatibility."
+        fi
+    fi
+fi
+
+# Get total amount of installed memory
+if [[ $ram == "yes" ]]; then
+    IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory | grep -i 'size')
+    if [[ ${#array[@]} -gt "0" ]]; then
+        num="0"
+        while [[ $num -lt "${#array[@]}" ]]; do
+            ramsize=$(printf %s "${array[num]}" | cut -d" " -f2)
+            if [[ $ramtotal ]]; then
+                ramtotal=$((ramtotal +ramsize))
+            else
+                ramtotal="$ramsize"
+            fi
+            num=$((num +1))
+        done
+    fi
+    setting="$(get_key_value $synoinfo mem_max_mb)"
+    if [[ $ramtotal -gt $setting ]]; then
+        synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
+        setting="$(get_key_value $synoinfo mem_max_mb)"
+        if [[ $setting == "$ramtotal" ]]; then
+            echo -e "\nSet max memory to $ramtotal MB."
         fi
     fi
 fi
@@ -909,12 +946,13 @@ if [[ $m2 != "no" ]]; then
         setting="$(get_key_value $synoinfo ${smp})"
         enabled=""
         if [[ ! $setting ]]; then
-            # Add support_m2_pool"yes"
+            # Add support_m2_pool="yes"
             echo 'support_m2_pool="yes"' >> "$synoinfo"
             enabled="yes"
         elif [[ $setting == "no" ]]; then
-            # Change support_m2_pool"no" to "yes"
-            sed -i "s/${smp}=\"no\"/${smp}=\"yes\"/" "$synoinfo"
+            # Change support_m2_pool="no" to "yes"
+            #sed -i "s/${smp}=\"no\"/${smp}=\"yes\"/" "$synoinfo"
+            synosetkeyvalue "$synoinfo" "$smp" "yes"
             enabled="yes"
         elif [[ $setting == "yes" ]]; then
             echo -e "\nM.2 volume support already enabled."
@@ -944,7 +982,8 @@ if [[ $nodbupdate == "yes" ]]; then
         disabled="yes"
     elif [[ $url != "127.0.0.1" ]]; then
         # Edit drive_db_test_url=
-        sed -i "s/drive_db_test_url=.*/drive_db_test_url=\"127.0.0.1\"/" "$synoinfo" >/dev/null
+        #sed -i "s/drive_db_test_url=.*/drive_db_test_url=\"127.0.0.1\"/" "$synoinfo" >/dev/null
+        synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
         disabled="yes"
     fi
 
@@ -986,10 +1025,10 @@ fi
 # Show the changes
 if [[ ${showedits,,} == "yes" ]]; then
     getdbtype "$db1"
-    if [[ $dbtype -gt "6" ]];then
+    if [[ $dbtype -gt "6" ]]; then
         # Show 11 lines after hdmodel line
         lines=11
-    elif [[ $dbtype -eq "6" ]];then
+    elif [[ $dbtype -eq "6" ]]; then
         # Show 2 lines after hdmodel line
         lines=2
     fi
