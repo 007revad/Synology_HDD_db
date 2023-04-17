@@ -30,6 +30,12 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Changed method of checking if drive is a USB drive to prevent ignoring internal drives on RS models.
+#
+# Improved shell output when editing max memory setting.
+#
+# Changed to not run "synostgdisk --check-all-disks-compatibility" in DSM 6.2.3 (which has no synostgdisk.
+#
 # Now edits max supported memory to match the amount of memory installed, if greater than the current max memory setting.
 #
 # Now allows creating M.2 storage pool and volume all from Storage Manager
@@ -115,7 +121,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.1.37"
+scriptver="v2.1.38"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -428,10 +434,12 @@ fixdrivemodel(){
 }
 
 getdriveinfo() {
-    # Skip removable drives (USB drives)
     # $1 is /sys/block/sata1 etc
-    removable=$(cat "$1/removable")  # Some DSM 7 RS models return 1 for internal drives!
-    if [[ $removable == "0" ]] || [[ $dsm -gt "6" ]]; then
+
+    # Skip USB drives
+    usb=$(grep $(basename -- "$1") /proc/mounts | grep usb | cut -d" " -f1-2)
+    if [[ ! $usb ]]; then
+
         # Get drive model and firmware version
         hdmodel=$(cat "$1/device/model")
         hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
@@ -912,8 +920,9 @@ else
     fi
 fi
 
-# Get total amount of installed memory
+# Optioanlly set mem_max_mb to the amount of installed memory
 if [[ $ram == "yes" ]]; then
+    # Get total amount of installed memory
     IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory | grep -i 'size')
     if [[ ${#array[@]} -gt "0" ]]; then
         num="0"
@@ -927,13 +936,19 @@ if [[ $ram == "yes" ]]; then
             num=$((num +1))
         done
     fi
+    # Set mem_max_mb to the amount of installed memory
     setting="$(get_key_value $synoinfo mem_max_mb)"
     if [[ $ramtotal -gt $setting ]]; then
         synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
+        # Check we changed mem_max_mb
         setting="$(get_key_value $synoinfo mem_max_mb)"
         if [[ $setting == "$ramtotal" ]]; then
             echo -e "\nSet max memory to $ramtotal MB."
+        else
+            echo -e "\n${Error}ERROR${Off} Failed to change max memory!"
         fi
+    elif [[ $setting == "$ramtotal" ]]; then
+        echo -e "\nMax memory already set to $ramtotal MB."
     fi
 fi
 
@@ -1059,15 +1074,17 @@ fi
 
 
 # Make Synology check disk compatibility
-/usr/syno/sbin/synostgdisk --check-all-disks-compatibility
-status=$?
-if [[ $status -eq "0" ]]; then
-    echo -e "\nDSM successfully checked disk compatibility."
-else
-    # Ignore DSM 6 as it returns 255 for "synostgdisk --check-all-disks-compatibility"
-    if [[ $dsm -gt "6" ]]; then
-        echo -e "\nDSM ${Red}failed${Off} to check disk compatibility with exit code $status"
-        echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+if [[ -f /usr/syno/sbin/synostgdisk ]]; then  # DSM 6.2.3 does not have synostgdisk
+    /usr/syno/sbin/synostgdisk --check-all-disks-compatibility
+    status=$?
+    if [[ $status -eq "0" ]]; then
+        echo -e "\nDSM successfully checked disk compatibility."
+    else
+        # Ignore DSM 6.2.4 as it returns 255 for "synostgdisk --check-all-disks-compatibility"
+        if [[ $dsm -gt "6" ]]; then
+            echo -e "\nDSM ${Red}failed${Off} to check disk compatibility with exit code $status"
+            echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+        fi
     fi
 fi
 
