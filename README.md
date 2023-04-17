@@ -22,7 +22,6 @@ The script works in DSM 7 and DSM 6.
 * Optionally disable DSM's "support_disk_compatibility".
 * Optionally disable DSM's "support_memory_compatibility" to prevent <a href=images/ram_wanring.png/>non-Synology memory notifications</a>.
 * Optionally edits max supported memory to match the amount of memory installed, if installed memory is greater than the current max memory setting.
-- Minor improvements.
 * Checks that M.2 volume support is enabled (on models that have M.2 slots or PCIe slots).
 * Enables creating M.2 storage pools and volumes from within Storage Manager.
 * Makes DSM recheck disk compatibility so rebooting is not needed (DSM 7 only).
