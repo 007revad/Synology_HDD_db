@@ -30,11 +30,11 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
-# Changed method of checking if drive is a USB drive to prevent ignoring internal drives on RS models.
-#
 # Improved shell output when editing max memory setting.
 #
-# Changed to not run "synostgdisk --check-all-disks-compatibility" in DSM 6.2.3 (which has no synostgdisk.
+# Changed method of checking if drive is a USB drive to prevent ignoring internal drives on RS models.
+#
+# Changed to not run "synostgdisk --check-all-disks-compatibility" in DSM 6.2.3 (which has no synostgdisk).
 #
 # Now edits max supported memory to match the amount of memory installed, if greater than the current max memory setting.
 #
