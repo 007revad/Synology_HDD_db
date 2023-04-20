@@ -2,6 +2,7 @@
 
 <a href="https://github.com/007revad/Synology_HDD_db/releases"><img src="https://img.shields.io/github/release/007revad/Synology_HDD_db.svg"></a>
 <a href="https://hits.seeyoufarm.com"><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2F007revad%2FSynology_HDD_db&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false"/></a>
+[![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/007revad)
 
 ### Description
 
@@ -19,15 +20,14 @@ The script works in DSM 7 and DSM 6.
 * Adds any missing drives to the Synology's compatible-drive database.
 * Prevents DSM auto updating the drive database.
 * Optionally disable DSM's "support_disk_compatibility".
-* Optionally disable DSM's "support_memory_compatibility".
-* Checks that M.2 volume support is enabled (on supported models).
+* Optionally disable DSM's "support_memory_compatibility" to prevent <a href=images/ram_wanring.png/>non-Synology memory notifications</a>.
+* Optionally edits max supported memory to match the amount of memory installed, if installed memory is greater than the current max memory setting.
+* Checks that M.2 volume support is enabled (on models that have M.2 slots or PCIe slots).
+* Enables creating M.2 storage pools and volumes from within Storage Manager.
 * Makes DSM recheck disk compatibility so rebooting is not needed (DSM 7 only).
 * Reminds you that you may need to reboot the Synology after running the script (DSM 6 only).
 * Checks if there is a newer version of this script and offers to download it for you.
   * The new version available messages time out so they don't prevent the script running if it is scheduled to run unattended.
-
-**Planned updates:** 
-* Allow unsupported M.2 drives for use as volumes in DSM 7.2 (for models that supported M.2 volumes).
 
 ### Download the script
 
@@ -58,10 +58,10 @@ See <a href=how_to_schedule.md/>How to schedule a script in Synology Task Manage
 
 ### Running the script via SSH
 
-You run the script in a shell with sudo or as root.
+You run the script in a shell with sudo -i or as root.
 
 ```YAML
-sudo /path-to-script/syno_hdd_db.sh
+sudo -i /path-to-script/syno_hdd_db.sh -nr
 ```
 
 **Note:** Replace /path-to-script/ with the actual path to the script on your Synology.
@@ -71,7 +71,7 @@ sudo /path-to-script/syno_hdd_db.sh
 If you run the script with the -showedits flag it will show you the changes it made to the Synology's compatible-drive database. Obviously this is only useful if you run the script in a shell.
 
 ```YAML
-sudo /path-to-script/syno_hdd_db.sh -showedits
+sudo -i /path-to-script/syno_hdd_db.sh -nr -showedits
 ```
 
 **Note:** Replace /path-to-script/ with the actual path to the script on your Synology.
@@ -84,3 +84,9 @@ sudo /path-to-script/syno_hdd_db.sh -showedits
 - Thanks for the assistance from Alex_of_Chaos on the Synology subreddit.
 - Thanks to dwabraxus and aferende for help detecting connected expansion units.
 - Thanks to bartoque on the Synology subreddit for the tip on making the script download the latest release from github.
+- Thanks to nicolerenee for pointing out the easiest way to enable creating M.2 storage pools and volumes in Storage Manager.
+
+**Donators**
+
+- A big thank you to Gummibando on reddit for their donation.
+

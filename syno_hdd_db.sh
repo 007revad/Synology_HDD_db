@@ -23,12 +23,50 @@
 #--------------------------------------------------------------------------------------------------
 
 # TODO
-# Bypass M.2 volume lock for unsupported M.2 drives.
+# Bypass M.2 volume lock for unsupported M.2 drives. 
+#    See https://github.com/007revad/Synology_enable_M2_volume
 #
 # Maybe also edit the other disk compatibility db in synoboot, used during boot time.
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Improved shell output when editing max memory setting.
+#
+# Changed method of checking if drive is a USB drive to prevent ignoring internal drives on RS models.
+#
+# Changed to not run "synostgdisk --check-all-disks-compatibility" in DSM 6.2.3 (which has no synostgdisk).
+#
+# Now edits max supported memory to match the amount of memory installed, if greater than the current max memory setting.
+#
+# Now allows creating M.2 storage pool and volume all from Storage Manager
+#
+# Now always shows your drive entries in the host db file if -s or --showedits used,
+#    instead of only db file was edited during that run.
+#
+# Changed to show usage if invalid long option used instead of continuing.
+#
+# Fixed bug inserting firmware version for already existing model.
+#
+# Changed to add drives' firmware version to the db files (to support data deduplication).
+#    See https://github.com/007revad/Synology_enable_Deduplication
+#
+# Changed to be able to edit existing drive entries in the db files to add the firmware version.
+#
+# Now supports editing db files that don't currently have any drives listed.
+#
+# Fixed bug where the --noupdate option was coded as --nodbupdate. Now either will work.
+#
+# Fixed bug in re-enable drive db updates
+#
+# Fixed "download new version" failing if script was run via symlink or ./<scriptname>
+#
+# Changed to show if no M.2 cards were found, if M.2 drives were found.
+#
+# Changed latest version check to download to /tmp and extract files to the script's location,
+# replacing the existing .sh and readme.txt files.
+#
+# Added a timeouts when checking for newer script version in case github is down or slow.
+#
 # Added option to disable incompatible memory notifications.
 #
 # Now finds your expansion units' model numbers and adds your drives to their db files.
@@ -52,7 +90,6 @@
 # Fixed bug where removable drives were being detected and added to drive database.
 #
 # Fixed bug where "M.2 volume support already enabled" message appeared when NAS had no M.2 drives.
-#
 #
 # Added check that M.2 volume support is enabled (on supported models).
 #
@@ -84,7 +121,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v1.2.18"
+scriptver="v2.1.38"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -110,16 +147,16 @@ $script $scriptver - by 007revad
 Usage: $(basename "$0") [options]
 
 Options:
-  -s, --showedits  Show the edits made to host db file(s)
+  -s, --showedits  Show edits made to <model>_host db and db.new file(s)
   -n, --noupdate   Prevent DSM updating the compatible drive databases
   -m, --m2         Don't process M.2 drives
   -f, --force      Force DSM to not check drive compatibility
   -r, --ram        Disable memory compatibility checking
   -h, --help       Show this help message
-  -v, --version    Show the version
+  -v, --version    Show the script version
   
 EOF
-exit 0
+    exit 0
 }
 
 
@@ -129,20 +166,24 @@ $script $scriptver - by 007revad
 
 See https://github.com/$repo
 EOF
-exit 0
+    exit 0
 }
+
+
+# Save options used
+args="$@"
 
 
 # Check for flags with getopt
 if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
-    -l showedits,noupdate,m2,force,ram,help,version -- "$@")"; then
+    -l showedits,noupdate,nodbupdate,m2,force,ram,help,version,debug -- "$@")"; then
     eval set -- "$options"
     while true; do
         case "${1,,}" in
             -s|--showedits)     # Show edits done to host db file
                 showedits=yes
                 ;;
-            -n|--nodbupdate)    # Disable disk compatibility db updates
+            -n|--nodbupdate|--noupdate)    # Disable disk compatibility db updates
                 nodbupdate=yes
                 ;;
             -m|--m2)            # Don't add M.2 drives to db files
@@ -160,17 +201,29 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
             -v|--version)       # Show script version
                 scriptversion
                 ;;
+            -d|--debug)         # Show and log debug info
+                debug=yes
+                ;;
             --)
                 shift
                 break
                 ;;
             *)                  # Show usage options
-                echo "Invalid option '$1'"
+                echo -e "Invalid option '$1'\n"
                 usage "$1"
                 ;;
         esac
         shift
     done
+else
+    echo
+    usage
+fi
+
+
+if [[ $debug == "yes" ]]; then
+    # set -x
+    export PS4='`[[ $? == 0 ]] || echo "\e[1;31;40m($?)\e[m\n "`:.$LINENO:'
 fi
 
 
@@ -196,15 +249,19 @@ model=$(cat /proc/sys/kernel/syno_hw_version)
 
 
 # Show script version
+#echo -e "$script $scriptver\ngithub.com/$repo\n"
 echo "$script $scriptver"
-#echo "github.com/$repo"
 
-# Show NAS info
+# Get DSM full version
 productversion=$(get_key_value /etc.defaults/VERSION productversion)
 buildphase=$(get_key_value /etc.defaults/VERSION buildphase)
+buildnumber=$(get_key_value /etc.defaults/VERSION buildnumber)
+smallfixnumber=$(get_key_value /etc.defaults/VERSION smallfixnumber)
+
+# Show DSM full version and model
 if [[ $buildphase == GM ]]; then buildphase=""; fi
-echo "$model DSM $productversion $buildphase"
-echo ""
+if [[ $smallfixnumber -gt "0" ]]; then smallfix="-$smallfixnumber"; fi
+echo "$model DSM $productversion-$buildnumber$smallfix $buildphase"
 
 
 # Convert model to lower case
@@ -213,65 +270,137 @@ model=${model,,}
 # Check for dodgy characters after model number
 if [[ $model =~ 'pv10-j'$ ]]; then  # GitHub issue #10
     model=${model%??????}+  # replace last 6 chars with +
+    echo -e "\nUsing model: $model"
 elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
     model=${model%??}  # remove last 2 chars
+    echo -e "\nUsing model: $model"
 fi
+
+# Show options used
+echo "Using options: $args"
+
+#echo ""  # To keep output readable
 
 
 #------------------------------------------------------------------------------
 # Check latest release with GitHub API
 
 get_latest_release() {
-    curl --silent "https://api.github.com/repos/$1/releases/latest" |
+    # Curl timeout options:
+    # https://unix.stackexchange.com/questions/94604/does-curl-have-a-timeout
+    curl --silent -m 10 --connect-timeout 5 \
+        "https://api.github.com/repos/$1/releases/latest" |
     grep '"tag_name":' |          # Get tag line
     sed -E 's/.*"([^"]+)".*/\1/'  # Pluck JSON value
 }
 
-tag=$(get_latest_release "007revad/Synology_HDD_db")
+tag=$(get_latest_release "$repo")
 shorttag="${tag:1}"
+#scriptpath=$(dirname -- "$0")
 
-if [[ $HOME =~ /var/services/* ]]; then
-    shorthome=${HOME:14}
-else
-    shorthome="$HOME"
-fi
+# Get script location
+# https://stackoverflow.com/questions/59895/
+source=${BASH_SOURCE[0]}
+while [ -L "$source" ]; do # Resolve $source until the file is no longer a symlink
+    scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
+    source=$(readlink "$source")
+    # If $source was a relative symlink, we need to resolve it 
+    # relative to the path where the symlink file was located
+    [[ $source != /* ]] && source=$scriptpath/$source
+done
+scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
+#echo "Script location: $scriptpath"  # debug
+
 
 if ! printf "%s\n%s\n" "$tag" "$scriptver" |
         sort --check --version-sort &> /dev/null ; then
-    echo -e "${Cyan}There is a newer version of this script available.${Off}"
+    echo -e "\n${Cyan}There is a newer version of this script available.${Off}"
     echo -e "Current version: ${scriptver}\nLatest version:  $tag"
-    if [[ ! -d $HOME ]]; then
-        # Can't download to home
+    if [[ -f $scriptpath/$script-$shorttag.tar.gz ]]; then
+        # They have the latest version tar.gz downloaded but are using older version
         echo "https://github.com/$repo/releases/latest"
         sleep 10
-    elif [[ -f $HOME/$script-$shorttag.tar.gz ]]; then
-        # Latest version tar.gz in home but they're using older version
+    elif [[ -d $scriptpath/$script-$shorttag ]]; then
+        # They have the latest version extracted but are using older version
         echo "https://github.com/$repo/releases/latest"
         sleep 10
     else
-        echo -e "${Cyan}Do you want to download $tag now?${Off} {y/n]"
+        echo -e "${Cyan}Do you want to download $tag now?${Off} [y/n]"
         read -r -t 30 reply
         if [[ ${reply,,} == "y" ]]; then
-            if ! curl -LJO "https://github.com/$repo/archive/refs/tags/$tag.tar.gz"; then
-                echo -e "${Error}ERROR ${Off} Failed to download $script-$shorttag.tar.gz!"
-            else
-                if [[ -f $HOME/$script-$shorttag.tar.gz ]]; then
-                    if ! tar -xf "$HOME/$script-$shorttag.tar.gz"; then
-                        echo -e "${Error}ERROR ${Off} Failed to extract $script-$shorttag.tar.gz!"
-                    else
-                        if ! rm "$HOME/$script-$shorttag.tar.gz"; then
-                            echo -e "${Error}ERROR ${Off} Failed to delete downloaded $script-$shorttag.tar.gz!"
-                        else
-                            echo -e "\n$tag and changes.txt are in ${Cyan}$shorthome/$script-$shorttag${Off}"
-                            echo -e "${Cyan}Do you want to stop this script so you can run the new one?${Off} {y/n]"
-                            read -r -t 30 reply
-                            if [[ ${reply,,} == "y" ]]; then exit; fi
-                        fi
-                    fi
+            if cd /tmp; then
+                url="https://github.com/$repo/archive/refs/tags/$tag.tar.gz"
+                if ! curl -LJO -m 30 --connect-timeout 5 "$url";
+                then
+                    echo -e "${Error}ERROR ${Off} Failed to download"\
+                        "$script-$shorttag.tar.gz!"
                 else
-                    echo -e "${Error}ERROR ${Off} $shorthome/$script-$shorttag.tar.gz not found!"
-                    #ls $HOME/ | grep "$script"  # debug
+                    if [[ -f /tmp/$script-$shorttag.tar.gz ]]; then
+                        # Extract tar file to /tmp/<script-name>
+                        if ! tar -xf "/tmp/$script-$shorttag.tar.gz" -C "/tmp"; then
+                            echo -e "${Error}ERROR ${Off} Failed to"\
+                                "extract $script-$shorttag.tar.gz!"
+                        else
+                            # Copy new script sh files to script location
+                            if ! cp -p "/tmp/$script-$shorttag/"*.sh "$scriptpath"; then
+                                copyerr=1
+                                echo -e "${Error}ERROR ${Off} Failed to copy"\
+                                    "$script-$shorttag .sh file(s) to:\n $scriptpath"
+                            else                   
+                                # Set permsissions on CHANGES.txt
+                                if ! chmod 744 "$scriptpath/"*.sh ; then
+                                    permerr=1
+                                    echo -e "${Error}ERROR ${Off} Failed to set permissions on:"
+                                    echo "$scriptpath *.sh file(s)"
+                                fi
+                            fi
+
+                            # Copy new CHANGES.txt file to script location
+                            if ! cp -p "/tmp/$script-$shorttag/CHANGES.txt" "$scriptpath"; then
+                                copyerr=1
+                                echo -e "${Error}ERROR ${Off} Failed to copy"\
+                                    "$script-$shorttag/CHANGES.txt to:\n $scriptpath"
+                            else                   
+                                # Set permsissions on CHANGES.txt
+                                if ! chmod 744 "$scriptpath/CHANGES.txt"; then
+                                    permerr=1
+                                    echo -e "${Error}ERROR ${Off} Failed to set permissions on:"
+                                    echo "$scriptpath/CHANGES.txt"
+                                fi
+                            fi
+
+                            # Delete downloaded .tar.gz file
+                            if ! rm "/tmp/$script-$shorttag.tar.gz"; then
+                                delerr=1
+                                echo -e "${Error}ERROR ${Off} Failed to delete"\
+                                    "downloaded /tmp/$script-$shorttag.tar.gz!"
+                            fi
+
+                            # Delete extracted tmp files
+                            if ! rm -r "/tmp/$script-$shorttag"; then
+                                delerr=1
+                                echo -e "${Error}ERROR ${Off} Failed to delete"\
+                                    "downloaded /tmp/$script-$shorttag!"
+                            fi
+
+                            # Notify of success (if there were no errors)
+                            if [[ $copyerr != 1 ]] && [[ $permerr != 1 ]]; then
+                                echo -e "\n$tag and changes.txt downloaded to:"\
+                                    "$scriptpath"
+                                echo -e "${Cyan}Do you want to stop this script"\
+                                    "so you can run the new one?${Off} [y/n]"
+                                read -r reply
+                                if [[ ${reply,,} == "y" ]]; then exit; fi
+                            fi
+                        fi
+                    else
+                        echo -e "${Error}ERROR ${Off}"\
+                            "/tmp/$script-$shorttag.tar.gz not found!"
+                        #ls /tmp | grep "$script"  # debug
+                    fi
                 fi
+            else
+                echo -e "${Error}ERROR ${Off} Failed to cd to /tmp!"
             fi
         fi
     fi
@@ -288,12 +417,29 @@ fixdrivemodel(){
     if [[ $1 =~ MZ.*" 00Y" ]]; then
         hdmodel=$(printf "%s" "$1" | sed 's/ 00Y.*//')
     fi
+
+    # Brands that return "BRAND <model>" and need "BRAND " removed.
+    if [[ $1 =~ ^[A-Za-z]{1,7}" ".* ]]; then
+        #see  Smartmontools database in /var/lib/smartmontools/drivedb.db
+        hdmodel=${hdmodel#"WDC "}       # Remove "WDC " from start of model name
+        hdmodel=${hdmodel#"HGST "}      # Remove "HGST " from start of model name
+        hdmodel=${hdmodel#"TOSHIBA "}   # Remove "TOSHIBA " from start of model name
+
+        # Old drive brands
+        hdmodel=${hdmodel#"Hitachi "}   # Remove "Hitachi " from start of model name
+        hdmodel=${hdmodel#"SAMSUNG "}   # Remove "SAMSUNG " from start of model name
+        hdmodel=${hdmodel#"FUJISTU "}   # Remove "FUJISTU " from start of model name
+        hdmodel=${hdmodel#"APPLE HDD "} # Remove "APPLE HDD " from start of model name
+    fi
 }
 
 getdriveinfo() {
-    # Skip removable drives (USB drives)
-    removable=$(cat "$1/removable")
-    if [[ $removable == "0" ]]; then
+    # $1 is /sys/block/sata1 etc
+
+    # Skip USB drives
+    usb=$(grep $(basename -- "$1") /proc/mounts | grep usb | cut -d" " -f1-2)
+    if [[ ! $usb ]]; then
+
         # Get drive model and firmware version
         hdmodel=$(cat "$1/device/model")
         hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
@@ -311,6 +457,7 @@ getdriveinfo() {
 }
 
 getm2info() {
+    # $1 is /sys/block/nvme0n1 etc
     nvmemodel=$(cat "$1/device/model")
     nvmemodel=$(printf "%s" "$nvmemodel" | xargs)  # trim leading and trailing white space
     if [[ $2 == "nvme" ]]; then
@@ -327,6 +474,7 @@ getm2info() {
 
 getcardmodel() {
     # Get M.2 card model (if M.2 drives found)
+    # $1 is /dev/nvme0n1 etc
     if [[ ${#nvmelist[@]} -gt "0" ]]; then
         cardmodel=$(synodisk --m2-card-model-get "$1")
         if [[ $cardmodel =~ M2D[0-9][0-9] ]]; then
@@ -343,6 +491,7 @@ getcardmodel() {
 
 
 for d in /sys/block/*; do
+    # $d is /sys/block/sata1 etc
     case "$(basename -- "${d}")" in
         sd*|hd*)
             if [[ $d =~ [hs]d[a-z][a-z]?$ ]]; then
@@ -361,7 +510,10 @@ for d in /sys/block/*; do
                 if [[ $m2 != "no" ]]; then
                     getm2info "$d" "nvme"
                     # Get M.2 card model if in M.2 card
-                    getcardmodel "/dev/$d"
+                    getcardmodel "/dev/$(basename -- "${d}")"
+
+                    # Enable creating M.2 storage pool and volume in Storage Manager
+                    echo 1 > /run/synostorage/disks/$(basename -- "$d")/m2_pool_support
                 fi
             fi
         ;;
@@ -371,7 +523,10 @@ for d in /sys/block/*; do
                 if [[ $m2 != "no" ]]; then
                     getm2info "$d" "nvc"
                     # Get M.2 card model if in M.2 card
-                    getcardmodel "/dev/$d"
+                    getcardmodel "/dev/$(basename -- "${d}")"
+
+                    # Enable creating M.2 storage pool and volume in Storage Manager
+                    echo 1 > /run/synostorage/disks/$(basename -- "$d")/m2_pool_support
                 fi
             fi
         ;;
@@ -388,9 +543,9 @@ fi
 
 # Check hdds array isn't empty
 if [[ ${#hdds[@]} -eq "0" ]]; then
-    echo -e "${Error}ERROR${Off} No drives found!" && exit 2
+    echo -e "\n${Error}ERROR${Off} No drives found!" && exit 2
 else
-    echo "HDD/SSD models found: ${#hdds[@]}"
+    echo -e "\nHDD/SSD models found: ${#hdds[@]}"
     num="0"
     while [[ $num -lt "${#hdds[@]}" ]]; do
         echo "${hdds[num]}"
@@ -441,14 +596,18 @@ if [[ ${#m2cardlist[@]} -gt "0" ]]; then
 fi
 
 # Check m2cards array isn't empty
-if [[ ${#m2cards[@]} -gt "0" ]]; then
-    echo "M.2 card models found: ${#m2cards[@]}"
-    num="0"
-    while [[ $num -lt "${#m2cards[@]}" ]]; do
-        echo "${m2cards[num]}"
-        num=$((num +1))
-    done
-    echo
+if [[ $m2 != "no" ]]; then
+    if [[ ${#m2cards[@]} -eq "0" ]]; then
+        echo -e "No M.2 cards found\n"
+    else    
+        echo "M.2 card models found: ${#m2cards[@]}"
+        num="0"
+        while [[ $num -lt "${#m2cards[@]}" ]]; do
+            echo "${m2cards[num]}"
+            num=$((num +1))
+        done
+        echo
+    fi
 fi
 
 
@@ -536,6 +695,48 @@ backupdb "$db1" || exit 5
 #------------------------------------------------------------------------------
 # Edit db files
 
+editcount(){
+    # Count drives added to host db files
+    if [[ $1 == "$db1" ]]; then
+        db1Edits=$((db1Edits +1))
+    elif [[ $1 == "$db2" ]]; then
+        db2Edits=$((db2Edits +1))
+    fi
+}
+
+
+editdb7(){
+    if [[ $1 == "append" ]]; then  # model not in db file
+        if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # append
+            echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+            editcount "$2"
+        else
+            echo -e "\n${Error}ERROR 6a${Off} Failed to update $(basename -- "$2")${Off}"
+            #exit 6
+        fi
+
+    elif [[ $1 == "insert" ]]; then  # model and default exists
+        if sed -i "s/\"$hdmodel\":{/\"$hdmodel\":{$fwstrng/" "$2"; then  # insert firmware
+            echo -e "Updated ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+            #editcount "$2"
+        else
+            echo -e "\n${Error}ERROR 6b${Off} Failed to update $(basename -- "$2")${Off}"
+            #exit 6
+        fi
+
+    elif [[ $1 == "empty" ]]; then  # db file only contains {}
+        if sed -i "s/{}/{\"$hdmodel\":{$fwstrng${default}}/" "$2"; then  # empty
+            echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+            editcount "$2"
+        else
+            echo -e "\n${Error}ERROR 6c${Off} Failed to update $(basename -- "$2")${Off}"
+            #exit 6
+        fi
+
+    fi
+}
+
+
 updatedb() {
     hdmodel=$(printf "%s" "$1" | cut -d"," -f 1)
     fwrev=$(printf "%s" "$1" | cut -d"," -f 2)
@@ -545,13 +746,13 @@ updatedb() {
     #echo hdmodel "$hdmodel" >&2  # debug
     #echo fwrev "$fwrev" >&2      # debug
 
-    if grep "$hdmodel" "$2" >/dev/null; then
+    if grep "$hdmodel"'":{"'"$fwrev" "$2" >/dev/null; then
         echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
     else
         # Check if db file is new or old style
         getdbtype "$2"
 
-        if [[ $dbtype -gt "6" ]];then
+        if [[ $dbtype -gt "6" ]]; then
             # Don't need to add firmware version?
             fwstrng=\"$fwrev\"
             fwstrng="$fwstrng":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
@@ -561,22 +762,23 @@ updatedb() {
             default="$default":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
             default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]}}}
 
-            #if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # Don't need to add firmware version?
-            if sed -i "s/}}}/}},\"$hdmodel\":{$default/" "$2"; then
-                echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+            if grep '"disk_compatbility_info":{}' "$2" >/dev/null; then
+               # Replace  "disk_compatbility_info":{}  with  "disk_compatbility_info":{"WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}}
+                echo "Edit empty db file"
+                editdb7 "empty" "$2"
 
-                # Count drives added to host db files
-                if [[ $2 == "$db1" ]]; then
-                    db1Edits=$((db1Edits +1))
-                elif [[ $2 == "$db2" ]]; then
-                    db2Edits=$((db2Edits +1))
-                fi
+            elif grep '"'"$hdmodel"'":' "$2" >/dev/null; then
+               # Replace  "WD40PURX-64GVNY0":{  with  "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},
+                echo "Insert firmware version"
+                editdb7 "insert" "$2"
 
             else
-                echo -e "\n${Error}ERROR 6${Off} Failed to update v7 $(basename -- "$2")${Off}"
-                exit 6
+               # Add  "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}
+                echo "Append drive and firmware"
+                editdb7 "append" "$2"
             fi
-        elif [[ $dbtype -eq "6" ]];then
+
+        elif [[ $dbtype -eq "6" ]]; then
             # example:
             # {"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
             # Don't need to add firmware version?
@@ -622,7 +824,7 @@ while [[ $num -lt "${#hdds[@]}" ]]; do
     num2="0"
     while [[ $num2 -lt "${#eunits[@]}" ]]; do
         eudb="${dbpath}${eunits[$num2],,}${version}.db"
-        if [[ -f "$eudb" ]];then
+        if [[ -f "$eudb" ]]; then
             backupdb "$eudb" &&\
                 updatedb "${hdds[$num]}" "$eudb"
         else
@@ -647,7 +849,7 @@ while [[ $num -lt "${#nvmes[@]}" ]]; do
     # M.2 adaptor cards
     num2="0"
     while [[ $num2 -lt "${#m2carddbs[@]}" ]]; do
-        if [[ -f "${dbpath}${m2carddbs[$num2]}" ]];then
+        if [[ -f "${dbpath}${m2carddbs[$num2]}" ]]; then
             backupdb "${dbpath}${m2carddbs[$num2]}" &&\
                 updatedb "${nvmes[$num]}" "${dbpath}${m2carddbs[$num2]}"
         else
@@ -673,7 +875,8 @@ setting="$(get_key_value $synoinfo $sdc)"
 if [[ $force == "yes" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_disk_compatibility
-        sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/" "$synoinfo"
+        #sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/" "$synoinfo"
+        synosetkeyvalue "$synoinfo" "$sdc" "no"
         setting="$(get_key_value "$synoinfo" $sdc)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support disk compatibility."
@@ -682,7 +885,8 @@ if [[ $force == "yes" ]]; then
 else
     if [[ $setting == "no" ]]; then
         # Enable support_disk_compatibility
-        sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/" "$synoinfo"
+        #sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/" "$synoinfo"
+        synosetkeyvalue "$synoinfo" "$sdc" "yes"
         setting="$(get_key_value "$synoinfo" $sdc)"
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support disk compatibility."
@@ -697,7 +901,8 @@ setting="$(get_key_value $synoinfo $smc)"
 if [[ $ram == "yes" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_memory_compatibility
-        sed -i "s/${smc}=\"yes\"/${smc}=\"no\"/" "$synoinfo"
+        #sed -i "s/${smc}=\"yes\"/${smc}=\"no\"/" "$synoinfo"
+        synosetkeyvalue "$synoinfo" "$smc" "no"
         setting="$(get_key_value "$synoinfo" $smc)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support memory compatibility."
@@ -706,11 +911,44 @@ if [[ $ram == "yes" ]]; then
 else
     if [[ $setting == "no" ]]; then
         # Enable support_memory_compatibility
-        sed -i "s/${smc}=\"no\"/${smc}=\"yes\"/" "$synoinfo"
+        #sed -i "s/${smc}=\"no\"/${smc}=\"yes\"/" "$synoinfo"
+        synosetkeyvalue "$synoinfo" "$smc" "yes"
         setting="$(get_key_value "$synoinfo" $smc)"
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support memory compatibility."
         fi
+    fi
+fi
+
+# Optioanlly set mem_max_mb to the amount of installed memory
+if [[ $ram == "yes" ]]; then
+    # Get total amount of installed memory
+    IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory | grep -i 'size')
+    if [[ ${#array[@]} -gt "0" ]]; then
+        num="0"
+        while [[ $num -lt "${#array[@]}" ]]; do
+            ramsize=$(printf %s "${array[num]}" | cut -d" " -f2)
+            if [[ $ramtotal ]]; then
+                ramtotal=$((ramtotal +ramsize))
+            else
+                ramtotal="$ramsize"
+            fi
+            num=$((num +1))
+        done
+    fi
+    # Set mem_max_mb to the amount of installed memory
+    setting="$(get_key_value $synoinfo mem_max_mb)"
+    if [[ $ramtotal -gt $setting ]]; then
+        synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
+        # Check we changed mem_max_mb
+        setting="$(get_key_value $synoinfo mem_max_mb)"
+        if [[ $setting == "$ramtotal" ]]; then
+            echo -e "\nSet max memory to $ramtotal MB."
+        else
+            echo -e "\n${Error}ERROR${Off} Failed to change max memory!"
+        fi
+    elif [[ $setting == "$ramtotal" ]]; then
+        echo -e "\nMax memory already set to $ramtotal MB."
     fi
 fi
 
@@ -723,12 +961,13 @@ if [[ $m2 != "no" ]]; then
         setting="$(get_key_value $synoinfo ${smp})"
         enabled=""
         if [[ ! $setting ]]; then
-            # Add support_m2_pool"yes"
+            # Add support_m2_pool="yes"
             echo 'support_m2_pool="yes"' >> "$synoinfo"
             enabled="yes"
         elif [[ $setting == "no" ]]; then
-            # Change support_m2_pool"no" to "yes"
-            sed -i "s/${smp}=\"no\"/${smp}=\"yes\"/" "$synoinfo"
+            # Change support_m2_pool="no" to "yes"
+            #sed -i "s/${smp}=\"no\"/${smp}=\"yes\"/" "$synoinfo"
+            synosetkeyvalue "$synoinfo" "$smp" "yes"
             enabled="yes"
         elif [[ $setting == "yes" ]]; then
             echo -e "\nM.2 volume support already enabled."
@@ -758,7 +997,8 @@ if [[ $nodbupdate == "yes" ]]; then
         disabled="yes"
     elif [[ $url != "127.0.0.1" ]]; then
         # Edit drive_db_test_url=
-        sed -i "s/drive_db_test_url=.*/drive_db_test_url=\"127.0.0.1\"/" "$synoinfo" >/dev/null
+        #sed -i "s/drive_db_test_url=.*/drive_db_test_url=\"127.0.0.1\"/" "$synoinfo" >/dev/null
+        synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
         disabled="yes"
     fi
 
@@ -770,18 +1010,23 @@ if [[ $nodbupdate == "yes" ]]; then
         else
             echo -e "\n${Error}ERROR${Off} Failed to disable drive db auto updates!"
         fi
+    else
+        echo -e "\nDrive db auto updates already disabled."
     fi
 else
     # Re-enable drive db updates
-    if [[ $url == "127.0.0.1" ]]; then
-        # Edit drive_db_test_url=
-        sed -z "s/drive_db_test_url=\"127\.0\.0\.1\"\n//" "$synoinfo" >/dev/null
-        #sed -i "s/drive_db_test_url=\"127\.0\.0\.1\"//" "$synoinfo"  # works but leaves line feed
+    #if [[ $url == "127.0.0.1" ]]; then
+    if [[ $url ]]; then
+        # Delete "drive_db_test_url=127.0.0.1" line (inc. line break)
+        #sed -i "/drive_db_test_url=\"127.0.0.1\"/d" "/etc.defaults/synoinfo.conf"
+        sed -i "/drive_db_test_url=*/d" "/etc.defaults/synoinfo.conf"
 
         # Check if we re-enabled drive db auto updates
         url="$(get_key_value $synoinfo drive_db_test_url)"
         if [[ $url != "127.0.0.1" ]]; then
             echo -e "\nRe-enabled drive db auto updates."
+        else
+            echo -e "\n${Error}ERROR${Off} Failed to enable drive db auto updates!"
         fi
     else
         echo -e "\nDrive db auto updates already enabled."
@@ -795,40 +1040,51 @@ fi
 # Show the changes
 if [[ ${showedits,,} == "yes" ]]; then
     getdbtype "$db1"
-    if [[ $dbtype -gt "6" ]];then
-        # Show last 12 lines per drive + 4
-        lines=$(((db1Edits *12) +4))
-        if [[ $db1Edits -gt "0" ]]; then
-            echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
-            jq . "$db1" | tail -n "$lines"
-        elif [[ $db2Edits -gt "0" ]]; then
-            echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
-            jq . "$db2" | tail -n "$lines"
-        fi
-    elif [[ $dbtype -eq "6" ]];then
-        # Show first 8 lines per drive + 2
-        lines=$(((db1Edits *8) +2))
-        if [[ $db1Edits -gt "0" ]]; then
-            echo -e "\nChanges to ${Cyan}$(basename -- "$db1")${Off}"
-            jq . "$db1" | head -n "$lines"
-        elif [[ $db2Edits -gt "0" ]]; then
-            echo -e "\nChanges to ${Cyan}$(basename -- "$db2")${Off}"
-            jq . "$db2" | head -n "$lines"
-        fi
+    if [[ $dbtype -gt "6" ]]; then
+        # Show 11 lines after hdmodel line
+        lines=11
+    elif [[ $dbtype -eq "6" ]]; then
+        # Show 2 lines after hdmodel line
+        lines=2
     fi
+
+    # HDDs/SSDs
+    if [[ ${#hdds[@]} -gt "0" ]]; then
+        num="0"
+        while [[ $num -lt "${#hdds[@]}" ]]; do
+            hdmodel=$(printf "%s" "${hdds[$num]}" | cut -d"," -f 1)
+            echo
+            jq . "$db1" | grep -A "$lines" "$hdmodel"
+            num=$((num +1))
+        done
+    fi
+
+    # NVMe drives
+    if [[ ${#nvmes[@]} -gt "0" ]]; then
+        num="0"
+        while [[ $num -lt "${#nvmes[@]}" ]]; do
+            nvmemodel=$(printf "%s" "${nvmes[$num]}" | cut -d"," -f 1)
+            echo
+            jq . "$db1" | grep -A "$lines" "$nvmemodel"
+            num=$((num +1))
+        done
+    fi
+
 fi
 
 
 # Make Synology check disk compatibility
-/usr/syno/sbin/synostgdisk --check-all-disks-compatibility
-status=$?
-if [[ $status -eq "0" ]]; then
-    echo -e "\nDSM successfully checked disk compatibility."
-else
-    # Ignore DSM 6 as it returns 255 for "synostgdisk --check-all-disks-compatibility"
-    if [[ $dsm -gt "6" ]]; then
-        echo -e "\nDSM ${Red}failed${Off} to check disk compatibility with exit code $status"
-        echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+if [[ -f /usr/syno/sbin/synostgdisk ]]; then  # DSM 6.2.3 does not have synostgdisk
+    /usr/syno/sbin/synostgdisk --check-all-disks-compatibility
+    status=$?
+    if [[ $status -eq "0" ]]; then
+        echo -e "\nDSM successfully checked disk compatibility."
+    else
+        # Ignore DSM 6.2.4 as it returns 255 for "synostgdisk --check-all-disks-compatibility"
+        if [[ $dsm -gt "6" ]]; then
+            echo -e "\nDSM ${Red}failed${Off} to check disk compatibility with exit code $status"
+            echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+        fi
     fi
 fi
 

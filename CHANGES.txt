@@ -1,4 +1,72 @@
-v2.2.18
+v2.1.38
+- Improved shell output when editing max memory setting.
+- Changed method of checking if drive is a USB drive to prevent ignoring internal drives on RS models.
+- Changed to not run "synostgdisk --check-all-disks-compatibility" in DSM 6.2.3 (which has no synostgdisk).
+
+v2.1.37
+- Now edits max supported memory to match the amount of memory installed, if installed memory is greater than the current max memory setting.
+- Minor improvements.
+
+v2.0.36
+- Show the options used.
+- Thank you to Gummibando on reddit for their donation.
+
+v2.0.35
+- Now allows creating M.2 storage pool and volume all from Storage Manager.
+
+v1.3.34
+- Now always shows your drive entries in the host db file if -s or --showedits used instead of only db file was edited during that run.
+- Changed to show usage if invalid long option used instead of continuing.
+
+v1.3.33
+-  Fixed bug inserting firmware version for already existing model.
+
+v1.3.32
+- Changed to add drives' firmware version to the db files (to support data deduplication).
+    - See https://github.com/007revad/Synology_enable_Deduplication
+- Changed to be able to edit existing drive entries in the db files to add the firmware version.
+- Now supports editing db files that don't currently have any drives listed.
+
+v1.2.31
+- Bug fix. The --noupdate option was coded as --nodbupdate. Now either will work.
+- Bug fix. Re-enable drive db updates wasn't working in some instances.
+
+v1.2.30
+- Fixed "download new version" failing if script was run via symlink or ./<scriptname>
+
+v1.2.29
+- Bug fix. v1.2.28 had v1.2.27 in the sh file so it always wanted to update!
+
+v1.2.28
+- Fixed bug in getting the M.2 card model.
+
+v1.2.27
+- Changed 'latest version check' to download and extract to /tmp then copy only the syno_hdd_db.sh and readme.txt files to the currrently running script's location.
+- Minor tweaks to the shell output.
+
+v1.2.25
+- Minor bug fix.
+
+v1.2.24
+- Bug fix. Ignoring removable drives was ignoring all drives in DSM 7 on a RS2421rp+. Fix issue #23.
+
+v1.2.23
+- Changed to show if no M.2 cards were found, if M.2 drives were found.
+
+v1.2.22
+- Changed 'latest version check' to download to /tmp and extract files to the script's location to fix issue #27.
+
+v1.2.21
+- Reinstated removing brand from start of drive model to fix issue #24.
+
+v1.2.20
+- Added a timeouts when checking for newer script version in case github is down or slow to fix issue #25.
+- Fixed change log (v1.2.19 and v1.2.18 were listed as v2.2.19 and v2.2.19).
+
+v1.2.19
+- Minor change to check new version code.
+
+v1.2.18
 - Minor shell output formatting fix.
 
 v1.2.17
@@ -52,16 +120,16 @@ v1.1.8
   - If run without -f or -force "support_disk_compatibility" is re-enabled.
 
 v1.0.7
-Added message if newer script version is available.
+- Added message if newer script version is available.
 
 v1.0.6
-Added 2nd method of disabling disk compatibility to solve issue #1 and #4 for the few people where the original method didn't work.
+- Added 2nd method of disabling disk compatibility to solve issue #1 and #4 for the few people where the original method didn't work.
 
 v1.0.5
-Changed to avoid issue #2
+- Changed to avoid issue #2
 
 v1.0.4
-Now backs up the database file if there is no backup already.
+- Now backs up the database file if there is no backup already.
 
 v1.0.3
 Changed to avoid avoid error messages from previous change to search for sda and sata# drives in DSM 6 and DSM 7.
@@ -69,13 +137,13 @@ Changed to avoid avoid error messages from previous change to search for sda and
 - /dev/sd*: No such file or directory
 
 v1.0.2
-Improved formatting when listing found drives.
+- Improved formatting when listing found drives.
 
 v1.0.1
-Fixed issue where drives weren't detected if:
-- NAS had been updated from DSM 6 to DSM 7 and still used sda, sdb etc.
-- Models like the DVA3219 that use sata# even in DSM 6.
+- Fixed issue where drives weren't detected if:
+  - NAS had been updated from DSM 6 to DSM 7 and still used sda, sdb etc.
+  - Models like the DVA3219 that use sata# even in DSM 6.
 
 v1.0.0
-Initial release.
+- Initial release.
 
