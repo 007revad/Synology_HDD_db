@@ -1,3 +1,6 @@
+v2.2.39
+- Now looks for and edits both v7 and non-v7 db files to solve issue #11 for RS '21 models running DSM 6.2.4.
+
 v2.1.38
 - Improved shell output when editing max memory setting.
 - Changed method of checking if drive is a USB drive to prevent ignoring internal drives on RS models.
