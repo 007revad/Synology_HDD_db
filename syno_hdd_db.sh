@@ -30,6 +30,9 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Now looks for and edits both v7 and non-v7 db files to solve issue #11 for RS '21 models running DSM 6.2.4.
+#
+#
 # Improved shell output when editing max memory setting.
 #
 # Changed method of checking if drive is a USB drive to prevent ignoring internal drives on RS models.
@@ -121,7 +124,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.1.38"
+scriptver="v2.2.39"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -371,14 +374,14 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
 
                             # Delete downloaded .tar.gz file
                             if ! rm "/tmp/$script-$shorttag.tar.gz"; then
-                                delerr=1
+                                #delerr=1
                                 echo -e "${Error}ERROR ${Off} Failed to delete"\
                                     "downloaded /tmp/$script-$shorttag.tar.gz!"
                             fi
 
                             # Delete extracted tmp files
                             if ! rm -r "/tmp/$script-$shorttag"; then
-                                delerr=1
+                                #delerr=1
                                 echo -e "${Error}ERROR ${Off} Failed to delete"\
                                     "downloaded /tmp/$script-$shorttag!"
                             fi
@@ -437,7 +440,7 @@ getdriveinfo() {
     # $1 is /sys/block/sata1 etc
 
     # Skip USB drives
-    usb=$(grep $(basename -- "$1") /proc/mounts | grep usb | cut -d" " -f1-2)
+    usb=$(grep "$(basename -- "$1")" /proc/mounts | grep usb | cut -d" " -f1-2)
     if [[ ! $usb ]]; then
 
         # Get drive model and firmware version
@@ -479,12 +482,22 @@ getcardmodel() {
         cardmodel=$(synodisk --m2-card-model-get "$1")
         if [[ $cardmodel =~ M2D[0-9][0-9] ]]; then
             # M2 adaptor card
-            m2carddblist+=("${model}_${cardmodel,,}${version}.db")  # M.2 card's db file
-            m2cardlist+=("$cardmodel")                              # M.2 card
+            if [[ -f "${model}_${cardmodel,,}${version}.db" ]]; then
+                m2carddblist+=("${model}_${cardmodel,,}${version}.db")  # M.2 card's db file
+            fi
+            if [[ -f "${model}_${cardmodel,,}.db" ]]; then
+                m2carddblist+=("${model}_${cardmodel,,}.db")            # M.2 card's db file
+            fi
+            m2cardlist+=("$cardmodel")                                  # M.2 card
         elif [[ $cardmodel =~ E[0-9][0-9]+M.+ ]]; then
             # Ethernet + M2 adaptor card
-            m2carddblist+=("${model}_${cardmodel,,}${version}.db")  # M.2 card's db file
-            m2cardlist+=("$cardmodel")                              # M.2 card
+            if [[ -f "${model}_${cardmodel,,}${version}.db" ]]; then
+                m2carddblist+=("${model}_${cardmodel,,}${version}.db")  # M.2 card's db file
+            fi
+            if [[ -f "${model}_${cardmodel,,}.db" ]]; then
+                m2carddblist+=("${model}_${cardmodel,,}.db")            # M.2 card's db file
+            fi
+            m2cardlist+=("$cardmodel")                                  # M.2 card
         fi
     fi
 }
@@ -513,7 +526,7 @@ for d in /sys/block/*; do
                     getcardmodel "/dev/$(basename -- "${d}")"
 
                     # Enable creating M.2 storage pool and volume in Storage Manager
-                    echo 1 > /run/synostorage/disks/$(basename -- "$d")/m2_pool_support
+                    echo 1 > /run/synostorage/disks/"$(basename -- "$d")"/m2_pool_support
                 fi
             fi
         ;;
@@ -526,7 +539,7 @@ for d in /sys/block/*; do
                     getcardmodel "/dev/$(basename -- "${d}")"
 
                     # Enable creating M.2 storage pool and volume in Storage Manager
-                    echo 1 > /run/synostorage/disks/$(basename -- "$d")/m2_pool_support
+                    echo 1 > /run/synostorage/disks/"$(basename -- "$d")"/m2_pool_support
                 fi
             fi
         ;;
@@ -644,16 +657,19 @@ fi
 #------------------------------------------------------------------------------
 # Check databases and add our drives if needed
 
-db1="/var/lib/disk-compatibility/${model}_host${version}.db"
-db2="/var/lib/disk-compatibility/${model}_host${version}.db.new"
 dbpath="/var/lib/disk-compatibility/"
+db1list=("$(find "$dbpath" -maxdepth 1 -name "*_host*.db")")
+db2list=("$(find "$dbpath" -maxdepth 1 -name "*_host*.db.new")")
 
 synoinfo="/etc.defaults/synoinfo.conf"
 
 
-if [[ ! -f "$db1" ]]; then echo -e "${Error}ERROR 3${Off} $db1 not found!" && exit 3; fi
-#if [[ ! -f "$db2" ]]; then echo -e "${Error}ERROR 4${Off} $db2 not found!" && exit 4; fi
-# new installs don't have a .db.new file
+#if [[ ! -f "$db1" ]]; then echo -e "${Error}ERROR 3${Off} $db1 not found!" && exit 3; fi
+if [[ ${#db1list[@]} -eq "0" ]]; then
+    echo -e "${Error}ERROR 4${Off} Host db file not found!" && exit 4
+fi
+##if [[ ! -f "$db2" ]]; then echo -e "${Error}ERROR 4${Off} $db2 not found!" && exit 4; fi
+## new installs don't have a .db.new file
 
 
 getdbtype(){
@@ -689,7 +705,10 @@ backupdb() {
 
 
 # Backup host database file if needed
-backupdb "$db1" || exit 5
+#backupdb "$db1" || exit 5
+for i in "${!db2list[@]}"; do
+    backupdb "${db2list[i]}" || exit 5
+done 
 
 
 #------------------------------------------------------------------------------
@@ -697,9 +716,11 @@ backupdb "$db1" || exit 5
 
 editcount(){
     # Count drives added to host db files
-    if [[ $1 == "$db1" ]]; then
+    #if [[ $1 == "$db1" ]]; then
+    if [[ $1 =~ .*\.db$ ]]; then
         db1Edits=$((db1Edits +1))
-    elif [[ $1 == "$db2" ]]; then
+    #elif [[ $1 == "$db2" ]]; then
+    elif [[ $1 =~ .*\.db.new ]]; then
         db2Edits=$((db2Edits +1))
     fi
 }
@@ -797,11 +818,12 @@ updatedb() {
                 echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
 
                 # Count drives added to host db files
-                if [[ $2 == "$db1" ]]; then
-                    db1Edits=$((db1Edits +1))
-                elif [[ $2 == "$db2" ]]; then
-                    db2Edits=$((db2Edits +1))
-                fi
+                #if [[ $2 == "$db1" ]]; then
+                #    db1Edits=$((db1Edits +1))
+                #elif [[ $2 == "$db2" ]]; then
+                #    db2Edits=$((db2Edits +1))
+                #fi
+                #editcount "$2"
 
             else
                 echo -e "\n${Error}ERROR 8${Off} Failed to update $(basename -- "$2")${Off}" >&2
@@ -814,10 +836,16 @@ updatedb() {
 # HDDs and SATA SSDs
 num="0"
 while [[ $num -lt "${#hdds[@]}" ]]; do
-    updatedb "${hdds[$num]}" "$db1"
-    if [[ -f "$db2" ]]; then
-        updatedb "${hdds[$num]}" "$db2"
-    fi
+    #updatedb "${hdds[$num]}" "$db1"
+    #if [[ -f "$db2" ]]; then
+    #    updatedb "${hdds[$num]}" "$db2"
+    #fi
+    for i in "${!db1list[@]}"; do
+        updatedb "${hdds[$num]}" "${db1list[i]}"
+    done
+    for i in "${!db2list[@]}"; do
+        updatedb "${hdds[$num]}" "${db2list[i]}"
+    done
 
     #------------------------------------------------
     # Expansion Units
@@ -840,10 +868,16 @@ done
 # M.2 NVMe/SATA drives
 num="0"
 while [[ $num -lt "${#nvmes[@]}" ]]; do
-    updatedb "${nvmes[$num]}" "$db1"
-    if [[ -f "$db2" ]]; then
-        updatedb "${nvmes[$num]}" "$db2"
-    fi
+    #updatedb "${hdds[$num]}" "$db1"
+    #if [[ -f "$db2" ]]; then
+    #    updatedb "${hdds[$num]}" "$db2"
+    #fi
+    for i in "${!db1list[@]}"; do
+        updatedb "${nvmes[$num]}" "$i"
+    done
+    for i in "${!db2list[@]}"; do
+        updatedb "${nvmes[$num]}" "$i"
+    done
 
     #------------------------------------------------
     # M.2 adaptor cards
@@ -1039,36 +1073,38 @@ fi
 
 # Show the changes
 if [[ ${showedits,,} == "yes" ]]; then
-    getdbtype "$db1"
-    if [[ $dbtype -gt "6" ]]; then
-        # Show 11 lines after hdmodel line
-        lines=11
-    elif [[ $dbtype -eq "6" ]]; then
-        # Show 2 lines after hdmodel line
-        lines=2
-    fi
+    for i in "${!db1list[@]}"; do
+        getdbtype "$i"
+        if [[ $dbtype -gt "6" ]]; then
+            # Show 11 lines after hdmodel line
+            lines=11
+        elif [[ $dbtype -eq "6" ]]; then
+            # Show 2 lines after hdmodel line
+            lines=2
+        fi
 
-    # HDDs/SSDs
-    if [[ ${#hdds[@]} -gt "0" ]]; then
-        num="0"
-        while [[ $num -lt "${#hdds[@]}" ]]; do
-            hdmodel=$(printf "%s" "${hdds[$num]}" | cut -d"," -f 1)
-            echo
-            jq . "$db1" | grep -A "$lines" "$hdmodel"
-            num=$((num +1))
-        done
-    fi
+        # HDDs/SSDs
+        if [[ ${#hdds[@]} -gt "0" ]]; then
+            num="0"
+            while [[ $num -lt "${#hdds[@]}" ]]; do
+                hdmodel=$(printf "%s" "${hdds[$num]}" | cut -d"," -f 1)
+                echo
+                jq . "$i" | grep -A "$lines" "$hdmodel"
+                num=$((num +1))
+            done
+        fi
 
-    # NVMe drives
-    if [[ ${#nvmes[@]} -gt "0" ]]; then
-        num="0"
-        while [[ $num -lt "${#nvmes[@]}" ]]; do
-            nvmemodel=$(printf "%s" "${nvmes[$num]}" | cut -d"," -f 1)
-            echo
-            jq . "$db1" | grep -A "$lines" "$nvmemodel"
-            num=$((num +1))
-        done
-    fi
+        # NVMe drives
+        if [[ ${#nvmes[@]} -gt "0" ]]; then
+            num="0"
+            while [[ $num -lt "${#nvmes[@]}" ]]; do
+                nvmemodel=$(printf "%s" "${nvmes[$num]}" | cut -d"," -f 1)
+                echo
+                jq . "$i" | grep -A "$lines" "$nvmemodel"
+                num=$((num +1))
+            done
+        fi
+    done
 
 fi
 
