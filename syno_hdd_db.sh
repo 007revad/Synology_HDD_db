@@ -30,6 +30,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Fixed bug where expansion units ending in RP or II were not detected.
+#
 # Added a --restore option to undo all changes.
 #
 # Now looks for and edits both v7 and non-v7 db files to solve issue #11 for RS '21 models running DSM 6.2.4.
@@ -137,7 +139,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.2.40"
+scriptver="v2.2.41"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -685,8 +687,8 @@ fi
 # Get list of connected expansion units (aka eunit/ebox)
 path="/var/log/diskprediction"
 # shellcheck disable=SC2012
-file=$(ls $path | tail -n1) 
-eunitlist=($(grep -Eow "([FRD]XD?[0-9]{3,4})(RP|II|sas){0,2}" "$path/$file" | uniq))
+file=$(ls $path | tail -n1)
+eunitlist=($(grep -Eowi "([FRD]XD?[0-9]{3,4})(rp|ii|sas){0,2}" "$path/$file" | uniq))
 
 # Sort eunitlist array into new eunits array to remove duplicates
 if [[ ${#eunitlist[@]} -gt "0" ]]; then
