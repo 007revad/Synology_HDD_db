@@ -30,6 +30,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Added a --restore option to undo all changes.
+#
 # Now looks for and edits both v7 and non-v7 db files to solve issue #11 for RS '21 models running DSM 6.2.4.
 # This will also ensure the script still works if:
 #     Synology append different numbers to the db file names in DSM 8 etc.
@@ -135,7 +137,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.2.39"
+scriptver="v2.2.40"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -190,14 +192,18 @@ args="$*"
 
 # Check for flags with getopt
 if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
-    -l showedits,noupdate,nodbupdate,m2,force,ram,help,version,debug -- "$@")"; then
+    -l restore,showedits,noupdate,nodbupdate,m2,force,ram,help,version,debug -- "$@")"; then
     eval set -- "$options"
     while true; do
         case "${1,,}" in
+            --restore)          # Restore changes from backups
+                restore=yes
+                break
+                ;;
             -s|--showedits)     # Show edits done to host db file
                 showedits=yes
                 ;;
-            -n|--nodbupdate|--noupdate)    # Disable disk compatibility db updates
+            -n|--nodbupdate|--noupdate)  # Disable disk compatibility db updates
                 nodbupdate=yes
                 ;;
             -m|--m2)            # Don't add M.2 drives to db files
@@ -416,6 +422,49 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
             fi
         fi
     fi
+fi
+
+
+#------------------------------------------------------------------------------
+# Restore changes from backups
+
+dbpath=/var/lib/disk-compatibility/
+synoinfo="/etc.defaults/synoinfo.conf"
+
+if [[ $restore == "yes" ]]; then
+    dbbakfiles=($(find $dbpath -maxdepth 1 \( -name "*.db.new.bak" -o -name "*.db.bak" \)))
+    echo
+
+    if [[ ${#dbbakfiles[@]} -gt "0" ]] || [[ -f ${synoinfo}.bak ]]; then
+
+        # Restore .db files from backups
+        for f in "${!dbbakfiles[@]}"; do
+            deleteme="${dbbakfiles[f]%.bak}"  # Remove .bak
+            if mv "${dbbakfiles[f]}" "$deleteme"; then
+                echo "Restored $(basename -- "$deleteme")"
+            else
+                restoreerr=1
+                echo -e "${Error}ERROR${Off} Failed to restore $(basename -- "$deleteme")!\n"
+            fi
+        done
+
+        # Restore synoinfo.conf from backup
+        if [[ -f ${synoinfo}.bak ]]; then
+            if mv "${synoinfo}.bak" "${synoinfo}"; then
+                echo "Restored $(basename -- "$synoinfo")"
+            else
+                restoreerr=1
+                echo -e "${Error}ERROR${Off} Failed to restore synoinfo.conf!\n"
+            fi
+        fi
+
+        if [[ -z $restoreerr ]]; then
+            echo -e "\nRestore successful."
+        fi
+    else
+        echo "Nothing to restore."
+    fi
+    exit
 fi
 
 
@@ -664,8 +713,6 @@ fi
 #------------------------------------------------------------------------------
 # Check databases and add our drives if needed
 
-dbpath="/var/lib/disk-compatibility/"
-
 # Host db files
 db1list=($(find "$dbpath" -maxdepth 1 -name "*_host*.db"))
 db2list=($(find "$dbpath" -maxdepth 1 -name "*_host*.db.new"))
@@ -681,8 +728,6 @@ for i in "${!m2cards[@]}"; do
     m2carddb1list=($(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db"))
     m2carddb2list=($(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db.new"))
 done
-
-synoinfo="/etc.defaults/synoinfo.conf"
 
 
 if [[ ${#db1list[@]} -eq "0" ]]; then
