@@ -47,7 +47,6 @@
 #
 # Now shows status of "Support memory compatibility" setting even if it wasn't changed.
 #
-#
 # Improved shell output when editing max memory setting.
 #
 # Changed method of checking if drive is a USB drive to prevent ignoring internal drives on RS models.
@@ -139,7 +138,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.2.41"
+scriptver="v2.2.42"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
