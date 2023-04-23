@@ -1,3 +1,6 @@
+v2.2.40
+- Added a --restore option to undo all changes.
+
 v2.2.39
 - Now looks for and edits both v7 and non-v7 db files to solve issue #11 for RS '21 models running DSM 6.2.4. This will also ensure the script still works if:
     - Synology append different numbers to the db file names in DSM 8 etc.
