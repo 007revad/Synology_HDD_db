@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1083,SC2054,SC2121
+# shellcheck disable=SC1083,SC2054,SC2121,SC2207
 #--------------------------------------------------------------------------------------------------
 # Github: https://github.com/007revad/Synology_HDD_db
 # Script verified at https://www.shellcheck.net/
@@ -31,6 +31,17 @@
 
 # DONE
 # Now looks for and edits both v7 and non-v7 db files to solve issue #11 for RS '21 models running DSM 6.2.4.
+# This will also ensure the script still works if:
+#     Synology append different numbers to the db file names in DSM 8 etc.
+#     The detected NAS model name does not match the .db files' model name.
+#
+# Now backs up the .db.new files (as well as the .db files).
+#
+# Now shows max memory in GB instead of MB.
+#
+# Now shows status of "Support disk compatibility" setting even if it wasn't changed.
+#
+# Now shows status of "Support memory compatibility" setting even if it wasn't changed.
 #
 #
 # Improved shell output when editing max memory setting.
@@ -174,7 +185,7 @@ EOF
 
 
 # Save options used
-args="$@"
+args="$*"
 
 
 # Check for flags with getopt
@@ -374,14 +385,12 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
 
                             # Delete downloaded .tar.gz file
                             if ! rm "/tmp/$script-$shorttag.tar.gz"; then
-                                #delerr=1
                                 echo -e "${Error}ERROR ${Off} Failed to delete"\
                                     "downloaded /tmp/$script-$shorttag.tar.gz!"
                             fi
 
                             # Delete extracted tmp files
                             if ! rm -r "/tmp/$script-$shorttag"; then
-                                #delerr=1
                                 echo -e "${Error}ERROR ${Off} Failed to delete"\
                                     "downloaded /tmp/$script-$shorttag!"
                             fi
@@ -531,7 +540,6 @@ for d in /sys/block/*; do
             fi
         ;;
         nvc*)  # M.2 SATA drives (in PCIe card only?)
-            #if [[ $d =~ nvc[0-9][0-9]?p[0-9][0-9]?$ ]]; then
             if [[ $d =~ nvc[0-9][0-9]?$ ]]; then
                 if [[ $m2 != "no" ]]; then
                     getm2info "$d" "nvc"
@@ -629,7 +637,6 @@ fi
 path="/var/log/diskprediction"
 # shellcheck disable=SC2012
 file=$(ls $path | tail -n1) 
-# shellcheck disable=SC2207
 eunitlist=($(grep -Eow "([FRD]XD?[0-9]{3,4})(RP|II|sas){0,2}" "$path/$file" | uniq))
 
 # Sort eunitlist array into new eunits array to remove duplicates
@@ -658,18 +665,30 @@ fi
 # Check databases and add our drives if needed
 
 dbpath="/var/lib/disk-compatibility/"
-db1list=("$(find "$dbpath" -maxdepth 1 -name "*_host*.db")")
-db2list=("$(find "$dbpath" -maxdepth 1 -name "*_host*.db.new")")
+
+# Host db files
+db1list=($(find "$dbpath" -maxdepth 1 -name "*_host*.db"))
+db2list=($(find "$dbpath" -maxdepth 1 -name "*_host*.db.new"))
+
+# Expansion Unit db files
+for i in "${!eunits[@]}"; do
+    eunitdb1list=($(find "$dbpath" -maxdepth 1 -name "${eunits[i],,}*.db"))
+    eunitdb2list=($(find "$dbpath" -maxdepth 1 -name "${eunits[i],,}*.db.new"))
+done
+
+# M.2 Card db files
+for i in "${!m2cards[@]}"; do
+    m2carddb1list=($(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db"))
+    m2carddb2list=($(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db.new"))
+done
 
 synoinfo="/etc.defaults/synoinfo.conf"
 
 
-#if [[ ! -f "$db1" ]]; then echo -e "${Error}ERROR 3${Off} $db1 not found!" && exit 3; fi
 if [[ ${#db1list[@]} -eq "0" ]]; then
     echo -e "${Error}ERROR 4${Off} Host db file not found!" && exit 4
 fi
-##if [[ ! -f "$db2" ]]; then echo -e "${Error}ERROR 4${Off} $db2 not found!" && exit 4; fi
-## new installs don't have a .db.new file
+# Don't check .db.new as new installs don't have a .db.new file
 
 
 getdbtype(){
@@ -705,10 +724,18 @@ backupdb() {
 
 
 # Backup host database file if needed
-#backupdb "$db1" || exit 5
+for i in "${!db1list[@]}"; do
+    backupdb "${db1list[i]}" ||{
+        echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db1list[i]}")!"
+        exit 5
+        }
+done
 for i in "${!db2list[@]}"; do
-    backupdb "${db2list[i]}" || exit 5
-done 
+    backupdb "${db2list[i]}" ||{
+        echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db2list[i]}")!"
+        exit 5  # maybe don't exit for .db.new file
+        }
+done
 
 
 #------------------------------------------------------------------------------
@@ -716,10 +743,8 @@ done
 
 editcount(){
     # Count drives added to host db files
-    #if [[ $1 == "$db1" ]]; then
     if [[ $1 =~ .*\.db$ ]]; then
         db1Edits=$((db1Edits +1))
-    #elif [[ $1 == "$db2" ]]; then
     elif [[ $1 =~ .*\.db.new ]]; then
         db2Edits=$((db2Edits +1))
     fi
@@ -785,17 +810,17 @@ updatedb() {
 
             if grep '"disk_compatbility_info":{}' "$2" >/dev/null; then
                # Replace  "disk_compatbility_info":{}  with  "disk_compatbility_info":{"WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}}
-                echo "Edit empty db file"
+                #echo "Edit empty db file:"  # debug
                 editdb7 "empty" "$2"
 
             elif grep '"'"$hdmodel"'":' "$2" >/dev/null; then
                # Replace  "WD40PURX-64GVNY0":{  with  "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},
-                echo "Insert firmware version"
+                #echo "Insert firmware version:"  # debug
                 editdb7 "insert" "$2"
 
             else
                # Add  "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}
-                echo "Append drive and firmware"
+                #echo "Append drive and firmware:"  # debug
                 editdb7 "append" "$2"
             fi
 
@@ -807,24 +832,10 @@ updatedb() {
             string="{\"model\":\"${hdmodel}\",\"firmware\":\"\",\"rec_intvl\":\[1\]},"
             # {"success":1,"list":[
             startstring="{\"success\":1,\"list\":\["
-
-            #echo "$startstring" >&2  # debug
-            #echo "$string" >&2       # debug
-            #echo >&2                 # debug
-
             # example:
             # {"success":1,"list":[{"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
             if sed -ir "s/$startstring/$startstring$string/" "$2"; then
                 echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
-
-                # Count drives added to host db files
-                #if [[ $2 == "$db1" ]]; then
-                #    db1Edits=$((db1Edits +1))
-                #elif [[ $2 == "$db2" ]]; then
-                #    db2Edits=$((db2Edits +1))
-                #fi
-                #editcount "$2"
-
             else
                 echo -e "\n${Error}ERROR 8${Off} Failed to update $(basename -- "$2")${Off}" >&2
                 exit 8
@@ -836,10 +847,6 @@ updatedb() {
 # HDDs and SATA SSDs
 num="0"
 while [[ $num -lt "${#hdds[@]}" ]]; do
-    #updatedb "${hdds[$num]}" "$db1"
-    #if [[ -f "$db2" ]]; then
-    #    updatedb "${hdds[$num]}" "$db2"
-    #fi
     for i in "${!db1list[@]}"; do
         updatedb "${hdds[$num]}" "${db1list[i]}"
     done
@@ -849,16 +856,13 @@ while [[ $num -lt "${#hdds[@]}" ]]; do
 
     #------------------------------------------------
     # Expansion Units
-    num2="0"
-    while [[ $num2 -lt "${#eunits[@]}" ]]; do
-        eudb="${dbpath}${eunits[$num2],,}${version}.db"
-        if [[ -f "$eudb" ]]; then
-            backupdb "$eudb" &&\
-                updatedb "${hdds[$num]}" "$eudb"
-        else
-            echo -e "${Error}ERROR 11${Off} $eudb not found!"
-        fi
-        num2=$((num2 +1))
+    for i in "${!eunitdb1list[@]}"; do
+        backupdb "${eunitdb1list[i]}" &&\
+            updatedb "${hdds[$num]}" "${eunitdb1list[i]}"
+    done
+    for i in "${!eunitdb2list[@]}"; do
+        backupdb "${eunitdb2list[i]}" &&\
+            updatedb "${hdds[$num]}" "${eunitdb2list[i]}"
     done
     #------------------------------------------------
 
@@ -868,28 +872,22 @@ done
 # M.2 NVMe/SATA drives
 num="0"
 while [[ $num -lt "${#nvmes[@]}" ]]; do
-    #updatedb "${hdds[$num]}" "$db1"
-    #if [[ -f "$db2" ]]; then
-    #    updatedb "${hdds[$num]}" "$db2"
-    #fi
     for i in "${!db1list[@]}"; do
-        updatedb "${nvmes[$num]}" "$i"
+        updatedb "${nvmes[$num]}" "${db1list[i]}"
     done
     for i in "${!db2list[@]}"; do
-        updatedb "${nvmes[$num]}" "$i"
+        updatedb "${nvmes[$num]}" "${db2list[i]}"
     done
 
     #------------------------------------------------
     # M.2 adaptor cards
-    num2="0"
-    while [[ $num2 -lt "${#m2carddbs[@]}" ]]; do
-        if [[ -f "${dbpath}${m2carddbs[$num2]}" ]]; then
-            backupdb "${dbpath}${m2carddbs[$num2]}" &&\
-                updatedb "${nvmes[$num]}" "${dbpath}${m2carddbs[$num2]}"
-        else
-            echo -e "${Error}ERROR 10${Off} ${m2carddbs[$num2]} not found!"
-        fi
-        num2=$((num2 +1))
+    for i in "${!m2carddb1list[@]}"; do
+        backupdb "${m2carddb1list[i]}" &&\
+            updatedb "${nvmes[$num]}" "${m2carddb1list[i]}"
+    done
+    for i in "${!m2carddb2list[@]}"; do
+        backupdb "${m2carddb2list[i]}" &&\
+            updatedb "${nvmes[$num]}" "${m2carddb2list[i]}"
     done
     #------------------------------------------------
 
@@ -909,22 +907,24 @@ setting="$(get_key_value $synoinfo $sdc)"
 if [[ $force == "yes" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_disk_compatibility
-        #sed -i "s/${sdc}=\"yes\"/${sdc}=\"no\"/" "$synoinfo"
         synosetkeyvalue "$synoinfo" "$sdc" "no"
         setting="$(get_key_value "$synoinfo" $sdc)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support disk compatibility."
         fi
+    elif [[ $setting == "no" ]]; then
+        echo -e "\nSupport disk compatibility already disabled."
     fi
 else
     if [[ $setting == "no" ]]; then
         # Enable support_disk_compatibility
-        #sed -i "s/${sdc}=\"no\"/${sdc}=\"yes\"/" "$synoinfo"
         synosetkeyvalue "$synoinfo" "$sdc" "yes"
         setting="$(get_key_value "$synoinfo" $sdc)"
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support disk compatibility."
         fi
+    elif [[ $setting == "yes" ]]; then
+        echo -e "\nSupport disk compatibility already enabled."
     fi
 fi
 
@@ -935,26 +935,28 @@ setting="$(get_key_value $synoinfo $smc)"
 if [[ $ram == "yes" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_memory_compatibility
-        #sed -i "s/${smc}=\"yes\"/${smc}=\"no\"/" "$synoinfo"
         synosetkeyvalue "$synoinfo" "$smc" "no"
         setting="$(get_key_value "$synoinfo" $smc)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support memory compatibility."
         fi
+    elif [[ $setting == "no" ]]; then
+        echo -e "\nSupport memory compatibility already disabled."
     fi
 else
     if [[ $setting == "no" ]]; then
         # Enable support_memory_compatibility
-        #sed -i "s/${smc}=\"no\"/${smc}=\"yes\"/" "$synoinfo"
         synosetkeyvalue "$synoinfo" "$smc" "yes"
         setting="$(get_key_value "$synoinfo" $smc)"
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support memory compatibility."
         fi
+    elif [[ $setting == "yes" ]]; then
+        echo -e "\nSupport memory compatibility already enabled."
     fi
 fi
 
-# Optioanlly set mem_max_mb to the amount of installed memory
+# Optionally set mem_max_mb to the amount of installed memory
 if [[ $ram == "yes" ]]; then
     # Get total amount of installed memory
     IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory | grep -i 'size')
@@ -982,7 +984,9 @@ if [[ $ram == "yes" ]]; then
             echo -e "\n${Error}ERROR${Off} Failed to change max memory!"
         fi
     elif [[ $setting == "$ramtotal" ]]; then
-        echo -e "\nMax memory already set to $ramtotal MB."
+        #echo -e "\nMax memory already set to $ramtotal MB."
+        ramgb=$((ramtotal / 1024))
+        echo -e "\nMax memory already set to $ramgb GB."
     fi
 fi
 
@@ -1000,7 +1004,6 @@ if [[ $m2 != "no" ]]; then
             enabled="yes"
         elif [[ $setting == "no" ]]; then
             # Change support_m2_pool="no" to "yes"
-            #sed -i "s/${smp}=\"no\"/${smp}=\"yes\"/" "$synoinfo"
             synosetkeyvalue "$synoinfo" "$smp" "yes"
             enabled="yes"
         elif [[ $setting == "yes" ]]; then
@@ -1031,7 +1034,6 @@ if [[ $nodbupdate == "yes" ]]; then
         disabled="yes"
     elif [[ $url != "127.0.0.1" ]]; then
         # Edit drive_db_test_url=
-        #sed -i "s/drive_db_test_url=.*/drive_db_test_url=\"127.0.0.1\"/" "$synoinfo" >/dev/null
         synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
         disabled="yes"
     fi
@@ -1052,7 +1054,6 @@ else
     #if [[ $url == "127.0.0.1" ]]; then
     if [[ $url ]]; then
         # Delete "drive_db_test_url=127.0.0.1" line (inc. line break)
-        #sed -i "/drive_db_test_url=\"127.0.0.1\"/d" "/etc.defaults/synoinfo.conf"
         sed -i "/drive_db_test_url=*/d" "/etc.defaults/synoinfo.conf"
 
         # Check if we re-enabled drive db auto updates
@@ -1073,8 +1074,8 @@ fi
 
 # Show the changes
 if [[ ${showedits,,} == "yes" ]]; then
-    for i in "${!db1list[@]}"; do
-        getdbtype "$i"
+    if [[ ${#db1list[@]} -gt "0" ]]; then
+        getdbtype "${db1list[0]}"
         if [[ $dbtype -gt "6" ]]; then
             # Show 11 lines after hdmodel line
             lines=11
@@ -1084,28 +1085,19 @@ if [[ ${showedits,,} == "yes" ]]; then
         fi
 
         # HDDs/SSDs
-        if [[ ${#hdds[@]} -gt "0" ]]; then
-            num="0"
-            while [[ $num -lt "${#hdds[@]}" ]]; do
-                hdmodel=$(printf "%s" "${hdds[$num]}" | cut -d"," -f 1)
-                echo
-                jq . "$i" | grep -A "$lines" "$hdmodel"
-                num=$((num +1))
-            done
-        fi
+        for i in "${!hdds[@]}"; do
+            hdmodel=$(printf "%s" "${hdds[i]}" | cut -d"," -f 1)
+            echo
+            jq . "${db1list[0]}" | grep -A "$lines" "$hdmodel"
+        done
 
         # NVMe drives
-        if [[ ${#nvmes[@]} -gt "0" ]]; then
-            num="0"
-            while [[ $num -lt "${#nvmes[@]}" ]]; do
-                nvmemodel=$(printf "%s" "${nvmes[$num]}" | cut -d"," -f 1)
-                echo
-                jq . "$i" | grep -A "$lines" "$nvmemodel"
-                num=$((num +1))
-            done
-        fi
-    done
-
+        for i in "${!nvmes[@]}"; do
+            hdmodel=$(printf "%s" "${nvmes[i]}" | cut -d"," -f 1)
+            echo
+            jq . "${db1list[0]}" | grep -A "$lines" "$hdmodel"
+        done
+    fi
 fi
 
 
@@ -1117,6 +1109,7 @@ if [[ -f /usr/syno/sbin/synostgdisk ]]; then  # DSM 6.2.3 does not have synostgd
         echo -e "\nDSM successfully checked disk compatibility."
     else
         # Ignore DSM 6.2.4 as it returns 255 for "synostgdisk --check-all-disks-compatibility"
+        # and DSM 6.2.3 and lower have no synostgdisk command
         if [[ $dsm -gt "6" ]]; then
             echo -e "\nDSM ${Red}failed${Off} to check disk compatibility with exit code $status"
             echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
