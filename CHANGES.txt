@@ -1,3 +1,6 @@
+v2.2.41
+- Fixed bug where expansion units ending in RP or II were not detected.
+
 v2.2.40
 - Added a --restore option to undo all changes made by the script.
 
