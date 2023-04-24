@@ -34,7 +34,6 @@
 #
 # Fixed DSM 6 bug where the .db files were being duplicated as .dbr each time the db files were edited.
 #
-#
 # Fixed bug where expansion units ending in RP or II were not detected.
 #
 # Added a --restore option to undo all changes.
