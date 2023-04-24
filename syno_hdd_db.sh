@@ -30,6 +30,11 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Fixed DSM 6 bug where the drives were being duplicated in the .db files each time the script was run.
+#
+# Fixed DSM 6 bug where the .db files were being duplicated as .dbr each time the db files were edited.
+#
+#
 # Fixed bug where expansion units ending in RP or II were not detected.
 #
 # Added a --restore option to undo all changes.
@@ -138,7 +143,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.2.42"
+scriptver="v2.2.43"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -838,14 +843,13 @@ updatedb() {
     #echo hdmodel "$hdmodel" >&2  # debug
     #echo fwrev "$fwrev" >&2      # debug
 
-    if grep "$hdmodel"'":{"'"$fwrev" "$2" >/dev/null; then
-        echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
-    else
-        # Check if db file is new or old style
-        getdbtype "$2"
+    # Check if db file is new or old style
+    getdbtype "$2"
 
-        if [[ $dbtype -gt "6" ]]; then
-            # Don't need to add firmware version?
+    if [[ $dbtype -gt "6" ]]; then
+        if grep "$hdmodel"'":{"'"$fwrev" "$2" >/dev/null; then
+            echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
+        else
             fwstrng=\"$fwrev\"
             fwstrng="$fwstrng":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
             fwstrng="$fwstrng":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]},
@@ -869,8 +873,11 @@ updatedb() {
                 #echo "Append drive and firmware:"  # debug
                 editdb7 "append" "$2"
             fi
-
-        elif [[ $dbtype -eq "6" ]]; then
+        fi
+    elif [[ $dbtype -eq "6" ]]; then
+        if grep "$hdmodel" "$2" >/dev/null; then
+            echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
+        else
             # example:
             # {"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
             # Don't need to add firmware version?
@@ -880,7 +887,7 @@ updatedb() {
             startstring="{\"success\":1,\"list\":\["
             # example:
             # {"success":1,"list":[{"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
-            if sed -ir "s/$startstring/$startstring$string/" "$2"; then
+            if sed -i "s/$startstring/$startstring$string/" "$2"; then
                 echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
             else
                 echo -e "\n${Error}ERROR 8${Off} Failed to update $(basename -- "$2")${Off}" >&2
@@ -889,6 +896,7 @@ updatedb() {
         fi
     fi
 }
+
 
 # HDDs and SATA SSDs
 num="0"
@@ -1100,7 +1108,7 @@ else
     #if [[ $url == "127.0.0.1" ]]; then
     if [[ $url ]]; then
         # Delete "drive_db_test_url=127.0.0.1" line (inc. line break)
-        sed -i "/drive_db_test_url=*/d" "/etc.defaults/synoinfo.conf"
+        sed -i "/drive_db_test_url=*/d" "$synoinfo"
 
         # Check if we re-enabled drive db auto updates
         url="$(get_key_value $synoinfo drive_db_test_url)"
