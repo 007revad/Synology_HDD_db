@@ -49,6 +49,7 @@ There are optional flags you can use when running the script:
   * If you run the script without --force or -f it will re-eanble "support_disk_compatibility".
 * --ram or -r to disable "support_memory_compatibility".
   * If you run the script without --ram or -r it will re-eanble "support_memory_compatibility".
+* --restore to undo all the changes the script has made.
 
 <p align="leftr"><img src="images/syno_hdd_db_help.png"></p>
 
@@ -88,5 +89,6 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr -showedits
 
 **Donators**
 
-- A big thank you to Gummibando on reddit for their donation.
+- Thank you to Gummibando on reddit for their donation.
+- Thank you to the onimous donors.
 
