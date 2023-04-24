@@ -89,5 +89,6 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr -showedits
 
 **Donators**
 
-- A big thank you to Gummibando on reddit for their donation.
+- Thank you to Gummibando on reddit for their donation.
+- Thank you to the onimous donors.
 
