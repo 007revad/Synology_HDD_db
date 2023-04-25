@@ -30,6 +30,8 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Prevent running with "sh scriptname.sh".
+#
 # Fixed DSM 6 bug where the drives were being duplicated in the .db files each time the script was run.
 #
 # Fixed DSM 6 bug where the .db files were being duplicated as .dbr each time the db files were edited.
@@ -142,9 +144,15 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.2.43"
+scriptver="v2.2.44"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
+
+# Check BASH variable is is non-empty and posix mode is off, else abort with error.
+[ "$BASH" ] && ! shopt -qo posix || {
+    printf >&2 "This is a bash script, don't run it with sh\n"
+    exit 1
+}
 
 #echo -e "bash version: $(bash --version | head -1 | cut -d' ' -f4)\n"  # debug
 
