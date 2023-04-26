@@ -30,6 +30,13 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Added --restore info to --help
+#
+# Updated restore option to download the latest db files from Synology
+#
+# Now warns you if you try to run it in sh with "sh scriptname.sh"
+#
+#
 # Fixed DSM 6 bug where the drives were being duplicated in the .db files each time the script was run.
 #
 # Fixed DSM 6 bug where the .db files were being duplicated as .dbr each time the db files were edited.
@@ -142,9 +149,15 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.2.43"
+scriptver="v2.2.44"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
+
+# Check BASH variable is is non-empty and posix mode is off, else abort with error.
+[ "$BASH" ] && ! shopt -qo posix || {
+    printf >&2 "This is a bash script, don't run it with sh\n"
+    exit 1
+}
 
 #echo -e "bash version: $(bash --version | head -1 | cut -d' ' -f4)\n"  # debug
 
@@ -173,6 +186,7 @@ Options:
   -m, --m2         Don't process M.2 drives
   -f, --force      Force DSM to not check drive compatibility
   -r, --ram        Disable memory compatibility checking
+      --restore    Undo all changes made by the script
   -h, --help       Show this help message
   -v, --version    Show the script version
   
@@ -442,6 +456,16 @@ if [[ $restore == "yes" ]]; then
 
     if [[ ${#dbbakfiles[@]} -gt "0" ]] || [[ -f ${synoinfo}.bak ]]; then
 
+        # Restore synoinfo.conf from backup
+        if [[ -f ${synoinfo}.bak ]]; then
+            if mv "${synoinfo}.bak" "${synoinfo}"; then
+                echo "Restored $(basename -- "$synoinfo")"
+            else
+                restoreerr=1
+                echo -e "${Error}ERROR${Off} Failed to restore synoinfo.conf!\n"
+            fi
+        fi
+
         # Restore .db files from backups
         for f in "${!dbbakfiles[@]}"; do
             deleteme="${dbbakfiles[f]%.bak}"  # Remove .bak
@@ -453,15 +477,12 @@ if [[ $restore == "yes" ]]; then
             fi
         done
 
-        # Restore synoinfo.conf from backup
-        if [[ -f ${synoinfo}.bak ]]; then
-            if mv "${synoinfo}.bak" "${synoinfo}"; then
-                echo "Restored $(basename -- "$synoinfo")"
-            else
-                restoreerr=1
-                echo -e "${Error}ERROR${Off} Failed to restore synoinfo.conf!\n"
-            fi
-        fi
+        # Delete any .dbr and .db.newr files left by previous script versions
+        for f in "${dbpath}"*dbr; do rm "$f"; done
+        for f in "${dbpath}"*db.newr; do rm "$f"; done
+
+        # Update .db files from Synology
+        syno_disk_db_update --update
 
         if [[ -z $restoreerr ]]; then
             echo -e "\nRestore successful."

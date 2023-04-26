@@ -1,3 +1,8 @@
+v2.2.44
+- Added --restore info to --help
+- Updated restore option to download the latest db files from Synology
+- Now warns you if you try to run it in sh with "sh scriptname.sh"
+
 v2.2.43
 - Fixed DSM 6 bug where the drives were being duplicated in the .db files each time the script was run.
 - Fixed DSM 6 bug where the .db files were being duplicated as .dbr each time the db files were edited.
