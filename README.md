@@ -51,7 +51,7 @@ There are optional flags you can use when running the script:
   * If you run the script without --ram or -r it will re-eanble "support_memory_compatibility".
 * --restore to undo all the changes the script has made.
 
-<p align="leftr"><img src="images/syno_hdd_db_help.png"></p>
+<p align="leftr"><img src="images/syno_hdd_db_help2.png"></p>
 
 ### Scheduling the script in Synology's Task Scheduler
 
