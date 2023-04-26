@@ -477,6 +477,10 @@ if [[ $restore == "yes" ]]; then
             fi
         done
 
+        # Delete any .dbr and .db.newr files left by previous script versions
+        for f in "${dbpath}"*dbr; do rm "$f"; done
+        for f in "${dbpath}"*db.newr; do rm "$f"; done
+
         # Update .db files from Synology
         syno_disk_db_update --update
 
