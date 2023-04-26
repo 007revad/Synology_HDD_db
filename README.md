@@ -10,7 +10,7 @@ Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 drives to your Synolog
 
 The script works in DSM 7 and DSM 6.
 
-It also has a restore option to undo all the chnages made by the script.
+It also has a restore option to undo all the changes made by the script.
 
 #### What the script does:
 
