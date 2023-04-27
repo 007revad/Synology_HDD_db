@@ -149,7 +149,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.2.44"
+scriptver="v2.2.45"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -478,8 +478,8 @@ if [[ $restore == "yes" ]]; then
         done
 
         # Delete any .dbr and .db.newr files left by previous script versions
-        for f in "${dbpath}"*dbr; do rm "$f"; done
-        for f in "${dbpath}"*db.newr; do rm "$f"; done
+        for f in "${dbpath}"*dbr; do rm "$f" >/dev/null; done
+        for f in "${dbpath}"*db.newr; do rm "$f">/dev/null; done
 
         # Update .db files from Synology
         syno_disk_db_update --update
