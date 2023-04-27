@@ -1,6 +1,9 @@
+v2.2.45
+- Minor bug fix.
+
 v2.2.44
 - Added --restore info to --help
-- Updated restore option to download the latest db files from Synology
+- Updated restore option to download the latest db files from Synology.
 - Now warns you if you try to run it in sh with "sh scriptname.sh"
 
 v2.2.43
