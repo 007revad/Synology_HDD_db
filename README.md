@@ -53,7 +53,7 @@ There are optional flags you can use when running the script:
   * If you run the script without --ram or -r it will re-eanble "support_memory_compatibility".
 * --restore to undo all the changes the script has made.
 
-**Note** If you have some Synology drives and want to update their firmware run the script **without** --noupdate or -n, then do the drive database update from Storage Manager and finally run the script again with your preferred options.
+**Note:** If you have some Synology drives and want to update their firmware run the script **without** --noupdate or -n then do the drive database update from Storage Manager and finally run the script again with your preferred options.
 
 <p align="leftr"><img src="images/syno_hdd_db_help2.png"></p>
 
