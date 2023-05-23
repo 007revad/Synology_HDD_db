@@ -148,7 +148,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.2.46"
+scriptver="v2.2.47"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -805,6 +805,7 @@ backupdb(){
             return 1
         fi
     fi
+    return 0
 }
 
 
@@ -812,14 +813,14 @@ backupdb(){
 for i in "${!db1list[@]}"; do
     backupdb "${db1list[i]}" ||{
         ding
-        echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db1list[i]}")!"
+        #echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db1list[i]}")!"
         exit 5
         }
 done
 for i in "${!db2list[@]}"; do
     backupdb "${db2list[i]}" ||{
         ding
-        echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db2list[i]}")!"
+        #echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db2list[i]}")!"
         exit 5  # maybe don't exit for .db.new file
         }
 done
@@ -993,7 +994,10 @@ done
 # Edit /etc.defaults/synoinfo.conf
 
 # Backup synoinfo.conf if needed
-backupdb "$synoinfo" || ding && exit 9
+backupdb "$synoinfo" ||{
+    ding
+    exit 9
+}
 
 # Optionally disable "support_disk_compatibility"
 sdc=support_disk_compatibility
@@ -1203,12 +1207,15 @@ if [[ -f /usr/syno/sbin/synostgdisk ]]; then  # DSM 6.2.3 does not have synostgd
     status=$?
     if [[ $status -eq "0" ]]; then
         echo -e "\nDSM successfully checked disk compatibility."
+        echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
     else
         # Ignore DSM 6.2.4 as it returns 255 for "synostgdisk --check-all-disks-compatibility"
         # and DSM 6.2.3 and lower have no synostgdisk command
         if [[ $dsm -gt "6" ]]; then
             echo -e "\nDSM ${Red}failed${Off} to check disk compatibility with exit code $status"
-            echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+            #if [[ $m2 != "no" ]] && [[ ${#m2cards[@]} -gt "0" ]]; then
+                echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+            #fi
         fi
     fi
 fi
