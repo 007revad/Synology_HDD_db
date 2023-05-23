@@ -3,7 +3,6 @@
 #--------------------------------------------------------------------------------------------------
 # Github: https://github.com/007revad/Synology_HDD_db
 # Script verified at https://www.shellcheck.net/
-# Tested on DSM 7.2 beta, 7.1.1 and DSM 6.2.4
 #
 # Easiest solution:
 # Edit /etc.defaults/synoinfo.conf and change support_disk_compatibility="yes" to "no" and reboot.
@@ -15,11 +14,11 @@
 # /volume1/scripts/syno_hdd_db.sh  # replace /volume1/scripts/ with path to script
 #
 # To run in a shell (replace /volume1/scripts/ with path to script):
-# sudo /volume1/scripts/syno_hdd_db.sh
+# sudo -i /volume1/scripts/syno_hdd_db.sh
 #  or
-# sudo /volume1/scripts/syno_hdd_db.sh -showedits
+# sudo -i /volume1/scripts/syno_hdd_db.sh -showedits
 #  or
-# sudo /volume1/scripts/syno_hdd_db.sh -force -showedits
+# sudo -i /volume1/scripts/syno_hdd_db.sh -force -showedits
 #--------------------------------------------------------------------------------------------------
 
 # TODO
@@ -149,12 +148,13 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.2.45"
+scriptver="v2.2.47"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
 # Check BASH variable is is non-empty and posix mode is off, else abort with error.
 [ "$BASH" ] && ! shopt -qo posix || {
+    printf \\a
     printf >&2 "This is a bash script, don't run it with sh\n"
     exit 1
 }
@@ -173,6 +173,9 @@ Cyan='\e[0;36m'
 Error='\e[41m'
 Off='\e[0m'
 
+ding(){
+    printf \\a
+}
 
 usage(){
     cat <<EOF
@@ -268,6 +271,7 @@ fi
 
 # Check script is running as root
 if [[ $( whoami ) != "root" ]]; then
+    ding
     echo -e "${Error}ERROR${Off} This script must be run as root or sudo!"
     exit 1
 fi
@@ -324,7 +328,7 @@ echo "Using options: $args"
 #------------------------------------------------------------------------------
 # Check latest release with GitHub API
 
-get_latest_release() {
+get_latest_release(){
     # Curl timeout options:
     # https://unix.stackexchange.com/questions/94604/does-curl-have-a-timeout
     curl --silent -m 10 --connect-timeout 5 \
@@ -478,8 +482,16 @@ if [[ $restore == "yes" ]]; then
         done
 
         # Delete any .dbr and .db.newr files left by previous script versions
-        for f in "${dbpath}"*dbr; do rm "$f" >/dev/null; done
-        for f in "${dbpath}"*db.newr; do rm "$f">/dev/null; done
+        for f in "${dbpath}"*dbr; do
+            if [[ -f $f ]]; then
+                rm "$f" >/dev/null
+            fi
+        done
+        for f in "${dbpath}"*db.newr; do
+            if [[ -f $f ]]; then
+                rm "$f" >/dev/null
+            fi
+        done
 
         # Update .db files from Synology
         syno_disk_db_update --update
@@ -520,7 +532,7 @@ fixdrivemodel(){
     fi
 }
 
-getdriveinfo() {
+getdriveinfo(){
     # $1 is /sys/block/sata1 etc
 
     # Skip USB drives
@@ -543,7 +555,7 @@ getdriveinfo() {
     fi
 }
 
-getm2info() {
+getm2info(){
     # $1 is /sys/block/nvme0n1 etc
     nvmemodel=$(cat "$1/device/model")
     nvmemodel=$(printf "%s" "$nvmemodel" | xargs)  # trim leading and trailing white space
@@ -559,7 +571,7 @@ getm2info() {
     fi
 }
 
-getcardmodel() {
+getcardmodel(){
     # Get M.2 card model (if M.2 drives found)
     # $1 is /dev/nvme0n1 etc
     if [[ ${#nvmelist[@]} -gt "0" ]]; then
@@ -639,6 +651,7 @@ fi
 
 # Check hdds array isn't empty
 if [[ ${#hdds[@]} -eq "0" ]]; then
+    ding
     echo -e "\n${Error}ERROR${Off} No drives found!" && exit 2
 else
     echo -e "\nHDD/SSD models found: ${#hdds[@]}"
@@ -757,6 +770,7 @@ done
 
 
 if [[ ${#db1list[@]} -eq "0" ]]; then
+    ding
     echo -e "${Error}ERROR 4${Off} Host db file not found!" && exit 4
 fi
 # Don't check .db.new as new installs don't have a .db.new file
@@ -778,7 +792,7 @@ getdbtype(){
 }
 
 
-backupdb() {
+backupdb(){
     # Backup database file if needed
     if [[ ! -f "$1.bak" ]]; then
         if [[ $(basename "$1") == "synoinfo.conf" ]]; then
@@ -791,19 +805,22 @@ backupdb() {
             return 1
         fi
     fi
+    return 0
 }
 
 
 # Backup host database file if needed
 for i in "${!db1list[@]}"; do
     backupdb "${db1list[i]}" ||{
-        echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db1list[i]}")!"
+        ding
+        #echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db1list[i]}")!"
         exit 5
         }
 done
 for i in "${!db2list[@]}"; do
     backupdb "${db2list[i]}" ||{
-        echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db2list[i]}")!"
+        ding
+        #echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db2list[i]}")!"
         exit 5  # maybe don't exit for .db.new file
         }
 done
@@ -821,10 +838,10 @@ editcount(){
     fi
 }
 
-
 editdb7(){
     if [[ $1 == "append" ]]; then  # model not in db file
-        if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # append
+        #if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # append
+        if sed -i "s/}}}/}},\"${hdmodel//\//\\/}\":{$fwstrng$default/" "$2"; then  # append
             echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
             editcount "$2"
         else
@@ -833,7 +850,8 @@ editdb7(){
         fi
 
     elif [[ $1 == "insert" ]]; then  # model and default exists
-        if sed -i "s/\"$hdmodel\":{/\"$hdmodel\":{$fwstrng/" "$2"; then  # insert firmware
+        #if sed -i "s/\"$hdmodel\":{/\"$hdmodel\":{$fwstrng/" "$2"; then  # insert firmware
+        if sed -i "s/\"${hdmodel//\//\\/}\":{/\"${hdmodel//\//\\/}\":{$fwstrng/" "$2"; then  # insert firmware
             echo -e "Updated ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
             #editcount "$2"
         else
@@ -842,7 +860,8 @@ editdb7(){
         fi
 
     elif [[ $1 == "empty" ]]; then  # db file only contains {}
-        if sed -i "s/{}/{\"$hdmodel\":{$fwstrng${default}}/" "$2"; then  # empty
+        #if sed -i "s/{}/{\"$hdmodel\":{$fwstrng${default}}/" "$2"; then  # empty
+        if sed -i "s/{}/{\"${hdmodel//\//\\/}\":{$fwstrng${default}}/" "$2"; then  # empty
             echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
             editcount "$2"
         else
@@ -854,7 +873,7 @@ editdb7(){
 }
 
 
-updatedb() {
+updatedb(){
     hdmodel=$(printf "%s" "$1" | cut -d"," -f 1)
     fwrev=$(printf "%s" "$1" | cut -d"," -f 2)
 
@@ -907,9 +926,11 @@ updatedb() {
             startstring="{\"success\":1,\"list\":\["
             # example:
             # {"success":1,"list":[{"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
-            if sed -i "s/$startstring/$startstring$string/" "$2"; then
+            #if sed -i "s/$startstring/$startstring$string/" "$2"; then
+            if sed -i "s/${startstring//\//\\/}/${startstring//\//\\/}$string/" "$2"; then
                 echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
             else
+                ding
                 echo -e "\n${Error}ERROR 8${Off} Failed to update $(basename -- "$2")${Off}" >&2
                 exit 8
             fi
@@ -973,7 +994,10 @@ done
 # Edit /etc.defaults/synoinfo.conf
 
 # Backup synoinfo.conf if needed
-backupdb "$synoinfo" || exit 9
+backupdb "$synoinfo" ||{
+    ding
+    exit 9
+}
 
 # Optionally disable "support_disk_compatibility"
 sdc=support_disk_compatibility
@@ -1074,7 +1098,8 @@ if [[ $m2 != "no" ]]; then
         enabled=""
         if [[ ! $setting ]]; then
             # Add support_m2_pool="yes"
-            echo 'support_m2_pool="yes"' >> "$synoinfo"
+            #echo 'support_m2_pool="yes"' >> "$synoinfo"
+            synosetkeyvalue "$synoinfo" "$smp" "yes"
             enabled="yes"
         elif [[ $setting == "no" ]]; then
             # Change support_m2_pool="no" to "yes"
@@ -1104,7 +1129,8 @@ disabled=""
 if [[ $nodbupdate == "yes" ]]; then
     if [[ ! $url ]]; then
         # Add drive_db_test_url="127.0.0.1"
-        echo 'drive_db_test_url="127.0.0.1"' >> "$synoinfo"
+        #echo 'drive_db_test_url="127.0.0.1"' >> "$synoinfo"
+        synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
         disabled="yes"
     elif [[ $url != "127.0.0.1" ]]; then
         # Edit drive_db_test_url=
@@ -1181,12 +1207,15 @@ if [[ -f /usr/syno/sbin/synostgdisk ]]; then  # DSM 6.2.3 does not have synostgd
     status=$?
     if [[ $status -eq "0" ]]; then
         echo -e "\nDSM successfully checked disk compatibility."
+        echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
     else
         # Ignore DSM 6.2.4 as it returns 255 for "synostgdisk --check-all-disks-compatibility"
         # and DSM 6.2.3 and lower have no synostgdisk command
         if [[ $dsm -gt "6" ]]; then
             echo -e "\nDSM ${Red}failed${Off} to check disk compatibility with exit code $status"
-            echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+            #if [[ $m2 != "no" ]] && [[ ${#m2cards[@]} -gt "0" ]]; then
+                echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+            #fi
         fi
     fi
 fi

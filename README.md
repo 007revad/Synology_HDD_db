@@ -27,8 +27,9 @@ It also has a restore option to undo all the changes made by the script.
 * Optionally edits max supported memory to match the amount of memory installed, if installed memory is greater than the current max memory setting.
 * Checks that M.2 volume support is enabled (on models that have M.2 slots or PCIe slots).
 * Enables creating M.2 storage pools and volumes from within Storage Manager **(newer models only?)**.
-* Makes DSM recheck disk compatibility so rebooting is not needed (DSM 7 only).
-* Reminds you that you may need to reboot the Synology after running the script (DSM 6 only).
+* Makes DSM recheck disk compatibility so rebooting is not needed if you don't have M.2 drives (DSM 7 only).
+    * **If you have M.2 drives you may need to reboot.**
+    * Reminds you that you may need to reboot the Synology after running the script (DSM 6 only).
 * Checks if there is a newer version of this script and offers to download it for you.
   * The new version available messages time out so they don't prevent the script running if it is scheduled to run unattended.
 
@@ -40,7 +41,7 @@ See <a href=images/how_to_download.png/>How to download the script</a> for the e
 
 You would need to re-run the script after a DSM update. If you have DSM set to auto update the best option is to run the script every time the Synology boots, and the best way to do that is to setup a scheduled task to run the the script at boot-up.
 
-**Note:** For DSM 6, after you first run the script you may need to reboot the Synology to see the effect of the changes.
+**Note:** After you first run the script you may need to reboot the Synology to see the effect of the changes.
 
 ### Options when running the script
 
