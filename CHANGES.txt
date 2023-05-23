@@ -1,3 +1,9 @@
+v2.2.47
+- Updated reboot info in readme.
+- Added reboot message for DSM 7.
+- Bug fix for issue #77 (escape slashes in drive model name).
+- Added error sound.
+
 v2.2.45
 - Minor bug fix.
 
