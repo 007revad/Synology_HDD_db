@@ -29,12 +29,18 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 
 # DONE
+# Now the script reloads itself after updating.
+#
+# Added --autoupdate option to auto update synology_hdd_db x days after new version released.
+#    Autoupdate logs update success or errors to DSM system log.
+# Added -w, --wdda option to disable WDDA
+#
+#
 # Added --restore info to --help
 #
 # Updated restore option to download the latest db files from Synology
 #
 # Now warns you if you try to run it in sh with "sh scriptname.sh"
-#
 #
 # Fixed DSM 6 bug where the drives were being duplicated in the .db files each time the script was run.
 #
@@ -148,7 +154,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.2.47"
+scriptver="v2.3.48"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -184,15 +190,19 @@ $script $scriptver - by 007revad
 Usage: $(basename "$0") [options]
 
 Options:
-  -s, --showedits  Show edits made to <model>_host db and db.new file(s)
-  -n, --noupdate   Prevent DSM updating the compatible drive databases
-  -m, --m2         Don't process M.2 drives
-  -f, --force      Force DSM to not check drive compatibility
-  -r, --ram        Disable memory compatibility checking
-      --restore    Undo all changes made by the script
-  -h, --help       Show this help message
-  -v, --version    Show the script version
-  
+  -s, --showedits        Show edits made to <model>_host db and db.new file(s)
+  -n, --noupdate         Prevent DSM updating the compatible drive databases
+  -m, --m2               Don't process M.2 drives
+  -f, --force            Force DSM to not check drive compatibility
+  -r, --ram              Disable memory compatibility checking
+  -w, --wdda             Disable WD WDDA
+      --restore          Undo all changes made by the script
+      --autoupdate=[age] Auto update script (useful when script is scheduled)
+                         'age' is how old a release must be in days before
+                         auto-updating, and must be a number: 0 or greater
+  -h, --help             Show this help message
+  -v, --version          Show the script version
+
 EOF
     exit 0
 }
@@ -209,12 +219,13 @@ EOF
 
 
 # Save options used
-args="$*"
+args=("$@")
 
 
 # Check for flags with getopt
-if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
-    -l restore,showedits,noupdate,nodbupdate,m2,force,ram,help,version,debug -- "$@")"; then
+if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
+    restore,showedits,noupdate,nodbupdate,m2,force,ram,wdda,autoupdate:,help,version,debug \
+    -- "$@")"; then
     eval set -- "$options"
     while true; do
         case "${1,,}" in
@@ -236,6 +247,18 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -a \
                 ;;
             -r|--ram)           # Disable "support_memory_compatibility"
                 ram=yes
+                ;;
+            -w|--wdda)          # Disable "support_memory_compatibility"
+                wdda=no
+                ;;
+            --autoupdate)       # Auto update script
+                autoupdate=yes
+                if [[ $2 =~ ^[0-9]+$ ]]; then
+                    delay="$2"
+                    shift
+                else
+                    delay="0"
+                fi
                 ;;
             -h|--help)          # Show usage options
                 usage
@@ -320,7 +343,7 @@ elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
 fi
 
 # Show options used
-echo "Using options: $args"
+echo "Using options: ${args[*]}"
 
 #echo ""  # To keep output readable
 
@@ -328,18 +351,37 @@ echo "Using options: $args"
 #------------------------------------------------------------------------------
 # Check latest release with GitHub API
 
-get_latest_release(){
-    # Curl timeout options:
-    # https://unix.stackexchange.com/questions/94604/does-curl-have-a-timeout
-    curl --silent -m 10 --connect-timeout 5 \
-        "https://api.github.com/repos/$1/releases/latest" |
-    grep '"tag_name":' |          # Get tag line
-    sed -E 's/.*"([^"]+)".*/\1/'  # Pluck JSON value
+syslog_set(){
+    if [[ ${1,,} == "info" ]] || [[ ${1,,} == "warn" ]] || [[ ${1,,} == "err" ]]; then
+        if [[ $autoupdate == "yes" ]]; then
+            # Add entry to Synology system log
+            synologset1 sys "$1" 0x11100000 "$2"
+        fi
+    fi
 }
 
-tag=$(get_latest_release "$repo")
+
+# Get latest release info
+# Curl timeout options:
+# https://unix.stackexchange.com/questions/94604/does-curl-have-a-timeout
+release=$(curl --silent -m 10 --connect-timeout 5 \
+    "https://api.github.com/repos/$repo/releases/latest")
+
+# Release version
+tag=$(echo "$release" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 shorttag="${tag:1}"
-#scriptpath=$(dirname -- "$0")
+
+# Release published date
+published=$(echo "$release" | grep '"published_at":' | sed -E 's/.*"([^"]+)".*/\1/')
+published="${published:0:10}"
+published=$(date -d "$published" '+%s')
+
+# Today's date
+now=$(date '+%s')
+
+# Days since release published
+age=$(((now - published)/(60*60*24)))
+
 
 # Get script location
 # https://stackoverflow.com/questions/59895/
@@ -368,8 +410,17 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
         echo "https://github.com/$repo/releases/latest"
         sleep 10
     else
-        echo -e "${Cyan}Do you want to download $tag now?${Off} [y/n]"
-        read -r -t 30 reply
+        if [[ $autoupdate == "yes" ]]; then
+            if [[ $age -gt "$delay" ]] || [[ $age -eq "$delay" ]]; then
+                echo "Downloading $tag"
+                reply=y
+            else
+                echo "Skipping as $tag is less than $delay days old."
+            fi
+        else
+            echo -e "${Cyan}Do you want to download $tag now?${Off} [y/n]"
+            read -r -t 30 reply
+        fi
         if [[ ${reply,,} == "y" ]]; then
             if cd /tmp; then
                 url="https://github.com/$repo/archive/refs/tags/$tag.tar.gz"
@@ -377,36 +428,40 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                 then
                     echo -e "${Error}ERROR ${Off} Failed to download"\
                         "$script-$shorttag.tar.gz!"
+                    syslog_set warn "$script $tag failed to download"
                 else
                     if [[ -f /tmp/$script-$shorttag.tar.gz ]]; then
                         # Extract tar file to /tmp/<script-name>
                         if ! tar -xf "/tmp/$script-$shorttag.tar.gz" -C "/tmp"; then
                             echo -e "${Error}ERROR ${Off} Failed to"\
                                 "extract $script-$shorttag.tar.gz!"
+                            syslog_set warn "$script failed to extract $script-$shorttag.tar.gz!"
                         else
                             # Copy new script sh files to script location
                             if ! cp -p "/tmp/$script-$shorttag/"*.sh "$scriptpath"; then
                                 copyerr=1
                                 echo -e "${Error}ERROR ${Off} Failed to copy"\
                                     "$script-$shorttag .sh file(s) to:\n $scriptpath"
+                                syslog_set warn "$script failed to copy $tag to script location"
                             else                   
-                                # Set permsissions on CHANGES.txt
+                                # Set permsissions on script sh files
                                 if ! chmod 744 "$scriptpath/"*.sh ; then
                                     permerr=1
                                     echo -e "${Error}ERROR ${Off} Failed to set permissions on:"
                                     echo "$scriptpath *.sh file(s)"
+                                    syslog_set warn "$script failed to set permissions on $tag"
                                 fi
                             fi
 
                             # Copy new CHANGES.txt file to script location
                             if ! cp -p "/tmp/$script-$shorttag/CHANGES.txt" "$scriptpath"; then
-                                copyerr=1
+                                if [[ $autoupdate != "yes" ]]; then copyerr=1; fi
                                 echo -e "${Error}ERROR ${Off} Failed to copy"\
                                     "$script-$shorttag/CHANGES.txt to:\n $scriptpath"
                             else                   
                                 # Set permsissions on CHANGES.txt
                                 if ! chmod 744 "$scriptpath/CHANGES.txt"; then
-                                    permerr=1
+                                    if [[ $autoupdate != "yes" ]]; then permerr=1; fi
                                     echo -e "${Error}ERROR ${Off} Failed to set permissions on:"
                                     echo "$scriptpath/CHANGES.txt"
                                 fi
@@ -416,32 +471,38 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                             if ! rm "/tmp/$script-$shorttag.tar.gz"; then
                                 echo -e "${Error}ERROR ${Off} Failed to delete"\
                                     "downloaded /tmp/$script-$shorttag.tar.gz!"
+                                syslog_set warn "$script update failed to delete tmp files"
                             fi
 
                             # Delete extracted tmp files
                             if ! rm -r "/tmp/$script-$shorttag"; then
                                 echo -e "${Error}ERROR ${Off} Failed to delete"\
                                     "downloaded /tmp/$script-$shorttag!"
+                                syslog_set warn "$script update failed to delete tmp files"
                             fi
 
                             # Notify of success (if there were no errors)
                             if [[ $copyerr != 1 ]] && [[ $permerr != 1 ]]; then
-                                echo -e "\n$tag and changes.txt downloaded to:"\
-                                    "$scriptpath"
-                                echo -e "${Cyan}Do you want to stop this script"\
-                                    "so you can run the new one?${Off} [y/n]"
-                                read -r reply
-                                if [[ ${reply,,} == "y" ]]; then exit; fi
+                                echo -e "\n$tag and changes.txt downloaded to: ${scriptpath}\n"
+                                syslog_set info "$script successfully updated to $tag"
+
+                                # Reload script
+                                printf -- '-%.0s' {1..79}; echo  # print 79 -
+                                exec "$0" "${args[@]}"
+                            else
+                                syslog_set warn "$script update to $tag had errors"
                             fi
                         fi
                     else
                         echo -e "${Error}ERROR ${Off}"\
                             "/tmp/$script-$shorttag.tar.gz not found!"
                         #ls /tmp | grep "$script"  # debug
+                        syslog_set warn "/tmp/$script-$shorttag.tar.gz not found"
                     fi
                 fi
             else
                 echo -e "${Error}ERROR ${Off} Failed to cd to /tmp!"
+                syslog_set warn "$script update failed to cd to /tmp"
             fi
         fi
     fi
@@ -813,14 +874,14 @@ backupdb(){
 for i in "${!db1list[@]}"; do
     backupdb "${db1list[i]}" ||{
         ding
-        #echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db1list[i]}")!"
+        echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db1list[i]}")!"
         exit 5
         }
 done
 for i in "${!db2list[@]}"; do
     backupdb "${db2list[i]}" ||{
         ding
-        #echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db2list[i]}")!"
+        echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db2list[i]}")!"
         exit 5  # maybe don't exit for .db.new file
         }
 done
@@ -1165,6 +1226,23 @@ else
         fi
     else
         echo -e "\nDrive db auto updates already enabled."
+    fi
+fi
+
+
+# Optionally disable "support_wdda"
+wdda=support_wdda
+setting="$(get_key_value $synoinfo $wdda)"
+if [[ $wdda == "no" ]]; then
+    if [[ $setting == "yes" ]]; then
+        # Disable support_memory_compatibility
+        synosetkeyvalue "$synoinfo" "$wdda" "no"
+        setting="$(get_key_value "$synoinfo" $wdda)"
+        if [[ $setting == "no" ]]; then
+            echo -e "\nDisabled support WDDA."
+        fi
+    elif [[ $setting == "no" ]]; then
+        echo -e "\nSupport WDDA already disabled."
     fi
 fi
 
