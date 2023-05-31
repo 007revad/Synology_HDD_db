@@ -1,3 +1,9 @@
+v2.3.48
+- Now the script reloads itself after updating.
+- Added --autoupdate=[age] option to auto update synology_hdd_db x days after new version released.
+    - Autoupdate adds success/failed entry to the DSM system log.
+- Added -w, --wdda option to disable WDDA.
+
 v2.2.47
 - Updated reboot info in readme.
 - Added reboot message for DSM 7.
