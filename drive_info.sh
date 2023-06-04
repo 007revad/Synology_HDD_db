@@ -6,8 +6,24 @@ for d in $(cat /proc/partitions | awk '{print $4}'); do
     fi
     #echo $d  # debug
     case "$d" in
-        sd*)
+        sd*|hd*)
             if [[ $d =~ [hs]d[a-z]$ ]]; then
+                echo -e "\n$d"  # debug
+                hdmodel=$(smartctl -i "/dev/$d" | grep -i "Device Model:" | awk '{print $3 $4 $5}')
+                if [[ ! $hdmodel ]]; then
+                    hdmodel=$(smartctl -i "/dev/$d" | grep -i "Product:" | awk '{print $2 $3 $4}')
+                fi
+                echo "Model:    '$hdmodel'"  # debug
+
+                fwrev=$(smartctl -i "/dev/$d" | grep -i "Firmware Version:" | awk '{print $3}')
+                if [[ ! $fwrev ]]; then
+                    fwrev=$(smartctl -i "/dev/$d" | grep -i "Revision:" | awk '{print $2}')
+                fi
+                echo "Firmware: '$fwrev'"  # debug
+            fi
+        ;;
+        sata*|sas*)
+            if [[ $d =~ (sas|sata)[0-9][0-9]?[0-9]?$ ]]; then
                 echo -e "\n$d"  # debug
                 hdmodel=$(smartctl -i "/dev/$d" | grep -i "Device Model:" | awk '{print $3 $4 $5}')
                 if [[ ! $hdmodel ]]; then
@@ -37,7 +53,6 @@ for d in $(cat /proc/partitions | awk '{print $4}'); do
 
                 nvmefw=$(echo "$nvmefw" | xargs)  # trim leading and trailing white space
                 echo "NVMe Firmware: '$nvmefw'"  # debug
-
             fi
         ;;
     esac
