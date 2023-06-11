@@ -27,12 +27,36 @@
 #
 # Maybe also edit the other disk compatibility db in synoboot, used during boot time.
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
+#
+# Solve issue of --restore option restoring files that were backed up with older DSM version.
 
 # DONE
+#
+# Added "You may need to reboot" message when NVMe drives were detected.
+#
+# Fixed HDD/SSD firmware versions always being 4 characters long (for DSM 7.2 and 6.2.4 Update 7).
+#
+# Fixed detecting amount of installed memory (for DSM 7.2 which now reports GB instead of MB).
+#
+# Fixed USB drives sometimes being detected as internal drives (for DSM 7.2).
+#
+# Fixed error if /run/synostorage/disks/nvme0n1/m2_pool_support doesn't exist yet (for DSM 7.2).
+#
+# Fixed drive db update still being disabled in /etc/synoinfo.conf after script run without -n or --noupdate option.
+#
+# Fixed drive db update still being disabled in /etc/synoinfo.conf after script run with --restore option.
+#
+# Fixed permissions on restored files being incorrect after script run with --restore option.
+#
+# Fixed permissions on backup files.
+#
+# Now skips checking the amount of installed memory in DSM 6 (because it was never working).
+#
 # Now the script reloads itself after updating.
 #
-# Added --autoupdate option to auto update synology_hdd_db x days after new version released.
+# Added --autoupdate=AGE option to auto update synology_hdd_db x days after new version released.
 #    Autoupdate logs update success or errors to DSM system log.
+#
 # Added -w, --wdda option to disable WDDA
 #
 #
@@ -154,7 +178,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.3.48"
+scriptver="v2.3.49"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -190,18 +214,18 @@ $script $scriptver - by 007revad
 Usage: $(basename "$0") [options]
 
 Options:
-  -s, --showedits        Show edits made to <model>_host db and db.new file(s)
-  -n, --noupdate         Prevent DSM updating the compatible drive databases
-  -m, --m2               Don't process M.2 drives
-  -f, --force            Force DSM to not check drive compatibility
-  -r, --ram              Disable memory compatibility checking
-  -w, --wdda             Disable WD WDDA
-      --restore          Undo all changes made by the script
-      --autoupdate=[age] Auto update script (useful when script is scheduled)
-                         'age' is how old a release must be in days before
-                         auto-updating, and must be a number: 0 or greater
-  -h, --help             Show this help message
-  -v, --version          Show the script version
+  -s, --showedits       Show edits made to <model>_host db and db.new file(s)
+  -n, --noupdate        Prevent DSM updating the compatible drive databases
+  -m, --m2              Don't process M.2 drives
+  -f, --force           Force DSM to not check drive compatibility
+  -r, --ram             Disable memory compatibility checking (DSM 7.x only)
+  -w, --wdda            Disable WD WDDA
+      --restore         Undo all changes made by the script
+      --autoupdate=AGE  Auto update script (useful when script is scheduled)
+                          AGE is how many days old a release must be before
+                          auto-updating. AGE must be a number: 0 or greater
+  -h, --help            Show this help message
+  -v, --version         Show the script version
 
 EOF
     exit 0
@@ -444,7 +468,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                     "$script-$shorttag .sh file(s) to:\n $scriptpath"
                                 syslog_set warn "$script failed to copy $tag to script location"
                             else                   
-                                # Set permsissions on script sh files
+                                # Set permissions on script sh files
                                 if ! chmod 744 "$scriptpath/"*.sh ; then
                                     permerr=1
                                     echo -e "${Error}ERROR ${Off} Failed to set permissions on:"
@@ -459,7 +483,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                 echo -e "${Error}ERROR ${Off} Failed to copy"\
                                     "$script-$shorttag/CHANGES.txt to:\n $scriptpath"
                             else                   
-                                # Set permsissions on CHANGES.txt
+                                # Set permissions on CHANGES.txt
                                 if ! chmod 744 "$scriptpath/CHANGES.txt"; then
                                     if [[ $autoupdate != "yes" ]]; then permerr=1; fi
                                     echo -e "${Error}ERROR ${Off} Failed to set permissions on:"
@@ -523,8 +547,9 @@ if [[ $restore == "yes" ]]; then
 
         # Restore synoinfo.conf from backup
         if [[ -f ${synoinfo}.bak ]]; then
-            if mv "${synoinfo}.bak" "${synoinfo}"; then
-                echo "Restored $(basename -- "$synoinfo")"
+            #if mv "${synoinfo}.bak" "${synoinfo}"; then
+            if cp -p "${synoinfo}.bak" "${synoinfo}"; then
+                echo -e "Restored $(basename -- "$synoinfo")\n"
             else
                 restoreerr=1
                 echo -e "${Error}ERROR${Off} Failed to restore synoinfo.conf!\n"
@@ -533,12 +558,13 @@ if [[ $restore == "yes" ]]; then
 
         # Restore .db files from backups
         for f in "${!dbbakfiles[@]}"; do
-            deleteme="${dbbakfiles[f]%.bak}"  # Remove .bak
-            if mv "${dbbakfiles[f]}" "$deleteme"; then
-                echo "Restored $(basename -- "$deleteme")"
+            replaceme="${dbbakfiles[f]%.bak}"  # Remove .bak
+            #if mv "${dbbakfiles[f]}" "$replaceme"; then
+            if cp -p "${dbbakfiles[f]}" "$replaceme"; then
+                echo "Restored $(basename -- "$replaceme")"
             else
                 restoreerr=1
-                echo -e "${Error}ERROR${Off} Failed to restore $(basename -- "$deleteme")!\n"
+                echo -e "${Error}ERROR${Off} Failed to restore $(basename -- "$replaceme")!\n"
             fi
         done
 
@@ -553,6 +579,9 @@ if [[ $restore == "yes" ]]; then
                 rm "$f" >/dev/null
             fi
         done
+
+        # Delete "drive_db_test_url=127.0.0.1" line (inc. line break) from /etc/synoinfo.conf
+        sed -i "/drive_db_test_url=*/d" /etc/synoinfo.conf
 
         # Update .db files from Synology
         syno_disk_db_update --update
@@ -572,8 +601,7 @@ fi
 # PCIe M.2 cards and connected Expansion Units.
 
 fixdrivemodel(){
-    # Remove " 00Y" from end of Samsung/Lenovo SSDs
-    # To fix issue #13
+    # Remove " 00Y" from end of Samsung/Lenovo SSDs  # Github issue #13
     if [[ $1 =~ MZ.*" 00Y" ]]; then
         hdmodel=$(printf "%s" "$1" | sed 's/ 00Y.*//')
     fi
@@ -597,7 +625,7 @@ getdriveinfo(){
     # $1 is /sys/block/sata1 etc
 
     # Skip USB drives
-    usb=$(grep "$(basename -- "$1")" /proc/mounts | grep usb | cut -d" " -f1-2)
+    usb=$(grep "$(basename -- "$1")" /proc/mounts | grep "[Uu][Ss][Bb]" | cut -d" " -f1-2)
     if [[ ! $usb ]]; then
 
         # Get drive model and firmware version
@@ -607,8 +635,12 @@ getdriveinfo(){
         # Fix dodgy model numbers
         fixdrivemodel "$hdmodel"
 
-        fwrev=$(cat "$1/device/rev")
-        fwrev=$(printf "%s" "$fwrev" | xargs)  # trim leading and trailing white space
+        #fwrev=$(cat "$1/device/rev")
+        #fwrev=$(printf "%s" "$fwrev" | xargs)  # trim leading and trailing white space
+
+        #fwrev=$(syno_hdd_util --ssd_detect | grep "/dev/$d" | awk '{print $2}')      # GitHub issue #86, 87
+        # Account for SSD drives with spaces in their model name/number
+        fwrev=$(syno_hdd_util --ssd_detect | grep "/dev/$d" | awk '{print $(NF-3)}')  # GitHub issue #86, 87
 
         if [[ $hdmodel ]] && [[ $fwrev ]]; then
             hdlist+=("${hdmodel},${fwrev}")
@@ -659,6 +691,11 @@ getcardmodel(){
     fi
 }
 
+m2_pool_support(){
+    if [[ -f /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support ]]; then  # GitHub issue #86, 87
+        echo 1 > /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support
+    fi
+}
 
 for d in /sys/block/*; do
     # $d is /sys/block/sata1 etc
@@ -683,7 +720,9 @@ for d in /sys/block/*; do
                     getcardmodel "/dev/$(basename -- "${d}")"
 
                     # Enable creating M.2 storage pool and volume in Storage Manager
-                    echo 1 > /run/synostorage/disks/"$(basename -- "$d")"/m2_pool_support
+                    m2_pool_support "$d"
+
+                    rebootmsg=yes  # Show reboot message at end
                 fi
             fi
         ;;
@@ -695,7 +734,9 @@ for d in /sys/block/*; do
                     getcardmodel "/dev/$(basename -- "${d}")"
 
                     # Enable creating M.2 storage pool and volume in Storage Manager
-                    echo 1 > /run/synostorage/disks/"$(basename -- "$d")"/m2_pool_support
+                    m2_pool_support "$d"
+
+                    rebootmsg=yes  # Show reboot message at end
                 fi
             fi
         ;;
@@ -857,14 +898,19 @@ backupdb(){
     # Backup database file if needed
     if [[ ! -f "$1.bak" ]]; then
         if [[ $(basename "$1") == "synoinfo.conf" ]]; then
-            echo "" >&2
+            echo "" >&2  # Formatting for stdout
         fi
-        if cp "$1" "$1.bak"; then
+        if cp -p "$1" "$1.bak"; then
             echo -e "Backed up $(basename -- "${1}")" >&2
         else
             echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${1}")!" >&2
             return 1
         fi
+    fi
+    # Fix permissions if needed
+    octal=$(stat -c "%a %n" "$1" | cut -d" " -f1)
+    if [[ ! $octal -eq 644 ]]; then
+        chmod 644 "$1"
     fi
     return 0
 }
@@ -1116,36 +1162,53 @@ else
 fi
 
 # Optionally set mem_max_mb to the amount of installed memory
-if [[ $ram == "yes" ]]; then
-    # Get total amount of installed memory
-    IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory | grep -i 'size')
-    if [[ ${#array[@]} -gt "0" ]]; then
-        num="0"
-        while [[ $num -lt "${#array[@]}" ]]; do
-            ramsize=$(printf %s "${array[num]}" | cut -d" " -f2)
-            if [[ $ramtotal ]]; then
-                ramtotal=$((ramtotal +ramsize))
-            else
-                ramtotal="$ramsize"
-            fi
-            num=$((num +1))
-        done
-    fi
-    # Set mem_max_mb to the amount of installed memory
-    setting="$(get_key_value $synoinfo mem_max_mb)"
-    if [[ $ramtotal -gt $setting ]]; then
-        synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
-        # Check we changed mem_max_mb
-        setting="$(get_key_value $synoinfo mem_max_mb)"
-        if [[ $setting == "$ramtotal" ]]; then
-            echo -e "\nSet max memory to $ramtotal MB."
-        else
-            echo -e "\n${Error}ERROR${Off} Failed to change max memory!"
+if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
+    if [[ $ram == "yes" ]]; then
+        # Get total amount of installed memory
+        IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory | grep "[Ss]ize")  # GitHub issue #86, 87
+        if [[ ${#array[@]} -gt "0" ]]; then
+            num="0"
+            while [[ $num -lt "${#array[@]}" ]]; do
+                #ramsize=$(printf %s "${array[num]}" | cut -d" " -f2)
+                ramsize=$(printf %s "${array[num]}" | awk '{print $2}')             # GitHub issue #86, 87
+                bytes=$(printf %s "${array[num]}" | awk '{print $3}')               # GitHub issue #86, 87
+                if [[ $ramsize =~ ^[0-9]+$ ]]; then  # Check $ramsize is numeric  # GitHub issue #86, 87
+                    if [[ $ramtotal ]]; then
+                        ramtotal=$((ramtotal +ramsize))
+                    else
+                        ramtotal="$ramsize"
+                    fi
+                else
+                    echo -e "\n${Error}ERROR${Off} Memory size is not numeric: '$ramsize'"
+                fi
+                num=$((num +1))
+            done
         fi
-    elif [[ $setting == "$ramtotal" ]]; then
-        #echo -e "\nMax memory already set to $ramtotal MB."
-        ramgb=$((ramtotal / 1024))
-        echo -e "\nMax memory already set to $ramgb GB."
+        # Set mem_max_mb to the amount of installed memory
+        setting="$(get_key_value $synoinfo mem_max_mb)"
+        if [[ $ramtotal =~ ^[0-9]+$ ]]; then  # Check $ramtotal is numeric
+            if [[ $bytes == "GB" ]]; then       # DSM 7.2 dmidecode returns GB
+                ramtotal=$((ramtotal * 1024))   # Convert to MB
+            fi
+            if [[ $ramtotal -gt $setting ]]; then
+                synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
+                # Check we changed mem_max_mb
+                setting="$(get_key_value $synoinfo mem_max_mb)"
+                if [[ $setting == "$ramtotal" ]]; then
+                    #echo -e "\nSet max memory to $ramtotal MB."
+                    ramgb=$((ramtotal / 1024))
+                    echo -e "\nSet max memory to $ramtotal GB."
+                else
+                    echo -e "\n${Error}ERROR${Off} Failed to change max memory!"
+                fi
+            elif [[ $setting == "$ramtotal" ]]; then
+                #echo -e "\nMax memory already set to $ramtotal MB."
+                ramgb=$((ramtotal / 1024))
+                echo -e "\nMax memory already set to $ramgb GB."
+            fi
+        else
+            echo -e "\n${Error}ERROR${Off} Total memory size is not numeric: '$ramtotal'"
+        fi
     fi
 fi
 
@@ -1216,6 +1279,7 @@ else
     if [[ $url ]]; then
         # Delete "drive_db_test_url=127.0.0.1" line (inc. line break)
         sed -i "/drive_db_test_url=*/d" "$synoinfo"
+        sed -i "/drive_db_test_url=*/d" /etc/synoinfo.conf
 
         # Check if we re-enabled drive db auto updates
         url="$(get_key_value $synoinfo drive_db_test_url)"
@@ -1285,20 +1349,19 @@ if [[ -f /usr/syno/sbin/synostgdisk ]]; then  # DSM 6.2.3 does not have synostgd
     status=$?
     if [[ $status -eq "0" ]]; then
         echo -e "\nDSM successfully checked disk compatibility."
-        echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+        rebootmsg=yes  # Show reboot message at end
     else
         # Ignore DSM 6.2.4 as it returns 255 for "synostgdisk --check-all-disks-compatibility"
         # and DSM 6.2.3 and lower have no synostgdisk command
         if [[ $dsm -gt "6" ]]; then
             echo -e "\nDSM ${Red}failed${Off} to check disk compatibility with exit code $status"
-            #if [[ $m2 != "no" ]] && [[ ${#m2cards[@]} -gt "0" ]]; then
-                echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
-            #fi
+            rebootmsg=yes  # Show reboot message at end
         fi
     fi
 fi
 
-if [[ $dsm -eq "6" ]]; then
+# Show reboot message if required
+if [[ $dsm -eq "6" ]] || [[ $rebootmsg == "yes" ]]; then
     echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
 fi
 
