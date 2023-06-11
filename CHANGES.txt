@@ -1,5 +1,15 @@
-v2.3.48
+v2.3.49
+- Fixed HDD/SSD firmware versions always being 4 characters long (for DSM 7.2 and 6.2.4 Update 7).
+- Fixed detecting amount of installed memory (for DSM 7.2 which now reports GB instead of MB).
+- Fixed USB drives sometimes being detected as internal drives (for DSM 7.2).
+- Fixed error if /run/synostorage/disks/nvme0n1/m2_pool_support doesn't exist yet (for DSM 7.2).
+- Fixed drive db update still being disabled in /etc/synoinfo.conf after script run without -n or --noupdate option.
+- Fixed drive db update still being disabled in /etc/synoinfo.conf after script run with --restore option.
+- Fixed permissions on restored files being incorrect after script run with --restore option.
+- Fixed permissions on backup files.
+- Now skips checking the amount of installed memory in DSM 6 (because it was never working).
 - Now the script reloads itself after updating.
+- Added "You may need to reboot" message when NVMe drives were detected.
 - Added --autoupdate=[age] option to auto update synology_hdd_db x days after new version released.
     - Autoupdate logs update success or errors to DSM system log.
 - Added -w, --wdda option to disable WDDA.
