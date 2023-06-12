@@ -36,7 +36,7 @@
 #
 # Fixed HDD/SSD firmware versions always being 4 characters long (for DSM 7.2 and 6.2.4 Update 7).
 #
-# Fixed detecting amount of installed memory (for DSM 7.2 which now reports GB instead of MB).
+# Fixed detecting the amount of installed memory (for DSM 7.2 which now reports GB instead of MB).
 #
 # Fixed USB drives sometimes being detected as internal drives (for DSM 7.2).
 #
@@ -178,7 +178,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.3.49"
+scriptver="v2.3.50"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -628,19 +628,21 @@ getdriveinfo(){
     usb=$(grep "$(basename -- "$1")" /proc/mounts | grep "[Uu][Ss][Bb]" | cut -d" " -f1-2)
     if [[ ! $usb ]]; then
 
-        # Get drive model and firmware version
+        # Get drive model
         hdmodel=$(cat "$1/device/model")
         hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
 
         # Fix dodgy model numbers
         fixdrivemodel "$hdmodel"
 
+        # Get drive firmware version
         #fwrev=$(cat "$1/device/rev")
         #fwrev=$(printf "%s" "$fwrev" | xargs)  # trim leading and trailing white space
 
-        #fwrev=$(syno_hdd_util --ssd_detect | grep "/dev/$d" | awk '{print $2}')      # GitHub issue #86, 87
+        device="/dev/$(basename -- "$1")"
+        #fwrev=$(syno_hdd_util --ssd_detect | grep "$device" | awk '{print $2}')      # GitHub issue #86, 87
         # Account for SSD drives with spaces in their model name/number
-        fwrev=$(syno_hdd_util --ssd_detect | grep "/dev/$d" | awk '{print $(NF-3)}')  # GitHub issue #86, 87
+        fwrev=$(syno_hdd_util --ssd_detect | grep "$device" | awk '{print $(NF-3)}')  # GitHub issue #86, 87
 
         if [[ $hdmodel ]] && [[ $fwrev ]]; then
             hdlist+=("${hdmodel},${fwrev}")
