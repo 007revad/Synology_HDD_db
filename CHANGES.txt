@@ -1,4 +1,4 @@
-v2.3.50
+v2.3.51
 - Fixed HDD/SSD firmware versions always being 4 characters long (for DSM 7.2 and 6.2.4 Update 7).
 - Fixed detecting amount of installed memory (for DSM 7.2 which now reports GB instead of MB).
 - Fixed USB drives sometimes being detected as internal drives (for DSM 7.2).
