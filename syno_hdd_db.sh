@@ -22,15 +22,13 @@
 #--------------------------------------------------------------------------------------------------
 
 # TODO
-# Bypass M.2 volume lock for unsupported M.2 drives. 
-#    See https://github.com/007revad/Synology_enable_M2_volume
-#
 # Maybe also edit the other disk compatibility db in synoboot, used during boot time.
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 #
 # Solve issue of --restore option restoring files that were backed up with older DSM version.
 
 # DONE
+# Changed the "No M.2 cards found" to "No M.2 PCIe cards found" to make it clearer.
 #
 # Added "You may need to reboot" message when NVMe drives were detected.
 #
@@ -178,7 +176,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.3.51"
+scriptver="v2.3.52"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -811,9 +809,9 @@ fi
 # Check m2cards array isn't empty
 if [[ $m2 != "no" ]]; then
     if [[ ${#m2cards[@]} -eq "0" ]]; then
-        echo -e "No M.2 cards found\n"
+        echo -e "No M.2 PCIe cards found\n"
     else    
-        echo "M.2 card models found: ${#m2cards[@]}"
+        echo "M.2 PCIe card models found: ${#m2cards[@]}"
         num="0"
         while [[ $num -lt "${#m2cards[@]}" ]]; do
             echo "${m2cards[num]}"
