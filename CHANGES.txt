@@ -9,6 +9,7 @@ v2.3.53
 - Fixed permissions on backup files.
 - Now skips checking the amount of installed memory in DSM 6 (because it was never working in DSM 6).
 - Now the script reloads itself after updating.
+- Changed help to show -r, --ram also sets max memory to the amount of installed memory.
 - Changed the "No M.2 cards found" to "No M.2 PCIe cards found" to make it clearer.
 - Added "You may need to reboot" message when NVMe drives were detected.
 - Added --autoupdate=[age] option to auto update synology_hdd_db x days after new version released.
