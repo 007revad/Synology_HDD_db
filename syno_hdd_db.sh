@@ -28,6 +28,8 @@
 # Solve issue of --restore option restoring files that were backed up with older DSM version.
 
 # DONE
+# Changed help to show -r, --ram also sets max memory to the amount of installed memory.
+#
 # Changed the "No M.2 cards found" to "No M.2 PCIe cards found" to make it clearer.
 #
 # Added "You may need to reboot" message when NVMe drives were detected.
@@ -176,7 +178,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.3.52"
+scriptver="v2.3.53"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -216,7 +218,8 @@ Options:
   -n, --noupdate        Prevent DSM updating the compatible drive databases
   -m, --m2              Don't process M.2 drives
   -f, --force           Force DSM to not check drive compatibility
-  -r, --ram             Disable memory compatibility checking (DSM 7.x only)
+  -r, --ram             Disable memory compatibility checking (DSM 7.x only),
+                        and sets max memory to the amount of installed memory
   -w, --wdda            Disable WD WDDA
       --restore         Undo all changes made by the script
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
@@ -1169,17 +1172,20 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
         if [[ ${#array[@]} -gt "0" ]]; then
             num="0"
             while [[ $num -lt "${#array[@]}" ]]; do
-                #ramsize=$(printf %s "${array[num]}" | cut -d" " -f2)
-                ramsize=$(printf %s "${array[num]}" | awk '{print $2}')             # GitHub issue #86, 87
-                bytes=$(printf %s "${array[num]}" | awk '{print $3}')               # GitHub issue #86, 87
-                if [[ $ramsize =~ ^[0-9]+$ ]]; then  # Check $ramsize is numeric  # GitHub issue #86, 87
-                    if [[ $ramtotal ]]; then
-                        ramtotal=$((ramtotal +ramsize))
+                check=$(printf %s "${array[num]}" | awk '{print $1}')
+                if [[ ${check,,} == "size:" ]]; then
+                    #ramsize=$(printf %s "${array[num]}" | cut -d" " -f2)
+                    ramsize=$(printf %s "${array[num]}" | awk '{print $2}')           # GitHub issue #86, 87
+                    bytes=$(printf %s "${array[num]}" | awk '{print $3}')             # GitHub issue #86, 87
+                    if [[ $ramsize =~ ^[0-9]+$ ]]; then  # Check $ramsize is numeric  # GitHub issue #86, 87
+                        if [[ $ramtotal ]]; then
+                            ramtotal=$((ramtotal +ramsize))
+                        else
+                            ramtotal="$ramsize"
+                        fi
                     else
-                        ramtotal="$ramsize"
+                        echo -e "\n${Error}ERROR${Off} Memory size is not numeric: '$ramsize'"
                     fi
-                else
-                    echo -e "\n${Error}ERROR${Off} Memory size is not numeric: '$ramsize'"
                 fi
                 num=$((num +1))
             done
