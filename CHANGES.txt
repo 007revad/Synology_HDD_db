@@ -1,3 +1,24 @@
+v3.0.55
+- Now enables any installed Synology M.2 PCIe cards for models that don't officially support them.
+  - You can use a M2D20, M2D18, M2D17 or E10M20-T1 on any model with a PCIe slot (not Mini PCIe).
+- Now the script reloads itself after updating.
+- Added -i, --immutable option to enable immutable snapshots on models older than '20 series running DSM 7.2.
+- Added -w, --wdda option to disable WDDA (to prevent warnings when WD drives have been running more than 3 years).
+- Added "You may need to reboot" message when NVMe drives were detected.
+- Added --autoupdate=[age] option to auto update synology_hdd_db x days after new version released.
+    - Autoupdate logs update success or errors to DSM system log.
+- Changed help to show -r, --ram also sets max memory to the amount of installed memory.
+- Changed the "No M.2 cards found" to "No M.2 PCIe cards found" to make it clearer.
+- Changed to skip checking the amount of installed memory in DSM 6 (because it was never working in DSM 6).
+- Fixed HDD/SSD firmware versions always being 4 characters long (for DSM 7.2 and 6.2.4 Update 7).
+- Fixed detecting amount of installed memory (for DSM 7.2 which now reports GB instead of MB).
+- Fixed USB drives sometimes being detected as internal drives (for DSM 7.2).
+- Fixed error if /run/synostorage/disks/nvme0n1/m2_pool_support doesn't exist yet (for DSM 7.2).
+- Fixed drive db update still being disabled in /etc/synoinfo.conf after script run without -n or --noupdate option.
+- Fixed drive db update still being disabled in /etc/synoinfo.conf after script run with --restore option.
+- Fixed permissions on restored files being incorrect after script run with --restore option.
+- Fixed permissions on backup files.
+
 v2.2.47
 - Updated reboot info in readme.
 - Added reboot message for DSM 7.
