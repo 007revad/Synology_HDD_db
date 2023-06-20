@@ -9,7 +9,7 @@
 
 Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 drives to your Synology's compatible drive databases, including your M.2 card and Expansion Unit databases. 
 
-The script works in DSM 7 and DSM 6.
+The script works in DSM 7, including DSM 7.2, and DSM 6.
 
 It also has a restore option to undo all the changes made by the script.
 
@@ -25,11 +25,13 @@ It also has a restore option to undo all the changes made by the script.
 * Optionally disable DSM's "support_disk_compatibility".
 * Optionally disable DSM's "support_memory_compatibility" to prevent <a href=images/ram_wanring.png/>non-Synology memory notifications</a>.
 * Optionally edits max supported memory to match the amount of memory installed, if installed memory is greater than the current max memory setting.
+* Optionally enables M2D20, M2D18, M2D17 and E10M20-T1 on Synology NAS that don't officially support them.
+* Optionally enables immutable snapshots on models older than '20 series running DSM 7.2.
 * Checks that M.2 volume support is enabled (on models that have M.2 slots or PCIe slots).
 * Enables creating M.2 storage pools and volumes from within Storage Manager **(newer models only?)**.
 * Makes DSM recheck disk compatibility so rebooting is not needed if you don't have M.2 drives (DSM 7 only).
     * **If you have M.2 drives you may need to reboot.**
-    * Reminds you that you may need to reboot the Synology after running the script (DSM 6 only).
+    * Reminds you that you may need to reboot the Synology after running the script.
 * Checks if there is a newer version of this script and offers to download it for you.
   * The new version available messages time out so they don't prevent the script running if it is scheduled to run unattended.
 
@@ -46,14 +48,20 @@ You would need to re-run the script after a DSM update. If you have DSM set to a
 ### Options when running the script
 
 There are optional flags you can use when running the script:
-* --showedits or -s to show you the changes it made to the Synology's compatible-drive database.
-* --noupdate or -n to prevent DSM updating the compatible drive databases. See note below.  
-* --m2 or -m to prevent processing M.2 drives.
-* --force or -f to disable "support_disk_compatibility". This should only be needed if any of your drives weren't detected.
-  * If you run the script without --force or -f it will re-eanble "support_disk_compatibility".
-* --ram or -r to disable "support_memory_compatibility".
-  * If you run the script without --ram or -r it will re-eanble "support_memory_compatibility".
-* --restore to undo all the changes the script has made.
+```YAML
+-s, --showedits       Show edits made to <model>_host db and db.new file(s)
+-n, --noupdate        Prevent DSM updating the compatible drive databases
+-m, --m2              Don't process M.2 drives
+-f, --force           Force DSM to not check drive compatibility
+-r, --ram             Disable memory compatibility checking (DSM 7.x only) and set max memory to amount of installed memory
+-w, --wdda            Disable WD WDDA
+-i, --immutable       Enable immutable snapshots on models older than 20-series (DSM 7.2 and newer only)
+    --restore         Undo all changes made by the script
+    --autoupdate=AGE  Auto update script (useful when script is scheduled)
+                      AGE is how many days old a release must be before auto-updating. AGE must be a number: 0 or greater
+-h, --help            Show this help message
+-v, --version         Show the script version
+```
 
 **Note:** If you have some Synology drives and want to update their firmware run the script **without** --noupdate or -n then do the drive database update from Storage Manager and finally run the script again with your preferred options.
 
