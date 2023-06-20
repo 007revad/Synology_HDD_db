@@ -28,7 +28,11 @@
 # Solve issue of --restore option restoring files that were backed up with older DSM version.
 
 # DONE
-# Changed help to show -r, --ram also sets max memory to the amount of installed memory.
+# Now enables any installed Synology M.2 PCIe cards for models that don't officially support them.
+#
+# Added -i, --immutable option to enable immutable snapshots on models older than '20 series running DSM 7.2.
+#
+# Changed help to show that -r, --ram also sets max memory to the amount of installed memory.
 #
 # Changed the "No M.2 cards found" to "No M.2 PCIe cards found" to make it clearer.
 #
@@ -58,6 +62,9 @@
 #    Autoupdate logs update success or errors to DSM system log.
 #
 # Added -w, --wdda option to disable WDDA
+#  https://kb.synology.com/en-us/DSM/tutorial/Which_Synology_NAS_supports_WDDA
+#  https://www.youtube.com/watch?v=cLGi8sPLkLY
+#  https://community.synology.com/enu/forum/1/post/159537
 #
 #
 # Added --restore info to --help
@@ -178,16 +185,16 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v2.3.54"
+scriptver="v3.0.55"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
-# Check BASH variable is is non-empty and posix mode is off, else abort with error.
-[ "$BASH" ] && ! shopt -qo posix || {
+# Check BASH variable is bash
+if [ ! "$(basename "$BASH")" = bash ]; then
+    echo "This is a bash script. Do not run it with $(basename "$BASH")"
     printf \\a
-    printf >&2 "This is a bash script, don't run it with sh\n"
     exit 1
-}
+fi
 
 #echo -e "bash version: $(bash --version | head -1 | cut -d' ' -f4)\n"  # debug
 
@@ -221,6 +228,8 @@ Options:
   -r, --ram             Disable memory compatibility checking (DSM 7.x only),
                         and sets max memory to the amount of installed memory
   -w, --wdda            Disable WD WDDA
+  -i, --immutable       Enable immutable snapshots on models older than
+                        20-series (DSM 7.2 and newer only).
       --restore         Undo all changes made by the script
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
                           AGE is how many days old a release must be before
@@ -249,7 +258,7 @@ args=("$@")
 
 # Check for flags with getopt
 if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
-    restore,showedits,noupdate,nodbupdate,m2,force,ram,wdda,autoupdate:,help,version,debug \
+    restore,showedits,noupdate,nodbupdate,m2,force,ram,wdda,immutable,autoupdate:,help,version,debug \
     -- "$@")"; then
     eval set -- "$options"
     while true; do
@@ -272,6 +281,9 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
                 ;;
             -r|--ram)           # Disable "support_memory_compatibility"
                 ram=yes
+                ;;
+            -i|--immutable)     # Enable "support_worm" (immutable snapshots)
+                immutable=yes
                 ;;
             -w|--wdda)          # Disable "support_memory_compatibility"
                 wdda=no
@@ -337,6 +349,7 @@ fi
 #    cut -d"/" -f5 | cut -d"_" -f1 | uniq)
 
 model=$(cat /proc/sys/kernel/syno_hw_version)
+modelname="$model"
 
 
 # Show script version
@@ -360,10 +373,12 @@ model=${model,,}
 
 # Check for dodgy characters after model number
 if [[ $model =~ 'pv10-j'$ ]]; then  # GitHub issue #10
-    model=${model%??????}+  # replace last 6 chars with +
+    modelname=${modelname%??????}+  # replace last 6 chars with +
+    model=${model%??????}+          # replace last 6 chars with +
     echo -e "\nUsing model: $model"
 elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
-    model=${model%??}  # remove last 2 chars
+    modelname=${modelname%??}     # remove last 2 chars
+    model=${model%??}             # remove last 2 chars
     echo -e "\nUsing model: $model"
 fi
 
@@ -1101,6 +1116,52 @@ done
 
 
 #------------------------------------------------------------------------------
+# Enable unsupported Synology M2 PCIe cards
+
+enable_card(){
+    if [[ -f $1 ]] && [[ -n $2 ]]; then
+        # Check if section exists
+        if ! grep '^\['"$2"'\]$' "$1"; then
+            echo -e "Section [$2] not found in $(basename -- "$1")!" >&2
+            return
+        fi
+        # Check if already enabled
+        val=$(get_section_key_value "$1" "$2" "$modelname")
+        if [[ $val != "yes" ]]; then
+            if set_section_key_value "$1" "$2" "$modelname" yes; then
+                echo -e "Enabled $1 for $modelname" >&2
+            else
+                echo -e "${Error}ERROR 5${Off} Failed to enable $1 for ${modelname}!" >&2
+            fi
+        else
+            echo -e "$1 already enabled for $modelname" >&2
+        fi
+    fi
+}
+
+for c in "${!m2cards[@]}"; do
+    echo ""
+    m2cardconf="/usr/syno/etc.defaults/adapter_cards.conf"
+    case "$c" in
+        E10M20-T1)
+            enable_card "$m2cardconf" E10M20-T1_sup_nvme
+            enable_card "$m2cardconf" E10M20-T1_sup_sata
+        ;;
+        M2D20)
+            enable_card "$m2cardconf" M2D20_sup_nvme
+        ;;
+        M2D18)
+            enable_card "$m2cardconf" M2D18_sup_nvme
+            enable_card "$m2cardconf" M2D18_sup_sata
+        ;;
+        M2D17)
+            enable_card "$m2cardconf" M2D17_sup_sata
+        ;;
+    esac
+done
+
+
+#------------------------------------------------------------------------------
 # Edit /etc.defaults/synoinfo.conf
 
 # Backup synoinfo.conf if needed
@@ -1301,18 +1362,33 @@ fi
 
 
 # Optionally disable "support_wdda"
-wdda=support_wdda
-setting="$(get_key_value $synoinfo $wdda)"
+setting="$(get_key_value $synoinfo support_wdda)"
 if [[ $wdda == "no" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_memory_compatibility
-        synosetkeyvalue "$synoinfo" "$wdda" "no"
-        setting="$(get_key_value "$synoinfo" $wdda)"
+        synosetkeyvalue "$synoinfo" support_wdda "no"
+        setting="$(get_key_value "$synoinfo" support_wdda)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support WDDA."
         fi
     elif [[ $setting == "no" ]]; then
         echo -e "\nSupport WDDA already disabled."
+    fi
+fi
+
+
+# Optionally enable "support_worm" (immutable snapshots)
+setting="$(get_key_value $synoinfo support_worm)"
+if [[ $immutable == "yes" ]]; then
+    if [[ $setting != "yes" ]]; then
+        # Disable support_memory_compatibility
+        synosetkeyvalue "$synoinfo" support_worm "yes"
+        setting="$(get_key_value "$synoinfo" support_worm)"
+        if [[ $setting == "yes" ]]; then
+            echo -e "\nEnabled Immutable Snapshots."
+        fi
+    elif [[ $setting == "no" ]]; then
+        echo -e "\nImmutable Snapshots already enabled."
     fi
 fi
 
