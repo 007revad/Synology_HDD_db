@@ -28,6 +28,9 @@
 # Solve issue of --restore option restoring files that were backed up with older DSM version.
 
 # DONE
+# Minor bug fix for checking amount of installed memory.
+#
+#
 # Now enables any installed Synology M.2 PCIe cards for models that don't officially support them.
 #
 # Added -i, --immutable option to enable immutable snapshots on models older than '20 series running DSM 7.2.
@@ -185,7 +188,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v3.0.55"
+scriptver="v3.0.56"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -1244,8 +1247,8 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
                         else
                             ramtotal="$ramsize"
                         fi
-                    else
-                        echo -e "\n${Error}ERROR${Off} Memory size is not numeric: '$ramsize'"
+                    #else
+                    #    echo -e "\n${Error}ERROR${Off} Memory size is not numeric: '$ramsize'"
                     fi
                 fi
                 num=$((num +1))
@@ -1253,9 +1256,9 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
         fi
         # Set mem_max_mb to the amount of installed memory
         setting="$(get_key_value $synoinfo mem_max_mb)"
-        if [[ $ramtotal =~ ^[0-9]+$ ]]; then  # Check $ramtotal is numeric
-            if [[ $bytes == "GB" ]]; then       # DSM 7.2 dmidecode returns GB
-                ramtotal=$((ramtotal * 1024))   # Convert to MB
+        if [[ $ramtotal =~ ^[0-9]+$ ]]; then   # Check $ramtotal is numeric
+            if [[ $bytes == "GB" ]]; then      # DSM 7.2 dmidecode returns GB
+                ramtotal=$((ramtotal * 1024))  # Convert to MB
             fi
             if [[ $ramtotal -gt $setting ]]; then
                 synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
@@ -1272,6 +1275,10 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
                 #echo -e "\nMax memory already set to $ramtotal MB."
                 ramgb=$((ramtotal / 1024))
                 echo -e "\nMax memory already set to $ramgb GB."
+            else [[ $setting -lt "$ramtotal" ]]
+                #echo -e "\nMax memory is set to $ramtotal MB."
+                ramgb=$((ramtotal / 1024))
+                echo -e "\nMax memory is set to $ramgb GB."
             fi
         else
             echo -e "\n${Error}ERROR${Off} Total memory size is not numeric: '$ramtotal'"
