@@ -1,3 +1,6 @@
+v3.0.56
+- Minor bug fix for checking amount of installed memory.
+
 v3.0.55
 - Now enables any installed Synology M.2 PCIe cards for models that don't officially support them.
   - You can use a M2D20, M2D18, M2D17 or E10M20-T1 on any model with a PCIe slot (not Mini PCIe).
