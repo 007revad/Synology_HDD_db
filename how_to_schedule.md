@@ -1,4 +1,4 @@
-# How to schedule a script in Synology Task Manager
+# How to schedule a script in Synology Task Scheduler
 
 To schedule a script to run on your Synology at boot-up or shut-down follow these steps:
 
