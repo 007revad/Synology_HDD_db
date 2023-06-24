@@ -25,5 +25,8 @@
 - **<a href="https://github.com/007revad/Plex_Server_Sync">Plex_Server_Sync</a>**
   - Sync main Plex server database & metadata to backup Plex server
 
+- **<a href="https://github.com/007revad/Synology_DSM_reinstall">Synology_DSM_reinstall</a>**
+  - Easily re-install the same DSM version without losing any data or settings
+
 - **<a href="https://github.com/007revad/ScriptNotify">ScriptNotify</a>**
   - DSM 7 package to allow your scripts to send DSM notifications
