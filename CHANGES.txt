@@ -1,3 +1,10 @@
+v3.1.57
+- Added enabling E10M20-T1, M2D20 and M2D18 for DS1821+, DS1621+ and DS1520+.
+- Fixed enabling E10M20-T1, M2D20 and M2D18 cards in models that don't officially support them.
+- Fixed bugs where the calculated amount of installed memory could be incorrect:
+   - If last memory socket was empty an invalid unit of bytes could be used. Issue #106
+   - When dmidecode returned MB for one ram module and GB for another ram module. Issue #107
+
 v3.0.56
 - Minor bug fix for checking amount of installed memory.
 
