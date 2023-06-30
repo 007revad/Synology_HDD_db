@@ -26,10 +26,19 @@
 # It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
 #
 # Solve issue of --restore option restoring files that were backed up with older DSM version.
+# Change how synoinfo.conf is backed up and restored to prevent issue #73
 
 # DONE
-# Minor bug fix for checking amount of installed memory.
+# Added enabling E10M20-T1, M2D20 and M2D18 for DS1821+, DS1621+ and DS1520+.
 #
+# Fixed enabling E10M20-T1, M2D20 and M2D18 cards in models that don't officially support them.
+#
+# Fixed bugs where the calculated amount of installed memory could be incorrect:
+#   - If last memory socket was empty an invalid unit of bytes could be used. Issue #106
+#   - When dmidecode returned MB for one ram module and GB for another ram module. Issue #107
+#
+#
+# Minor bug fix for checking amount of installed memory.
 #
 # Now enables any installed Synology M.2 PCIe cards for models that don't officially support them.
 #
@@ -68,7 +77,6 @@
 #  https://kb.synology.com/en-us/DSM/tutorial/Which_Synology_NAS_supports_WDDA
 #  https://www.youtube.com/watch?v=cLGi8sPLkLY
 #  https://community.synology.com/enu/forum/1/post/159537
-#
 #
 # Added --restore info to --help
 #
@@ -188,7 +196,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v3.0.56"
+scriptver="v3.1.57"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -209,6 +217,7 @@ Yellow='\e[0;33m'
 #Blue='\e[0;34m'
 #Purple='\e[0;35m'
 Cyan='\e[0;36m'
+#White='\e[0;37m'
 #White='\e[0;37m'
 Error='\e[41m'
 Off='\e[0m'
@@ -441,7 +450,7 @@ scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
 
 
 if ! printf "%s\n%s\n" "$tag" "$scriptver" |
-        sort --check --version-sort &> /dev/null ; then
+        sort --check --version-sort >/dev/null ; then
     echo -e "\n${Cyan}There is a newer version of this script available.${Off}"
     echo -e "Current version: ${scriptver}\nLatest version:  $tag"
     if [[ -f $scriptpath/$script-$shorttag.tar.gz ]]; then
@@ -557,16 +566,18 @@ fi
 
 dbpath=/var/lib/disk-compatibility/
 synoinfo="/etc.defaults/synoinfo.conf"
+adapter_cards="/usr/syno/etc.defaults/adapter_cards.conf"
+modeldtb="/etc.defaults/model.dtb"
 
 if [[ $restore == "yes" ]]; then
     dbbakfiles=($(find $dbpath -maxdepth 1 \( -name "*.db.new.bak" -o -name "*.db.bak" \)))
     echo
 
-    if [[ ${#dbbakfiles[@]} -gt "0" ]] || [[ -f ${synoinfo}.bak ]]; then
+    if [[ ${#dbbakfiles[@]} -gt "0" ]] || [[ -f ${synoinfo}.bak ]] ||\
+        [[ -f ${modeldtb}.bak ]] || [[ -f ${adapter_cards}.bak ]] ; then
 
         # Restore synoinfo.conf from backup
         if [[ -f ${synoinfo}.bak ]]; then
-            #if mv "${synoinfo}.bak" "${synoinfo}"; then
             if cp -p "${synoinfo}.bak" "${synoinfo}"; then
                 echo -e "Restored $(basename -- "$synoinfo")\n"
             else
@@ -575,10 +586,29 @@ if [[ $restore == "yes" ]]; then
             fi
         fi
 
+        # Restore adapter_cards.conf from backup
+        if [[ -f ${adapter_cards}.bak ]]; then
+            if cp -p "${adapter_cards}.bak" "${adapter_cards}"; then
+                echo -e "Restored $(basename -- "$adapter_cards")\n"
+            else
+                restoreerr=1
+                echo -e "${Error}ERROR${Off} Failed to restore adapter_cards.conf!\n"
+            fi
+        fi
+
+        # Restore modeldtb from backup
+        if [[ -f ${modeldtb}.bak ]]; then
+            if cp -p "${modeldtb}.bak" "${modeldtb}"; then
+                echo -e "Restored $(basename -- "$modeldtb")\n"
+            else
+                restoreerr=1
+                echo -e "${Error}ERROR${Off} Failed to restore model.dtb!\n"
+            fi
+        fi
+
         # Restore .db files from backups
         for f in "${!dbbakfiles[@]}"; do
             replaceme="${dbbakfiles[f]%.bak}"  # Remove .bak
-            #if mv "${dbbakfiles[f]}" "$replaceme"; then
             if cp -p "${dbbakfiles[f]}" "$replaceme"; then
                 echo "Restored $(basename -- "$replaceme")"
             else
@@ -1121,10 +1151,16 @@ done
 #------------------------------------------------------------------------------
 # Enable unsupported Synology M2 PCIe cards
 
+# DS1821+, DS1621+ and DS1520+ also need edited device tree blob file
+# /etc.defaults/model.dtb
+
 enable_card(){
-    if [[ -f $1 ]] && [[ -n $2 ]]; then
+    # $1 is the file
+    # $2 is the section
+    # $3 is the card model and mode
+    if [[ -f $1 ]] && [[ -n $2 ]] && [[ -n $3 ]]; then
         # Check if section exists
-        if ! grep '^\['"$2"'\]$' "$1"; then
+        if ! grep '^\['"$2"'\]$' "$1" >/dev/null; then
             echo -e "Section [$2] not found in $(basename -- "$1")!" >&2
             return
         fi
@@ -1132,36 +1168,113 @@ enable_card(){
         val=$(get_section_key_value "$1" "$2" "$modelname")
         if [[ $val != "yes" ]]; then
             if set_section_key_value "$1" "$2" "$modelname" yes; then
-                echo -e "Enabled $1 for $modelname" >&2
+                echo -e "Enabled ${Yellow}$3${Off} for ${Cyan}$modelname${Off}" >&2
             else
-                echo -e "${Error}ERROR 5${Off} Failed to enable $1 for ${modelname}!" >&2
+                echo -e "${Error}ERROR 5${Off} Failed to enable $3 for ${modelname}!" >&2
             fi
         else
-            echo -e "$1 already enabled for $modelname" >&2
+            echo -e "${Yellow}$3${Off} already enabled for ${Cyan}$modelname${Off}" >&2
         fi
     fi
 }
 
-for c in "${!m2cards[@]}"; do
-    echo ""
+check_modeldtb(){
+    if [[ -f /etc.defaults/model.dtb ]]; then
+        if ! grep --text "$1" /etc.defaults/model.dtb >/dev/null; then
+            if [[ $modelname == "DS1821+" ]] ||\
+                [[ $modelname == "DS1621+" ]] ||\
+                    [[ $modelname == "DS1520+" ]];
+            then
+                echo "" >&2
+                if [[ -f ./dtb/${modelname}_model.dtb ]]; then
+                    # Edited device tree blob exists with script
+                    blob="./dtb/${modelname}_model.dtb"
+                else
+                    # Download edited device tree blob model.dtb from github
+                    if cd /var/services/tmp; then
+                        echo -e "Downloading ${modelname}_model.dtb" >&2
+                        repo=https://github.com/007revad/Synology_HDD_db
+                        url=${repo}/raw/main/dtb/${modelname}_model.dtb
+                        curl -LJO -m 30 --connect-timeout 5 "$url"
+                        echo "" >&2
+                    else
+                        echo -e "${Error}ERROR ${Off} /var/services/tmp does not exist!" >&2
+                    fi
+                    
+                    # Check we actually downloaded the file
+                    if [[ -f /var/services/tmp/${modelname}_model.dtb ]]; then
+                        blob="/var/services/tmp/${modelname}_model.dtb"
+                    else
+                        echo -e "${Error}ERROR ${Off} Failed to download ${modelname}_model.dtb!" >&2
+                    fi
+                fi
+                if [[ -f $blob ]]; then
+                    # Backup model.dtb
+                    if ! backupdb "/etc.defaults/model.dtb"; then
+                        echo -e "${Error}ERROR ${Off} Failed to backup /etc.defaults/model.dtb!" >&2
+                    else                
+                        # Move and rename downloaded model.dtb
+                        if mv "$blob" "/etc.defaults/model.dtb"; then
+                            echo -e "Enabled ${Yellow}$1${Off} in ${Cyan}model.dtb${Off}" >&2
+                        else
+                            echo -e "${Error}ERROR ${Off} Failed to add support for ${1}" >&2
+                        fi
+
+                        # Fix permissions if needed
+                        octal=$(stat -c "%a %n" "/etc.defaults/model.dtb" | cut -d" " -f1)
+                        if [[ ! $octal -eq 644 ]]; then
+                            chmod 644 "/etc.defaults/model.dtb"
+                        fi
+                    fi
+                else
+                    #echo -e "${Error}ERROR ${Off} Missing file ${modelname}_model.dtb" >&2
+                    echo -e "${Error}ERROR ${Off} Missing file $blob" >&2
+                fi
+            else
+                echo -e "\n${Cyan}Contact 007revad to get an edited model.dtb file for your model.${Off}" >&2
+            fi
+        else
+            echo -e "${Yellow}$1${Off} already enabled in ${Cyan}model.dtb${Off}" >&2
+        fi
+    fi
+}
+
+for c in "${m2cards[@]}"; do
+    #echo ""
     m2cardconf="/usr/syno/etc.defaults/adapter_cards.conf"
     case "$c" in
         E10M20-T1)
-            enable_card "$m2cardconf" E10M20-T1_sup_nvme
-            enable_card "$m2cardconf" E10M20-T1_sup_sata
+            backupdb "$m2cardconf"
+            echo ""
+            enable_card "$m2cardconf" E10M20-T1_sup_nic "E10M20-T1 NIC"
+            enable_card "$m2cardconf" E10M20-T1_sup_nvme "E10M20-T1 NVMe"
+            enable_card "$m2cardconf" E10M20-T1_sup_sata "E10M20-T1 SATA"
+            check_modeldtb "$c"
         ;;
         M2D20)
-            enable_card "$m2cardconf" M2D20_sup_nvme
+            backupdb "$m2cardconf"
+            echo ""
+            enable_card "$m2cardconf" M2D20_sup_nvme "M2D20 NVMe"
+            check_modeldtb "$c"
         ;;
         M2D18)
-            enable_card "$m2cardconf" M2D18_sup_nvme
-            enable_card "$m2cardconf" M2D18_sup_sata
+            backupdb "$m2cardconf"
+            echo ""
+            enable_card "$m2cardconf" M2D18_sup_nvme "M2D18 NVMe"
+            enable_card "$m2cardconf" M2D18_sup_sata "M2D18 SATA"
+            check_modeldtb "$c"
         ;;
         M2D17)
-            enable_card "$m2cardconf" M2D17_sup_sata
+            backupdb "$m2cardconf"
+            echo ""
+            enable_card "$m2cardconf" M2D17_sup_sata "M2D17 SATA"
+        ;;
+        *)
+            echo "Unknown M2 card type: $c"
         ;;
     esac
 done
+
 
 
 #------------------------------------------------------------------------------
@@ -1232,23 +1345,25 @@ fi
 if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
     if [[ $ram == "yes" ]]; then
         # Get total amount of installed memory
-        IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory | grep "[Ss]ize")  # GitHub issue #86, 87
+        #IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory | grep "[Ss]ize")  # GitHub issue #86, 87
+        IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory |\
+            grep -E "[Ss]ize: [0-9]+ [MG]{1}[B]{1}$")  # GitHub issue #86, 87, 106
         if [[ ${#array[@]} -gt "0" ]]; then
             num="0"
             while [[ $num -lt "${#array[@]}" ]]; do
                 check=$(printf %s "${array[num]}" | awk '{print $1}')
                 if [[ ${check,,} == "size:" ]]; then
-                    #ramsize=$(printf %s "${array[num]}" | cut -d" " -f2)
                     ramsize=$(printf %s "${array[num]}" | awk '{print $2}')           # GitHub issue #86, 87
                     bytes=$(printf %s "${array[num]}" | awk '{print $3}')             # GitHub issue #86, 87
                     if [[ $ramsize =~ ^[0-9]+$ ]]; then  # Check $ramsize is numeric  # GitHub issue #86, 87
+                        if [[ $bytes == "GB" ]]; then    # DSM 7.2 dmidecode returned GB
+                            ramsize=$((ramsize * 1024))  # Convert to MB  # GitHub issue #107
+                        fi
                         if [[ $ramtotal ]]; then
                             ramtotal=$((ramtotal +ramsize))
                         else
                             ramtotal="$ramsize"
                         fi
-                    #else
-                    #    echo -e "\n${Error}ERROR${Off} Memory size is not numeric: '$ramsize'"
                     fi
                 fi
                 num=$((num +1))
@@ -1257,9 +1372,6 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
         # Set mem_max_mb to the amount of installed memory
         setting="$(get_key_value $synoinfo mem_max_mb)"
         if [[ $ramtotal =~ ^[0-9]+$ ]]; then   # Check $ramtotal is numeric
-            if [[ $bytes == "GB" ]]; then      # DSM 7.2 dmidecode returns GB
-                ramtotal=$((ramtotal * 1024))  # Convert to MB
-            fi
             if [[ $ramtotal -gt $setting ]]; then
                 synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
                 # Check we changed mem_max_mb
