@@ -196,7 +196,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v3.1.58"
+scriptver="v3.1.59"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -217,7 +217,6 @@ Yellow='\e[0;33m'
 #Blue='\e[0;34m'
 #Purple='\e[0;35m'
 Cyan='\e[0;36m'
-#White='\e[0;37m'
 #White='\e[0;37m'
 Error='\e[41m'
 Off='\e[0m'
@@ -552,6 +551,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                         syslog_set warn "/tmp/$script-$shorttag.tar.gz not found"
                     fi
                 fi
+                cd "$scriptpath" || echo -e "${Error}ERROR ${Off} Failed to cd to script location!"
             else
                 echo -e "${Error}ERROR ${Off} Failed to cd to /tmp!"
                 syslog_set warn "$script update failed to cd to /tmp"
@@ -1179,6 +1179,7 @@ enable_card(){
 }
 
 check_modeldtb(){
+    # $1 is E10M20-T1 or M2D20 or M2D18 or M2D17
     if [[ -f /etc.defaults/model.dtb ]]; then
         if ! grep --text "$1" /etc.defaults/model.dtb >/dev/null; then
             if [[ $modelname == "DS1821+" ]] ||\
@@ -1187,8 +1188,11 @@ check_modeldtb(){
             then
                 echo "" >&2
                 if [[ -f ./dtb/${modelname}_model.dtb ]]; then
-                    # Edited device tree blob exists with script
+                    # Edited device tree blob exists in dtb folder with script
                     blob="./dtb/${modelname}_model.dtb"
+                elif [[ -f ./${modelname}_model.dtb ]]; then
+                    # Edited device tree blob exists with script
+                    blob="./${modelname}_model.dtb"
                 else
                     # Download edited device tree blob model.dtb from github
                     if cd /var/services/tmp; then
@@ -1197,10 +1201,11 @@ check_modeldtb(){
                         url=${repo}/raw/main/dtb/${modelname}_model.dtb
                         curl -LJO -m 30 --connect-timeout 5 "$url"
                         echo "" >&2
+                        cd "$scriptpath" || echo -e "${Error}ERROR ${Off} Failed to cd to script location!"
                     else
                         echo -e "${Error}ERROR ${Off} /var/services/tmp does not exist!" >&2
                     fi
-                    
+
                     # Check we actually downloaded the file
                     if [[ -f /var/services/tmp/${modelname}_model.dtb ]]; then
                         blob="/var/services/tmp/${modelname}_model.dtb"
@@ -1372,24 +1377,24 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
         # Set mem_max_mb to the amount of installed memory
         setting="$(get_key_value $synoinfo mem_max_mb)"
         if [[ $ramtotal =~ ^[0-9]+$ ]]; then   # Check $ramtotal is numeric
-            if [[ $ramtotal -gt $setting ]]; then
+            if [[ $ramtotal -gt "$setting" ]]; then
                 synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
                 # Check we changed mem_max_mb
                 setting="$(get_key_value $synoinfo mem_max_mb)"
-                if [[ $setting == "$ramtotal" ]]; then
+                if [[ $ramtotal == "$setting" ]]; then
                     #echo -e "\nSet max memory to $ramtotal MB."
                     ramgb=$((ramtotal / 1024))
                     echo -e "\nSet max memory to $ramtotal GB."
                 else
                     echo -e "\n${Error}ERROR${Off} Failed to change max memory!"
                 fi
-            elif [[ $setting == "$ramtotal" ]]; then
+            elif [[ $ramtotal == "$setting" ]]; then
                 #echo -e "\nMax memory already set to $ramtotal MB."
                 ramgb=$((ramtotal / 1024))
                 echo -e "\nMax memory already set to $ramgb GB."
-            else [[ $setting -lt "$ramtotal" ]]
-                #echo -e "\nMax memory is set to $ramtotal MB."
-                ramgb=$((ramtotal / 1024))
+            else [[ $ramtotal -lt "$setting" ]]
+                #echo -e "\nMax memory is set to $setting MB."
+                ramgb=$((setting / 1024))
                 echo -e "\nMax memory is set to $ramgb GB."
             fi
         else
