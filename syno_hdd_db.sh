@@ -30,12 +30,15 @@
 
 # DONE
 # Added enabling E10M20-T1, M2D20 and M2D18 for DS1821+, DS1621+ and DS1520+.
+# Added enabling M2D18 for RS822RP+, RS822+, RS1221RP+ and RS1221+ with older DSM version.
 #
 # Fixed enabling E10M20-T1, M2D20 and M2D18 cards in models that don't officially support them.
 #
 # Fixed bugs where the calculated amount of installed memory could be incorrect:
 #   - If last memory socket was empty an invalid unit of bytes could be used. Issue #106
 #   - When dmidecode returned MB for one ram module and GB for another ram module. Issue #107
+#
+# Fixed bug displaying the max memory setting if total installed memory was less than the max memory. Issue #107
 #
 #
 # Minor bug fix for checking amount of installed memory.
@@ -477,28 +480,28 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                 url="https://github.com/$repo/archive/refs/tags/$tag.tar.gz"
                 if ! curl -LJO -m 30 --connect-timeout 5 "$url";
                 then
-                    echo -e "${Error}ERROR ${Off} Failed to download"\
+                    echo -e "${Error}ERROR${Off} Failed to download"\
                         "$script-$shorttag.tar.gz!"
                     syslog_set warn "$script $tag failed to download"
                 else
                     if [[ -f /tmp/$script-$shorttag.tar.gz ]]; then
                         # Extract tar file to /tmp/<script-name>
                         if ! tar -xf "/tmp/$script-$shorttag.tar.gz" -C "/tmp"; then
-                            echo -e "${Error}ERROR ${Off} Failed to"\
+                            echo -e "${Error}ERROR${Off} Failed to"\
                                 "extract $script-$shorttag.tar.gz!"
                             syslog_set warn "$script failed to extract $script-$shorttag.tar.gz!"
                         else
                             # Copy new script sh files to script location
                             if ! cp -p "/tmp/$script-$shorttag/"*.sh "$scriptpath"; then
                                 copyerr=1
-                                echo -e "${Error}ERROR ${Off} Failed to copy"\
+                                echo -e "${Error}ERROR${Off} Failed to copy"\
                                     "$script-$shorttag .sh file(s) to:\n $scriptpath"
                                 syslog_set warn "$script failed to copy $tag to script location"
                             else                   
                                 # Set permissions on script sh files
                                 if ! chmod 744 "$scriptpath/"*.sh ; then
                                     permerr=1
-                                    echo -e "${Error}ERROR ${Off} Failed to set permissions on:"
+                                    echo -e "${Error}ERROR${Off} Failed to set permissions on:"
                                     echo "$scriptpath *.sh file(s)"
                                     syslog_set warn "$script failed to set permissions on $tag"
                                 fi
@@ -507,27 +510,27 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                             # Copy new CHANGES.txt file to script location
                             if ! cp -p "/tmp/$script-$shorttag/CHANGES.txt" "$scriptpath"; then
                                 if [[ $autoupdate != "yes" ]]; then copyerr=1; fi
-                                echo -e "${Error}ERROR ${Off} Failed to copy"\
+                                echo -e "${Error}ERROR${Off} Failed to copy"\
                                     "$script-$shorttag/CHANGES.txt to:\n $scriptpath"
                             else                   
                                 # Set permissions on CHANGES.txt
                                 if ! chmod 744 "$scriptpath/CHANGES.txt"; then
                                     if [[ $autoupdate != "yes" ]]; then permerr=1; fi
-                                    echo -e "${Error}ERROR ${Off} Failed to set permissions on:"
+                                    echo -e "${Error}ERROR${Off} Failed to set permissions on:"
                                     echo "$scriptpath/CHANGES.txt"
                                 fi
                             fi
 
                             # Delete downloaded .tar.gz file
                             if ! rm "/tmp/$script-$shorttag.tar.gz"; then
-                                echo -e "${Error}ERROR ${Off} Failed to delete"\
+                                echo -e "${Error}ERROR${Off} Failed to delete"\
                                     "downloaded /tmp/$script-$shorttag.tar.gz!"
                                 syslog_set warn "$script update failed to delete tmp files"
                             fi
 
                             # Delete extracted tmp files
                             if ! rm -r "/tmp/$script-$shorttag"; then
-                                echo -e "${Error}ERROR ${Off} Failed to delete"\
+                                echo -e "${Error}ERROR${Off} Failed to delete"\
                                     "downloaded /tmp/$script-$shorttag!"
                                 syslog_set warn "$script update failed to delete tmp files"
                             fi
@@ -545,15 +548,15 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                             fi
                         fi
                     else
-                        echo -e "${Error}ERROR ${Off}"\
+                        echo -e "${Error}ERROR${Off}"\
                             "/tmp/$script-$shorttag.tar.gz not found!"
                         #ls /tmp | grep "$script"  # debug
                         syslog_set warn "/tmp/$script-$shorttag.tar.gz not found"
                     fi
                 fi
-                cd "$scriptpath" || echo -e "${Error}ERROR ${Off} Failed to cd to script location!"
+                cd "$scriptpath" || echo -e "${Error}ERROR${Off} Failed to cd to script location!"
             else
-                echo -e "${Error}ERROR ${Off} Failed to cd to /tmp!"
+                echo -e "${Error}ERROR${Off} Failed to cd to /tmp!"
                 syslog_set warn "$script update failed to cd to /tmp"
             fi
         fi
@@ -971,14 +974,12 @@ backupdb(){
 for i in "${!db1list[@]}"; do
     backupdb "${db1list[i]}" ||{
         ding
-        echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db1list[i]}")!"
         exit 5
         }
 done
 for i in "${!db2list[@]}"; do
     backupdb "${db2list[i]}" ||{
         ding
-        echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${db2list[i]}")!"
         exit 5  # maybe don't exit for .db.new file
         }
 done
@@ -1153,6 +1154,8 @@ done
 
 # DS1821+, DS1621+ and DS1520+ also need edited device tree blob file
 # /etc.defaults/model.dtb
+# RS822RP+, RS822+, RS1221RP+ and RS1221+ with DSM older than 7.2 need
+# device tree blob file from DSM 7.2 to support M2D18
 
 enable_card(){
     # $1 is the file
@@ -1170,7 +1173,7 @@ enable_card(){
             if set_section_key_value "$1" "$2" "$modelname" yes; then
                 echo -e "Enabled ${Yellow}$3${Off} for ${Cyan}$modelname${Off}" >&2
             else
-                echo -e "${Error}ERROR 5${Off} Failed to enable $3 for ${modelname}!" >&2
+                echo -e "${Error}ERROR 9${Off} Failed to enable $3 for ${modelname}!" >&2
             fi
         else
             echo -e "${Yellow}$3${Off} already enabled for ${Cyan}$modelname${Off}" >&2
@@ -1182,9 +1185,10 @@ check_modeldtb(){
     # $1 is E10M20-T1 or M2D20 or M2D18 or M2D17
     if [[ -f /etc.defaults/model.dtb ]]; then
         if ! grep --text "$1" /etc.defaults/model.dtb >/dev/null; then
-            if [[ $modelname == "DS1821+" ]] ||\
-                [[ $modelname == "DS1621+" ]] ||\
-                    [[ $modelname == "DS1520+" ]];
+            if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1621+" ]] ||\
+                [[ $modelname == "DS1520+" ]] || [[ $modelname == "RS822RP+" ]] ||\
+                [[ $modelname == "RS822+" ]] || [[ $modelname == "RS1221RP+" ]] ||\
+                [[ $modelname == "RS1221+" ]];
             then
                 echo "" >&2
                 if [[ -f ./dtb/${modelname}_model.dtb ]]; then
@@ -1201,28 +1205,28 @@ check_modeldtb(){
                         url=${repo}/raw/main/dtb/${modelname}_model.dtb
                         curl -LJO -m 30 --connect-timeout 5 "$url"
                         echo "" >&2
-                        cd "$scriptpath" || echo -e "${Error}ERROR ${Off} Failed to cd to script location!"
+                        cd "$scriptpath" || echo -e "${Error}ERROR${Off} Failed to cd to script location!"
                     else
-                        echo -e "${Error}ERROR ${Off} /var/services/tmp does not exist!" >&2
+                        echo -e "${Error}ERROR${Off} /var/services/tmp does not exist!" >&2
                     fi
 
                     # Check we actually downloaded the file
                     if [[ -f /var/services/tmp/${modelname}_model.dtb ]]; then
                         blob="/var/services/tmp/${modelname}_model.dtb"
                     else
-                        echo -e "${Error}ERROR ${Off} Failed to download ${modelname}_model.dtb!" >&2
+                        echo -e "${Error}ERROR${Off} Failed to download ${modelname}_model.dtb!" >&2
                     fi
                 fi
                 if [[ -f $blob ]]; then
                     # Backup model.dtb
                     if ! backupdb "/etc.defaults/model.dtb"; then
-                        echo -e "${Error}ERROR ${Off} Failed to backup /etc.defaults/model.dtb!" >&2
+                        echo -e "${Error}ERROR${Off} Failed to backup /etc.defaults/model.dtb!" >&2
                     else                
                         # Move and rename downloaded model.dtb
                         if mv "$blob" "/etc.defaults/model.dtb"; then
                             echo -e "Enabled ${Yellow}$1${Off} in ${Cyan}model.dtb${Off}" >&2
                         else
-                            echo -e "${Error}ERROR ${Off} Failed to add support for ${1}" >&2
+                            echo -e "${Error}ERROR${Off} Failed to add support for ${1}" >&2
                         fi
 
                         # Fix permissions if needed
@@ -1232,8 +1236,8 @@ check_modeldtb(){
                         fi
                     fi
                 else
-                    #echo -e "${Error}ERROR ${Off} Missing file ${modelname}_model.dtb" >&2
-                    echo -e "${Error}ERROR ${Off} Missing file $blob" >&2
+                    #echo -e "${Error}ERROR${Off} Missing file ${modelname}_model.dtb" >&2
+                    echo -e "${Error}ERROR${Off} Missing file $blob" >&2
                 fi
             else
                 echo -e "\n${Cyan}Contact 007revad to get an edited model.dtb file for your model.${Off}" >&2
@@ -1376,6 +1380,7 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
         fi
         # Set mem_max_mb to the amount of installed memory
         setting="$(get_key_value $synoinfo mem_max_mb)"
+        settingbak="$(get_key_value ${synoinfo}.bak mem_max_mb)"                      # GitHub issue #107
         if [[ $ramtotal =~ ^[0-9]+$ ]]; then   # Check $ramtotal is numeric
             if [[ $ramtotal -gt "$setting" ]]; then
                 synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
@@ -1388,6 +1393,21 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
                 else
                     echo -e "\n${Error}ERROR${Off} Failed to change max memory!"
                 fi
+
+            elif [[ $setting -gt "$ramtotal" ]] && [[ $setting -gt "$settingbak" ]];  # GitHub issue #107 
+            then
+                # Fix setting is greater than both ramtotal and default in syninfo.conf.bak
+                synosetkeyvalue "$synoinfo" mem_max_mb "$settingbak"
+                # Check we restored mem_max_mb
+                setting="$(get_key_value $synoinfo mem_max_mb)"
+                if [[ $settingbak == "$setting" ]]; then
+                    #echo -e "\nSet max memory to $ramtotal MB."
+                    ramgb=$((ramtotal / 1024))
+                    echo -e "\nRestored max memory to $ramtotal GB."
+                else
+                    echo -e "\n${Error}ERROR${Off} Failed to restore max memory!"
+                fi
+
             elif [[ $ramtotal == "$setting" ]]; then
                 #echo -e "\nMax memory already set to $ramtotal MB."
                 ramgb=$((ramtotal / 1024))
