@@ -1,4 +1,4 @@
-v3.1.58
+v3.1.59
 - Added enabling E10M20-T1, M2D20 and M2D18 for DS1821+, DS1621+ and DS1520+.
 - Fixed enabling E10M20-T1, M2D20 and M2D18 cards in models that don't officially support them.
 - Fixed bugs where the calculated amount of installed memory could be incorrect:
