@@ -40,6 +40,8 @@
 #
 # Fixed bug displaying the max memory setting if total installed memory was less than the max memory. Issue #107
 #
+# Fixed bug where sata1 drive firmware version was wrong if there was a sata10 drive.
+#
 #
 # Minor bug fix for checking amount of installed memory.
 #
@@ -199,7 +201,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v3.1.59"
+scriptver="v3.1.60"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -692,9 +694,9 @@ getdriveinfo(){
         #fwrev=$(printf "%s" "$fwrev" | xargs)  # trim leading and trailing white space
 
         device="/dev/$(basename -- "$1")"
-        #fwrev=$(syno_hdd_util --ssd_detect | grep "$device" | awk '{print $2}')      # GitHub issue #86, 87
+        #fwrev=$(syno_hdd_util --ssd_detect | grep "$device " | awk '{print $2}')      # GitHub issue #86, 87
         # Account for SSD drives with spaces in their model name/number
-        fwrev=$(syno_hdd_util --ssd_detect | grep "$device" | awk '{print $(NF-3)}')  # GitHub issue #86, 87
+        fwrev=$(syno_hdd_util --ssd_detect | grep "$device " | awk '{print $(NF-3)}')  # GitHub issue #86, 87
 
         if [[ $hdmodel ]] && [[ $fwrev ]]; then
             hdlist+=("${hdmodel},${fwrev}")
@@ -1186,8 +1188,8 @@ check_modeldtb(){
     if [[ -f /etc.defaults/model.dtb ]]; then
         if ! grep --text "$1" /etc.defaults/model.dtb >/dev/null; then
             if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1621+" ]] ||\
-                [[ $modelname == "DS1520+" ]] || [[ $modelname == "RS822RP+" ]] ||\
-                [[ $modelname == "RS822+" ]] || [[ $modelname == "RS1221RP+" ]] ||\
+                [[ $modelname == "DS1520+" ]] || [[ $modelname == "RS822rp+" ]] ||\
+                [[ $modelname == "RS822+" ]] || [[ $modelname == "RS1221rp+" ]] ||\
                 [[ $modelname == "RS1221+" ]];
             then
                 echo "" >&2
