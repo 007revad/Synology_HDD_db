@@ -1,4 +1,4 @@
-v3.1.59
+v3.1.56
 - Added enabling E10M20-T1, M2D20 and M2D18 for DS1821+, DS1621+ and DS1520+.
 - Added enabling M2D18 for RS822RP+, RS822+, RS1221RP+ and RS1221+ for older DSM versions.
 - Fixed enabling E10M20-T1, M2D20 and M2D18 cards in models that don't officially support them.
@@ -6,6 +6,7 @@ v3.1.59
    - If last memory socket was empty an invalid unit of bytes could be used. Issue #106
    - When dmidecode returned MB for one ram module and GB for another ram module. Issue #107
 - Fixed bug displaying the max memory setting if total installed memory was less than the max memory. Issue #107
+- Fixed bug where sata1 drive firmware version was wrong if there was a sata10 drive.
 
 v3.0.56
 - Minor bug fix for checking amount of installed memory.
