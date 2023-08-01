@@ -7,7 +7,7 @@
 
 ### Description
 
-Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 drives to your Synology's compatible drive databases, including your M.2 card and Expansion Unit databases. 
+Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 drives to your Synology's compatible drive databases, including your Synology M.2 PCIe card and Expansion Unit databases. 
 
 The script works in DSM 7, including DSM 7.2, and DSM 6.
 

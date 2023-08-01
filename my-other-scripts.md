@@ -10,11 +10,14 @@
 - **<a href="https://github.com/007revad/Synology_M2_volume">Synology_M2_volume</a>**
   - Easily create an M.2 volume on Synology NAS.
 
+- **<a href="https://github.com/007revad/Synology_enable_M2_card">Synology_enable_M2_card</a>**
+  - Enable Synology M.2 PCIe cards in Synology NAS that don't officially support them.
+
 - **<a href="https://github.com/007revad/Synology_enable_Deduplication">Synology_enable_Deduplication</a>**
   - Enable deduplication with non-Synology SSDs and unsupported NAS models.
 
 - **<a href="https://github.com/007revad/Synology_RAID-F1_SHR_switch">Synology_RAID-F1_SHR_switch</a>**
-  - Easily switch between SHR and RAID F1.
+  - Easily switch between SHR and RAID Group.
 
 - **<a href="https://github.com/007revad/Synology_Config_Backup">Synology_Config_Backup</a>**
   - Backup and export your Synology DSM configuration.
