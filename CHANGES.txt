@@ -1,3 +1,6 @@
+v3.1.62
+- Fixed bug where newly connected expansion units weren't found until up to 24 hours later. #124
+
 v3.1.61
 - Added enabling E10M20-T1, M2D20 and M2D18 for DS1821+, DS1621+ and DS1520+.
 - Added enabling M2D18 for RS822RP+, RS822+, RS1221RP+ and RS1221+ for older DSM versions.
