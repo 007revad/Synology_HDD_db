@@ -29,6 +29,8 @@
 # Change how synoinfo.conf is backed up and restored to prevent issue #73
 
 # DONE
+# Fixed bug where newly connected expansion units weren't found until up to 24 hours later. #124
+#
 # Added enabling E10M20-T1, M2D20 and M2D18 for DS1821+, DS1621+ and DS1520+.
 # Added enabling M2D18 for RS822RP+, RS822+, RS1221RP+ and RS1221+ with older DSM version.
 #
@@ -41,7 +43,6 @@
 # Fixed bug displaying the max memory setting if total installed memory was less than the max memory. Issue #107
 #
 # Fixed bug where sata1 drive firmware version was wrong if there was a sata10 drive.
-#
 #
 # Minor bug fix for checking amount of installed memory.
 #
@@ -201,7 +202,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v3.1.61"
+scriptver="v3.1.62"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -879,6 +880,10 @@ fi
 
 
 # Expansion units
+# Create new /var/log/diskprediction log to ensure newly connected ebox is in latest log
+# Otherwise the new /var/log/diskprediction log is only created a midnight.
+syno_disk_data_collector record
+
 # Get list of connected expansion units (aka eunit/ebox)
 path="/var/log/diskprediction"
 # shellcheck disable=SC2012
