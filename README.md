@@ -25,7 +25,7 @@ It also has a restore option to undo all the changes made by the script.
 * Optionally disable DSM's "support_disk_compatibility".
 * Optionally disable DSM's "support_memory_compatibility" to prevent <a href=images/ram_wanring.png/>non-Synology memory notifications</a>.
 * Optionally edits max supported memory to match the amount of memory installed, if installed memory is greater than the current max memory setting.
-* Enables M2D20, M2D18, M2D17 and E10M20-T1 if present on Synology NAS that don't officially support them.
+* Enables M2D20, M2D18, M2D17 and E10M20-T1 if present on Synology NAS that don't officially support them
 * Checks that M.2 volume support is enabled (on models that have M.2 slots or PCIe slots).
 * Enables creating M.2 storage pools and volumes from within Storage Manager **(newer models only?)**.
 * Makes DSM recheck disk compatibility so rebooting is not needed if you don't have M.2 drives (DSM 7 only).
@@ -54,7 +54,6 @@ There are optional flags you can use when running the script:
 -f, --force           Force DSM to not check drive compatibility
 -r, --ram             Disable memory compatibility checking (DSM 7.x only) and set max memory to amount of installed memory
 -w, --wdda            Disable WD WDDA
--i, --immutable       Enable immutable snapshots on models older than 20-series (DSM 7.2 and newer only)
     --restore         Undo all changes made by the script
     --autoupdate=AGE  Auto update script (useful when script is scheduled)
                       AGE is how many days old a release must be before auto-updating. AGE must be a number: 0 or greater
