@@ -40,7 +40,7 @@ See <a href=images/how_to_download.png/>How to download the script</a> for the e
 
 ### When to run the script
 
-You would need to re-run the script after a DSM update. If you have DSM set to auto update the best option is to run the script every time the Synology boots, and the best way to do that is to setup a scheduled task to run the the script at boot-up.
+You would need to re-run the script after a DSM update. If you have DSM set to auto update the best option is to run the script every time the Synology boots, and the best way to do that is to <a href=how_to_schedule.md/>setup a scheduled task</a> to run the the script at boot-up.
 
 **Note:** After you first run the script you may need to reboot the Synology to see the effect of the changes.
 
@@ -101,6 +101,28 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr --showedits
 
 **Donators**
 
-- Thank you to Gummibando on reddit for their donation.
-- Thank you to the onimous donors.
+Thank you to the following paypal donators and GitHub sponsors
 
+- Bogdan-Stefan Rotariu
+- Kevin Boatswain
+- anschluss-org
+- Kyle Reid
+- Yemeth
+- Nick Dawson
+- Patrick Thomas
+- Manuel Marquez Corral
+- Evrard Franck
+- Chad Palmer
+- 侯​永政
+- CHEN​HAN-YING
+- Eric Wells
+- Massimiliano Pesce
+- JasonEMartin
+- Kevin Boatswain
+- Gerrit Klussmann
+- Alain Aube
+- Robert Kraut
+- Charles-Edouard Poisnel
+- Oliver Busch
+- Gummibando
+- The onimous donors
