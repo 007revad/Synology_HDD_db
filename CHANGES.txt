@@ -1,5 +1,5 @@
 v3.1.63
-- Added support to disable unsupported memory warnings on DVA models.
+- Added support to disable unsupported memory warnings on DVA models. #136
 
 v3.1.62
 - Fixed bug where newly connected expansion units weren't found until up to 24 hours later. #124
