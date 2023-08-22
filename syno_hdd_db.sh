@@ -29,6 +29,8 @@
 # Change how synoinfo.conf is backed up and restored to prevent issue #73
 
 # DONE
+# Added support to disable unsupported memory warnings on DVA models.
+#
 # Fixed bug where newly connected expansion units weren't found until up to 24 hours later. #124
 #
 # Added enabling E10M20-T1, M2D20 and M2D18 for DS1821+, DS1621+ and DS1520+.
@@ -202,7 +204,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v3.1.62"
+scriptver="v3.1.63"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -641,6 +643,14 @@ if [[ $restore == "yes" ]]; then
         # Update .db files from Synology
         syno_disk_db_update --update
 
+        # Enable SynoMemCheck.service for DVA models
+        if [[ ${model:0:3} == "dva" ]]; then
+            memcheck="/usr/lib/systemd/system/SynoMemCheck.service"
+            if [[ $(synogetkeyvalue "$memcheck" ExecStart) == "/bin/true" ]]; then
+                synosetkeyvalue "$memcheck" ExecStart /usr/syno/bin/syno_mem_check
+            fi
+        fi
+
         if [[ -z $restoreerr ]]; then
             echo -e "\nRestore successful."
         fi
@@ -1004,6 +1014,7 @@ editcount(){
     fi
 }
 
+
 editdb7(){
     if [[ $1 == "append" ]]; then  # model not in db file
         #if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # append
@@ -1255,6 +1266,7 @@ check_modeldtb(){
     fi
 }
 
+
 for c in "${m2cards[@]}"; do
     #echo ""
     m2cardconf="/usr/syno/etc.defaults/adapter_cards.conf"
@@ -1330,30 +1342,40 @@ else
 fi
 
 
-# Optionally disable "support_memory_compatibility"
-smc=support_memory_compatibility
-setting="$(get_key_value $synoinfo $smc)"
-if [[ $ram == "yes" ]]; then
-    if [[ $setting == "yes" ]]; then
-        # Disable support_memory_compatibility
-        synosetkeyvalue "$synoinfo" "$smc" "no"
-        setting="$(get_key_value "$synoinfo" $smc)"
-        if [[ $setting == "no" ]]; then
-            echo -e "\nDisabled support memory compatibility."
-        fi
-    elif [[ $setting == "no" ]]; then
-        echo -e "\nSupport memory compatibility already disabled."
-    fi
-else
-    if [[ $setting == "no" ]]; then
-        # Enable support_memory_compatibility
-        synosetkeyvalue "$synoinfo" "$smc" "yes"
-        setting="$(get_key_value "$synoinfo" $smc)"
+# Optionally disable "support_memory_compatibility" (not for DVA models)
+if [[ ${model:0:3} != "dva" ]]; then
+    smc=support_memory_compatibility
+    setting="$(get_key_value $synoinfo $smc)"
+    if [[ $ram == "yes" ]]; then
         if [[ $setting == "yes" ]]; then
-            echo -e "\nRe-enabled support memory compatibility."
+            # Disable support_memory_compatibility
+            synosetkeyvalue "$synoinfo" "$smc" "no"
+            setting="$(get_key_value "$synoinfo" $smc)"
+            if [[ $setting == "no" ]]; then
+                echo -e "\nDisabled support memory compatibility."
+            fi
+        elif [[ $setting == "no" ]]; then
+            echo -e "\nSupport memory compatibility already disabled."
         fi
-    elif [[ $setting == "yes" ]]; then
-        echo -e "\nSupport memory compatibility already enabled."
+    else
+        if [[ $setting == "no" ]]; then
+            # Enable support_memory_compatibility
+            synosetkeyvalue "$synoinfo" "$smc" "yes"
+            setting="$(get_key_value "$synoinfo" $smc)"
+            if [[ $setting == "yes" ]]; then
+                echo -e "\nRe-enabled support memory compatibility."
+            fi
+        elif [[ $setting == "yes" ]]; then
+            echo -e "\nSupport memory compatibility already enabled."
+        fi
+    fi
+fi
+
+# Optionally disable SynoMemCheck.service for DVA models
+if [[ ${model:0:3} == "dva" ]]; then
+    memcheck="/usr/lib/systemd/system/SynoMemCheck.service"
+    if [[ $(synogetkeyvalue "$memcheck" ExecStart) == "/usr/syno/bin/syno_mem_check" ]]; then
+        synosetkeyvalue "$memcheck" ExecStart /bin/true
     fi
 fi
 
@@ -1373,7 +1395,7 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
                     bytes=$(printf %s "${array[num]}" | awk '{print $3}')             # GitHub issue #86, 87
                     if [[ $ramsize =~ ^[0-9]+$ ]]; then  # Check $ramsize is numeric  # GitHub issue #86, 87
                         if [[ $bytes == "GB" ]]; then    # DSM 7.2 dmidecode returned GB
-                            ramsize=$((ramsize * 1024))  # Convert to MB  # GitHub issue #107
+                            ramsize=$((ramsize * 1024))  # Convert to MB              # GitHub issue #107
                         fi
                         if [[ $ramtotal ]]; then
                             ramtotal=$((ramtotal +ramsize))
