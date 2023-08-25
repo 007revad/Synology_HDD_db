@@ -106,9 +106,6 @@ Thank you to the following paypal donators and GitHub sponsors
 - Bogdan-Stefan Rotariu
 - Kevin Boatswain
 - anschluss-org
-- Kyle Reid
-- Yemeth
-- Nick Dawson
 - Patrick Thomas
 - Manuel Marquez Corral
 - Evrard Franck
@@ -125,4 +122,4 @@ Thank you to the following paypal donators and GitHub sponsors
 - Charles-Edouard Poisnel
 - Oliver Busch
 - Gummibando
-- The onimous donors
+- All the anonymous donors and private sponsors
