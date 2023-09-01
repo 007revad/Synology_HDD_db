@@ -103,6 +103,7 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr --showedits
 
 Thank you to the following paypal donators and GitHub sponsors
 
+- Daniel Hofer
 - Bogdan-Stefan Rotariu
 - Kevin Boatswain
 - anschluss-org
@@ -115,7 +116,6 @@ Thank you to the following paypal donators and GitHub sponsors
 - Eric Wells
 - Massimiliano Pesce
 - JasonEMartin
-- Kevin Boatswain
 - Gerrit Klussmann
 - Alain Aube
 - Robert Kraut
