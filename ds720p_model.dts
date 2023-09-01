@@ -1,0 +1,146 @@
+/dts-v1/;
+
+/ {
+	compatible = "Synology";
+	model = "synology_geminilake_720+";
+	version = <0x01>;
+	syno_spinup_group = <0x01 0x01>;
+	syno_spinup_group_delay = <0x0b>;
+	syno_hdd_powerup_seq = "true";
+	syno_cmos_reg_secure_flash = <0x66>;
+	syno_cmos_reg_secure_boot = <0x68>;
+	power_limit = "11.55,5.775";
+
+	DX517 {
+		compatible = "Synology";
+		model = "synology_dx517";
+
+		pmp_slot@1 {
+
+			libata {
+				EMID = <0x00>;
+				pmp_link = <0x00>;
+			};
+		};
+
+		pmp_slot@2 {
+
+			libata {
+				EMID = <0x00>;
+				pmp_link = <0x01>;
+			};
+		};
+
+		pmp_slot@3 {
+
+			libata {
+				EMID = <0x00>;
+				pmp_link = <0x02>;
+			};
+		};
+
+		pmp_slot@4 {
+
+			libata {
+				EMID = <0x00>;
+				pmp_link = <0x03>;
+			};
+		};
+
+		pmp_slot@5 {
+
+			libata {
+				EMID = <0x00>;
+				pmp_link = <0x04>;
+			};
+		};
+	};
+
+	internal_slot@1 {
+		protocol_type = "sata";
+		power_pin_gpio = <0x17 0x00>;
+		detect_pin_gpio = <0x26 0x01>;
+		led_type = "lp3943";
+
+		ahci {
+			pcie_root = "00:12.0";
+			ata_port = <0x00>;
+		};
+
+		led_green {
+			led_name = "syno_led0";
+		};
+
+		led_orange {
+			led_name = "syno_led1";
+		};
+	};
+
+	internal_slot@2 {
+		protocol_type = "sata";
+		power_pin_gpio = <0x1f 0x00>;
+		detect_pin_gpio = <0x29 0x01>;
+		led_type = "lp3943";
+
+		ahci {
+			pcie_root = "00:12.0";
+			ata_port = <0x01>;
+		};
+
+		led_green {
+			led_name = "syno_led2";
+		};
+
+		led_orange {
+			led_name = "syno_led3";
+		};
+	};
+
+	esata_port@1 {
+
+		ahci {
+			pcie_root = "00:13.0,00.0";
+			ata_port = <0x00>;
+		};
+	};
+
+	usb_slot@1 {
+
+		vbus {
+			syno_gpio = <0x1d 0x01>;
+		};
+
+		usb2 {
+			usb_port = "1-1";
+		};
+
+		usb3 {
+			usb_port = "2-1";
+		};
+	};
+
+	usb_slot@2 {
+
+		vbus {
+			syno_gpio = <0x1e 0x01>;
+		};
+
+		usb2 {
+			usb_port = "1-2";
+		};
+
+		usb3 {
+			usb_port = "2-2";
+		};
+	};
+
+	nvme_slot@1 {
+		pcie_root = "00:14.1";
+		port_type = "ssdcache";
+	};
+
+	nvme_slot@2 {
+		pcie_root = "00:13.2";
+		port_type = "ssdcache";
+	};
+};
