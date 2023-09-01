@@ -58,8 +58,8 @@
 
 	internal_slot@1 {
 		protocol_type = "sata";
-		power_pin_gpio = <0x17 0x00>;
-		detect_pin_gpio = <0x26 0x01>;
+		power_pin_gpio = <0x16 0x00>;
+		detect_pin_gpio = <0x25 0x01>;
 		led_type = "lp3943";
 
 		ahci {
@@ -78,8 +78,8 @@
 
 	internal_slot@2 {
 		protocol_type = "sata";
-		power_pin_gpio = <0x1f 0x00>;
-		detect_pin_gpio = <0x29 0x01>;
+		power_pin_gpio = <0x17 0x00>;
+		detect_pin_gpio = <0x26 0x01>;
 		led_type = "lp3943";
 
 		ahci {
@@ -99,8 +99,8 @@
 	esata_port@1 {
 
 		ahci {
-			pcie_root = "00:13.0,00.0";
-			ata_port = <0x00>;
+			pcie_root = "00:13.1,00.0";
+			ata_port = <0x01>;
 		};
 	};
 
@@ -135,12 +135,12 @@
 	};
 
 	nvme_slot@1 {
-		pcie_root = "00:14.1";
+		pcie_root = "00:14.0";
 		port_type = "ssdcache";
 	};
 
 	nvme_slot@2 {
-		pcie_root = "00:13.2";
+		pcie_root = "00:14.1";
 		port_type = "ssdcache";
 	};
 };
