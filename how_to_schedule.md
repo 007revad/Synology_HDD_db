@@ -15,7 +15,7 @@ To schedule a script to run on your Synology at boot-up or shut-down follow thes
 9. In the box under **User-defined script** type the path to the script. 
     - e.g. If you saved the script to a shared folder on volume1 called "scripts" you'd type:
     - **/volume1/scripts/syno_hdd_db.sh -nr --autoupdate=3**
-    - For information on the options see [Options](readme.md#options)
+    - For information on the options see [Options](README.md#options)
 11. Click **OK** to save the settings.
 
 Here's some screenshots showing what needs to be set:
