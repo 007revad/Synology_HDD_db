@@ -45,7 +45,7 @@ You would need to re-run the script after a DSM update. If you have DSM set to a
 
 **Note:** After you first run the script you may need to reboot the Synology to see the effect of the changes.
 
-### Options when running the script <a name="options"></a>
+### [Options when running the script](#options)
 
 There are optional flags you can use when running the script:
 ```YAML
