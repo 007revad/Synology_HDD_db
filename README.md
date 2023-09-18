@@ -106,6 +106,8 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr --showedits
 
 Thank you to the following paypal donators and GitHub sponsors
 
+- John Pham
+- Alejandro Bribian Rix
 - Daniel Hofer
 - Bogdan-Stefan Rotariu
 - Kevin Boatswain
@@ -125,4 +127,4 @@ Thank you to the following paypal donators and GitHub sponsors
 - Charles-Edouard Poisnel
 - Oliver Busch
 - Gummibando
-- All the anonymous donors and private sponsors
+- And the anonymous donors and private sponsors
