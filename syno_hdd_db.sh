@@ -29,6 +29,20 @@
 # Change how synoinfo.conf is backed up and restored to prevent issue #73
 
 # DONE
+# Bug fix for script not updating itself if .sh file had been renamed.
+#
+# Bug fix for missing executable permissions if .sh file had been renamed.
+#
+# Bug fix to prevent update loop if script's .tar.gz file already exists in /tmp.
+#
+# Bug fix to prevent update failing if script's temp folder already exists in /tmp.
+#
+# Now only copies CHANGES.txt to script location if script is located on a volume,
+# to prevent putting CHANGES.txt on system partition (/usr/bin, /usr/sbin, /root etc.)
+#
+# Added -e --email option to disable coloured output to make task scheduler emails easier to read.
+#
+#
 # Added support to disable unsupported memory warnings on DVA models.
 #
 # Fixed bug where newly connected expansion units weren't found until up to 24 hours later. #124
@@ -204,7 +218,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v3.1.63"
+scriptver="v3.1.64"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -216,18 +230,6 @@ if [ ! "$(basename "$BASH")" = bash ]; then
 fi
 
 #echo -e "bash version: $(bash --version | head -1 | cut -d' ' -f4)\n"  # debug
-
-# Shell Colors
-#Black='\e[0;30m'
-Red='\e[0;31m'
-#Green='\e[0;32m'
-Yellow='\e[0;33m'
-#Blue='\e[0;34m'
-#Purple='\e[0;35m'
-Cyan='\e[0;36m'
-#White='\e[0;37m'
-Error='\e[41m'
-Off='\e[0m'
 
 ding(){
     printf \\a
@@ -249,6 +251,7 @@ Options:
   -w, --wdda            Disable WD WDDA
   -i, --immutable       Enable immutable snapshots on models older than
                         20-series (DSM 7.2 and newer only).
+  -e, --email           Disable colored text in output scheduler emails.
       --restore         Undo all changes made by the script
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
                           AGE is how many days old a release must be before
@@ -277,7 +280,7 @@ args=("$@")
 
 # Check for flags with getopt
 if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
-    restore,showedits,noupdate,nodbupdate,m2,force,ram,wdda,immutable,autoupdate:,help,version,debug \
+    restore,showedits,noupdate,nodbupdate,m2,force,ram,wdda,immutable,email,autoupdate:,help,version,debug \
     -- "$@")"; then
     eval set -- "$options"
     while true; do
@@ -306,6 +309,9 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
                 ;;
             -w|--wdda)          # Disable "support_memory_compatibility"
                 wdda=no
+                ;;
+            -e|--email)         # Disable colour text in task scheduler emails
+                color=no
                 ;;
             --autoupdate)       # Auto update script
                 autoupdate=yes
@@ -345,6 +351,23 @@ fi
 if [[ $debug == "yes" ]]; then
     # set -x
     export PS4='`[[ $? == 0 ]] || echo "\e[1;31;40m($?)\e[m\n "`:.$LINENO:'
+fi
+
+
+# Shell Colors
+if [[ $color != "no" ]]; then
+    #Black='\e[0;30m'   # ${Black}
+    Red='\e[0;31m'      # ${Red}
+    #Green='\e[0;32m'   # ${Green}
+    Yellow='\e[0;33m'   # ${Yellow}
+    #Blue='\e[0;34m'    # ${Blue}
+    #Purple='\e[0;35m'  # ${Purple}
+    Cyan='\e[0;36m'     # ${Cyan}
+    #White='\e[0;37m'   # ${White}
+    Error='\e[41m'      # ${Error}
+    Off='\e[0m'         # ${Off}
+else
+    echo ""  # For task scheduler email readability
 fi
 
 
@@ -448,16 +471,52 @@ source=${BASH_SOURCE[0]}
 while [ -L "$source" ]; do # Resolve $source until the file is no longer a symlink
     scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
     source=$(readlink "$source")
-    # If $source was a relative symlink, we need to resolve it 
+    # If $source was a relative symlink, we need to resolve it
     # relative to the path where the symlink file was located
     [[ $source != /* ]] && source=$scriptpath/$source
 done
 scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
+scriptfile=$( basename -- "$source" )
+echo "Running from: ${scriptpath}/$scriptfile"
+
 #echo "Script location: $scriptpath"  # debug
+#echo "Source: $source"               # debug
+#echo "Script filename: $scriptfile"  # debug
+
+#echo "tag: $tag"              # debug
+#echo "scriptver: $scriptver"  # debug
+
+
+cleanup_tmp(){
+    cleanup_err=
+
+    # Delete downloaded .tar.gz file
+    if [[ -f "/tmp/$script-$shorttag.tar.gz" ]]; then
+        if ! rm "/tmp/$script-$shorttag.tar.gz"; then
+            echo -e "${Error}ERROR${Off} Failed to delete"\
+                "downloaded /tmp/$script-$shorttag.tar.gz!" >&2
+            cleanup_err=1
+        fi
+    fi
+
+    # Delete extracted tmp files
+    if [[ -d "/tmp/$script-$shorttag" ]]; then
+        if ! rm -r "/tmp/$script-$shorttag"; then
+            echo -e "${Error}ERROR${Off} Failed to delete"\
+                "downloaded /tmp/$script-$shorttag!" >&2
+            cleanup_err=1
+        fi
+    fi
+
+    # Add warning to DSM log
+    if [[ -z $cleanup_err ]]; then
+        syslog_set warn "$script update failed to delete tmp files"
+    fi
+}
 
 
 if ! printf "%s\n%s\n" "$tag" "$scriptver" |
-        sort --check --version-sort >/dev/null ; then
+        sort --check=quiet --version-sort >/dev/null ; then
     echo -e "\n${Cyan}There is a newer version of this script available.${Off}"
     echo -e "Current version: ${scriptver}\nLatest version:  $tag"
     if [[ -f $scriptpath/$script-$shorttag.tar.gz ]]; then
@@ -480,11 +539,14 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
             echo -e "${Cyan}Do you want to download $tag now?${Off} [y/n]"
             read -r -t 30 reply
         fi
+
         if [[ ${reply,,} == "y" ]]; then
+            # Delete previously downloaded .tar.gz file and extracted tmp files
+            cleanup_tmp
+
             if cd /tmp; then
                 url="https://github.com/$repo/archive/refs/tags/$tag.tar.gz"
-                if ! curl -LJO -m 30 --connect-timeout 5 "$url";
-                then
+                if ! curl -JLO -m 30 --connect-timeout 5 "$url"; then
                     echo -e "${Error}ERROR${Off} Failed to download"\
                         "$script-$shorttag.tar.gz!"
                     syslog_set warn "$script $tag failed to download"
@@ -496,53 +558,46 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                 "extract $script-$shorttag.tar.gz!"
                             syslog_set warn "$script failed to extract $script-$shorttag.tar.gz!"
                         else
-                            # Copy new script sh files to script location
-                            if ! cp -p "/tmp/$script-$shorttag/"*.sh "$scriptpath"; then
+                            # Set permissions on script sh files
+                            if ! chmod a+x "/tmp/$script-$shorttag/"*.sh ; then
+                                permerr=1
+                                echo -e "${Error}ERROR${Off} Failed to set executable permissions"
+                                syslog_set warn "$script failed to set permissions on $tag"
+                            fi
+
+                            # Copy new script sh file to script location
+                            if ! cp -p "/tmp/$script-$shorttag/syno_hdd_db.sh" "${scriptpath}/${scriptfile}";
+                            then
                                 copyerr=1
                                 echo -e "${Error}ERROR${Off} Failed to copy"\
                                     "$script-$shorttag .sh file(s) to:\n $scriptpath"
                                 syslog_set warn "$script failed to copy $tag to script location"
-                            else                   
-                                # Set permissions on script sh files
-                                if ! chmod 744 "$scriptpath/"*.sh ; then
-                                    permerr=1
-                                    echo -e "${Error}ERROR${Off} Failed to set permissions on:"
-                                    echo "$scriptpath *.sh file(s)"
-                                    syslog_set warn "$script failed to set permissions on $tag"
+                            fi
+
+                            # Copy new CHANGES.txt file
+                            if [[ $scriptpath =~ /volume* ]]; then
+                                # Copy new CHANGES.txt file to script location
+                                if ! cp -p "/tmp/$script-$shorttag/CHANGES.txt" "$scriptpath"; then
+                                    if [[ $autoupdate != "yes" ]]; then copyerr=1; fi
+                                    echo -e "${Error}ERROR${Off} Failed to copy"\
+                                        "$script-$shorttag/CHANGES.txt to:\n $scriptpath"
+                                else
+                                    # Set permissions on CHANGES.txt
+                                    if ! chmod 664 "$scriptpath/CHANGES.txt"; then
+                                        if [[ $autoupdate != "yes" ]]; then permerr=1; fi
+                                        echo -e "${Error}ERROR${Off} Failed to set permissions on:"
+                                        echo "$scriptpath/CHANGES.txt"
+                                    fi
+                                    changestxt=" and changes.txt"
                                 fi
                             fi
 
-                            # Copy new CHANGES.txt file to script location
-                            if ! cp -p "/tmp/$script-$shorttag/CHANGES.txt" "$scriptpath"; then
-                                if [[ $autoupdate != "yes" ]]; then copyerr=1; fi
-                                echo -e "${Error}ERROR${Off} Failed to copy"\
-                                    "$script-$shorttag/CHANGES.txt to:\n $scriptpath"
-                            else                   
-                                # Set permissions on CHANGES.txt
-                                if ! chmod 744 "$scriptpath/CHANGES.txt"; then
-                                    if [[ $autoupdate != "yes" ]]; then permerr=1; fi
-                                    echo -e "${Error}ERROR${Off} Failed to set permissions on:"
-                                    echo "$scriptpath/CHANGES.txt"
-                                fi
-                            fi
-
-                            # Delete downloaded .tar.gz file
-                            if ! rm "/tmp/$script-$shorttag.tar.gz"; then
-                                echo -e "${Error}ERROR${Off} Failed to delete"\
-                                    "downloaded /tmp/$script-$shorttag.tar.gz!"
-                                syslog_set warn "$script update failed to delete tmp files"
-                            fi
-
-                            # Delete extracted tmp files
-                            if ! rm -r "/tmp/$script-$shorttag"; then
-                                echo -e "${Error}ERROR${Off} Failed to delete"\
-                                    "downloaded /tmp/$script-$shorttag!"
-                                syslog_set warn "$script update failed to delete tmp files"
-                            fi
+                            # Delete downloaded .tar.gz file and extracted tmp files
+                            cleanup_tmp
 
                             # Notify of success (if there were no errors)
                             if [[ $copyerr != 1 ]] && [[ $permerr != 1 ]]; then
-                                echo -e "\n$tag and changes.txt downloaded to: ${scriptpath}\n"
+                                echo -e "\n$tag$changestxt downloaded to: ${scriptpath}\n"
                                 syslog_set info "$script successfully updated to $tag"
 
                                 # Reload script
@@ -673,7 +728,7 @@ fixdrivemodel(){
 
     # Brands that return "BRAND <model>" and need "BRAND " removed.
     if [[ $1 =~ ^[A-Za-z]{1,7}" ".* ]]; then
-        #see  Smartmontools database in /var/lib/smartmontools/drivedb.db
+        # See  Smartmontools database in /var/lib/smartmontools/drivedb.db
         hdmodel=${hdmodel#"WDC "}       # Remove "WDC " from start of model name
         hdmodel=${hdmodel#"HGST "}      # Remove "HGST " from start of model name
         hdmodel=${hdmodel#"TOSHIBA "}   # Remove "TOSHIBA " from start of model name
