@@ -1,3 +1,11 @@
+v3.1.64
+- Added -e --email option to disable coloured output to make task scheduler emails easier to read.
+- Bug fix for script not updating itself if .sh file had been renamed.
+- Bug fix for missing executable permissions if .sh file had been renamed.
+- Bug fix to prevent update loop if script's .tar.gz file already exists in /tmp.
+- Bug fix to prevent update failing if script's temp folder already exists in /tmp.
+- Now only copies CHANGES.txt to script location if script is located on a volume, to prevent putting CHANGES.txt on system partition (/usr/bin, /usr/sbin, /root etc.)
+
 v3.1.63
 - Added support to disable unsupported memory warnings on DVA models. #136
 
@@ -9,8 +17,8 @@ v3.1.61
 - Added enabling M2D18 for RS822RP+, RS822+, RS1221RP+ and RS1221+ for older DSM versions.
 - Fixed enabling E10M20-T1, M2D20 and M2D18 cards in models that don't officially support them.
 - Fixed bugs where the calculated amount of installed memory could be incorrect:
-   - If last memory socket was empty an invalid unit of bytes could be used. Issue #106
-   - When dmidecode returned MB for one ram module and GB for another ram module. Issue #107
+    - If last memory socket was empty an invalid unit of bytes could be used. Issue #106
+    - When dmidecode returned MB for one ram module and GB for another ram module. Issue #107
 - Fixed bug displaying the max memory setting if total installed memory was less than the max memory. Issue #107
 - Fixed bug where sata1 drive firmware version was wrong if there was a sata10 drive.
 
@@ -19,7 +27,7 @@ v3.0.56
 
 v3.0.55
 - Now enables any installed Synology M.2 PCIe cards for models that don't officially support them.
-  - You can use a M2D20, M2D18, M2D17 or E10M20-T1 on any model with a PCIe slot (not Mini PCIe).
+   - You can use a M2D20, M2D18, M2D17 or E10M20-T1 on any model with a PCIe slot (not Mini PCIe).
 - Now the script reloads itself after updating.
 - Added -i, --immutable option to enable immutable snapshots on models older than '20 series running DSM 7.2.
 - Added -w, --wdda option to disable WDDA (to prevent warnings when WD drives have been running more than 3 years).
