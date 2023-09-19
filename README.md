@@ -51,22 +51,23 @@ You would need to re-run the script after a DSM update. If you have DSM set to a
 
 There are optional flags you can use when running the script:
 ```YAML
--s, --showedits       Show edits made to <model>_host db and db.new file(s)
--n, --noupdate        Prevent DSM updating the compatible drive databases
--m, --m2              Don't process M.2 drives
--f, --force           Force DSM to not check drive compatibility
--r, --ram             Disable memory compatibility checking (DSM 7.x only) and set max memory to amount of installed memory
--w, --wdda            Disable WD WDDA
-    --restore         Undo all changes made by the script
-    --autoupdate=AGE  Auto update script (useful when script is scheduled)
-                      AGE is how many days old a release must be before auto-updating. AGE must be a number: 0 or greater
--h, --help            Show this help message
--v, --version         Show the script version
+  -s, --showedits       Show edits made to <model>_host db and db.new file(s)
+  -n, --noupdate        Prevent DSM updating the compatible drive databases
+  -m, --m2              Don't process M.2 drives
+  -f, --force           Force DSM to not check drive compatibility
+  -r, --ram             Disable memory compatibility checking (DSM 7.x only),
+                        and sets max memory to the amount of installed memory
+  -w, --wdda            Disable WD WDDA
+  -e, --email           Disable colored text in output scheduler emails.
+      --restore         Undo all changes made by the script
+      --autoupdate=AGE  Auto update script (useful when script is scheduled)
+                          AGE is how many days old a release must be before
+                          auto-updating. AGE must be a number: 0 or greater
+  -h, --help            Show this help message
+  -v, --version         Show the script version
 ```
 
 **Note:** If you have some Synology drives and want to update their firmware run the script **without** --noupdate or -n then do the drive database update from Storage Manager and finally run the script again with your preferred options.
-
-<p align="leftr"><img src="images/syno_hdd_db_help2.png"></p>
 
 ### Scheduling the script in Synology's Task Scheduler
 
