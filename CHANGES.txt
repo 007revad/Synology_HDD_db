@@ -1,4 +1,5 @@
 v3.1.64
+- Added -e --email option to disable coloured output to make task scheduler emails easier to read.
 - Bug fix for script not updating itself if .sh file had been renamed.
 - Bug fix for missing executable permissions if .sh file had been renamed.
 - Bug fix to prevent update loop if script's .tar.gz file already exists in /tmp.
