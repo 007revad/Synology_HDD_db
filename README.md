@@ -58,8 +58,6 @@ There are optional flags you can use when running the script:
   -r, --ram             Disable memory compatibility checking (DSM 7.x only),
                         and sets max memory to the amount of installed memory
   -w, --wdda            Disable WD WDDA
-  -i, --immutable       Enable immutable snapshots on models older than
-                        20-series (DSM 7.2 and newer only).
   -e, --email           Disable colored text in output scheduler emails.
       --restore         Undo all changes made by the script
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
