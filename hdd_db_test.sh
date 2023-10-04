@@ -1050,13 +1050,16 @@ check_modeldtb(){
                 [[ $modelname == "RS1221+" ]];
             then
                 echo "" >&2
-#                if [[ -f ./dtb/${modelname}_model.dtb ]]; then
-#                    # Edited device tree blob exists in dtb folder with script
-#                    blob="./dtb/${modelname}_model.dtb"
-#                elif [[ -f ./${modelname}_model.dtb ]]; then
-#                    # Edited device tree blob exists with script
-#                    blob="./${modelname}_model.dtb"
-#                else
+                if [[ -f ./dtb/${modelname}_model.dtb ]]; then
+                    # Edited device tree blob exists in dtb folder with script
+                    blob="./dtb/${modelname}_model.dtb"
+                elif [[ -f ./${modelname}_model.dtb ]]; then
+
+                    echo -e "\nEdited device tree blob exists with script\n"  # debug ####################################################
+
+                    # Edited device tree blob exists with script
+                    blob="./${modelname}_model.dtb"
+                else
                     # Download edited device tree blob model.dtb from github
                     if cd /var/services/tmp; then
                         echo -e "Downloading ${modelname}_model.dtb" >&2
@@ -1075,7 +1078,7 @@ check_modeldtb(){
                     else
                         echo -e "${Error}ERROR${Off} Failed to download ${modelname}_model.dtb!" >&2
                     fi
-#                fi
+                fi
                 if [[ -f $blob ]]; then
                     # Backup model.dtb
                     if ! backupdb "/etc.defaults/model.dtb"; then
