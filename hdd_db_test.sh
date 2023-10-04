@@ -4,7 +4,7 @@
 # Github: https://github.com/007revad/Synology_HDD_db
 #--------------------------------------------------------------------------------------------------
 
-scriptver="v10.1.64"
+scriptver="v3.1.64"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -181,7 +181,7 @@ modelname="$model"
 
 
 # Show script version
-#echo -e "$script $scriptver\ngithub.com/$repo\n"
+#echo -e "$script $scriptver\ngithub.com/${repo} TEST\n"
 echo "$script $scriptver"
 
 # Get DSM full version
@@ -218,196 +218,6 @@ echo "Using options: ${args[*]}"
 
 #------------------------------------------------------------------------------
 # Check latest release with GitHub API
-
-syslog_set(){
-    if [[ ${1,,} == "info" ]] || [[ ${1,,} == "warn" ]] || [[ ${1,,} == "err" ]]; then
-        if [[ $autoupdate == "yes" ]]; then
-            # Add entry to Synology system log
-            synologset1 sys "$1" 0x11100000 "$2"
-        fi
-    fi
-}
-
-
-# Get latest release info
-# Curl timeout options:
-# https://unix.stackexchange.com/questions/94604/does-curl-have-a-timeout
-release=$(curl --silent -m 10 --connect-timeout 5 \
-    "https://api.github.com/repos/$repo/releases/latest")
-
-# Release version
-tag=$(echo "$release" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-shorttag="${tag:1}"
-
-# Release published date
-published=$(echo "$release" | grep '"published_at":' | sed -E 's/.*"([^"]+)".*/\1/')
-published="${published:0:10}"
-published=$(date -d "$published" '+%s')
-
-# Today's date
-now=$(date '+%s')
-
-# Days since release published
-age=$(((now - published)/(60*60*24)))
-
-
-# Get script location
-# https://stackoverflow.com/questions/59895/
-source=${BASH_SOURCE[0]}
-while [ -L "$source" ]; do # Resolve $source until the file is no longer a symlink
-    scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
-    source=$(readlink "$source")
-    # If $source was a relative symlink, we need to resolve it
-    # relative to the path where the symlink file was located
-    [[ $source != /* ]] && source=$scriptpath/$source
-done
-scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
-scriptfile=$( basename -- "$source" )
-echo "Running from: ${scriptpath}/$scriptfile"
-
-#echo "Script location: $scriptpath"  # debug
-#echo "Source: $source"               # debug
-#echo "Script filename: $scriptfile"  # debug
-
-#echo "tag: $tag"              # debug
-#echo "scriptver: $scriptver"  # debug
-
-
-cleanup_tmp(){
-    cleanup_err=
-
-    # Delete downloaded .tar.gz file
-    if [[ -f "/tmp/$script-$shorttag.tar.gz" ]]; then
-        if ! rm "/tmp/$script-$shorttag.tar.gz"; then
-            echo -e "${Error}ERROR${Off} Failed to delete"\
-                "downloaded /tmp/$script-$shorttag.tar.gz!" >&2
-            cleanup_err=1
-        fi
-    fi
-
-    # Delete extracted tmp files
-    if [[ -d "/tmp/$script-$shorttag" ]]; then
-        if ! rm -r "/tmp/$script-$shorttag"; then
-            echo -e "${Error}ERROR${Off} Failed to delete"\
-                "downloaded /tmp/$script-$shorttag!" >&2
-            cleanup_err=1
-        fi
-    fi
-
-    # Add warning to DSM log
-    if [[ -z $cleanup_err ]]; then
-        syslog_set warn "$script update failed to delete tmp files"
-    fi
-}
-
-
-if ! printf "%s\n%s\n" "$tag" "$scriptver" |
-        sort --check=quiet --version-sort >/dev/null ; then
-    echo -e "\n${Cyan}There is a newer version of this script available.${Off}"
-    echo -e "Current version: ${scriptver}\nLatest version:  $tag"
-    if [[ -f $scriptpath/$script-$shorttag.tar.gz ]]; then
-        # They have the latest version tar.gz downloaded but are using older version
-        echo "https://github.com/$repo/releases/latest"
-        sleep 10
-    elif [[ -d $scriptpath/$script-$shorttag ]]; then
-        # They have the latest version extracted but are using older version
-        echo "https://github.com/$repo/releases/latest"
-        sleep 10
-    else
-        if [[ $autoupdate == "yes" ]]; then
-            if [[ $age -gt "$delay" ]] || [[ $age -eq "$delay" ]]; then
-                echo "Downloading $tag"
-                reply=y
-            else
-                echo "Skipping as $tag is less than $delay days old."
-            fi
-        else
-            echo -e "${Cyan}Do you want to download $tag now?${Off} [y/n]"
-            read -r -t 30 reply
-        fi
-
-        if [[ ${reply,,} == "y" ]]; then
-            # Delete previously downloaded .tar.gz file and extracted tmp files
-            cleanup_tmp
-
-            if cd /tmp; then
-                url="https://github.com/$repo/archive/refs/tags/$tag.tar.gz"
-                if ! curl -JLO -m 30 --connect-timeout 5 "$url"; then
-                    echo -e "${Error}ERROR${Off} Failed to download"\
-                        "$script-$shorttag.tar.gz!"
-                    syslog_set warn "$script $tag failed to download"
-                else
-                    if [[ -f /tmp/$script-$shorttag.tar.gz ]]; then
-                        # Extract tar file to /tmp/<script-name>
-                        if ! tar -xf "/tmp/$script-$shorttag.tar.gz" -C "/tmp"; then
-                            echo -e "${Error}ERROR${Off} Failed to"\
-                                "extract $script-$shorttag.tar.gz!"
-                            syslog_set warn "$script failed to extract $script-$shorttag.tar.gz!"
-                        else
-                            # Set permissions on script sh files
-                            if ! chmod a+x "/tmp/$script-$shorttag/"*.sh ; then
-                                permerr=1
-                                echo -e "${Error}ERROR${Off} Failed to set executable permissions"
-                                syslog_set warn "$script failed to set permissions on $tag"
-                            fi
-
-                            # Copy new script sh file to script location
-                            if ! cp -p "/tmp/$script-$shorttag/syno_hdd_db.sh" "${scriptpath}/${scriptfile}";
-                            then
-                                copyerr=1
-                                echo -e "${Error}ERROR${Off} Failed to copy"\
-                                    "$script-$shorttag .sh file(s) to:\n $scriptpath"
-                                syslog_set warn "$script failed to copy $tag to script location"
-                            fi
-
-                            # Copy new CHANGES.txt file
-                            if [[ $scriptpath =~ /volume* ]]; then
-                                # Copy new CHANGES.txt file to script location
-                                if ! cp -p "/tmp/$script-$shorttag/CHANGES.txt" "$scriptpath"; then
-                                    if [[ $autoupdate != "yes" ]]; then copyerr=1; fi
-                                    echo -e "${Error}ERROR${Off} Failed to copy"\
-                                        "$script-$shorttag/CHANGES.txt to:\n $scriptpath"
-                                else
-                                    # Set permissions on CHANGES.txt
-                                    if ! chmod 664 "$scriptpath/CHANGES.txt"; then
-                                        if [[ $autoupdate != "yes" ]]; then permerr=1; fi
-                                        echo -e "${Error}ERROR${Off} Failed to set permissions on:"
-                                        echo "$scriptpath/CHANGES.txt"
-                                    fi
-                                    changestxt=" and changes.txt"
-                                fi
-                            fi
-
-                            # Delete downloaded .tar.gz file and extracted tmp files
-                            cleanup_tmp
-
-                            # Notify of success (if there were no errors)
-                            if [[ $copyerr != 1 ]] && [[ $permerr != 1 ]]; then
-                                echo -e "\n$tag$changestxt downloaded to: ${scriptpath}\n"
-                                syslog_set info "$script successfully updated to $tag"
-
-                                # Reload script
-                                printf -- '-%.0s' {1..79}; echo  # print 79 -
-                                exec "$0" "${args[@]}"
-                            else
-                                syslog_set warn "$script update to $tag had errors"
-                            fi
-                        fi
-                    else
-                        echo -e "${Error}ERROR${Off}"\
-                            "/tmp/$script-$shorttag.tar.gz not found!"
-                        #ls /tmp | grep "$script"  # debug
-                        syslog_set warn "/tmp/$script-$shorttag.tar.gz not found"
-                    fi
-                fi
-                cd "$scriptpath" || echo -e "${Error}ERROR${Off} Failed to cd to script location!"
-            else
-                echo -e "${Error}ERROR${Off} Failed to cd to /tmp!"
-                syslog_set warn "$script update failed to cd to /tmp"
-            fi
-        fi
-    fi
-fi
 
 
 #------------------------------------------------------------------------------
@@ -1051,11 +861,14 @@ check_modeldtb(){
             then
                 echo "" >&2
                 if [[ -f ./dtb/${modelname}_model.dtb ]]; then
+
+                    echo -e "\nEdited device tree blob exists in dtb folder with script\n"  # debug ####################################################
+
                     # Edited device tree blob exists in dtb folder with script
                     blob="./dtb/${modelname}_model.dtb"
                 elif [[ -f ./${modelname}_model.dtb ]]; then
 
-                    echo -e "\nEdited device tree blob exists with script\n"  # debug ####################################################
+                    echo -e "\nEdited device tree blob exists with script\n"  # debug #################################################################
 
                     # Edited device tree blob exists with script
                     blob="./${modelname}_model.dtb"
