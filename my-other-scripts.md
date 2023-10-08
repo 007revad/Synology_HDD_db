@@ -16,7 +16,7 @@
 - **<a href="https://github.com/007revad/Synology_enable_Deduplication">Synology_enable_Deduplication</a>**
   - Enable deduplication with non-Synology SSDs and unsupported NAS models.
 
-- **<a href="https://github.com/007revad/Synology_RAID-F1_SHR_switch">Synology_RAID-F1_SHR_switch</a>**
+- **<a href="https://github.com/007revad/Synology_SHR_switch">Synology_SHR_switch</a>**
   - Easily switch between SHR and RAID Group.
 
 - **<a href="https://github.com/007revad/Synology_Config_Backup">Synology_Config_Backup</a>**
