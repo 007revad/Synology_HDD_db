@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Check script is running as root
+if [[ $( whoami ) != "root" ]]; then
+    echo "This script must be run as sudo or root!"
+    exit 1
+fi
+
 echo -e '\n Checking permissions and owner on model.dtb files'
 ls -l /etc.defaults/model.dtb
 ls -l /etc/model.dtb
@@ -150,5 +156,9 @@ ls /run/synostorage/disks | grep nv
 echo -e '\n Checking nvme block devices in /sys/block'
 ls /sys/block | grep nv
 
+echo -e '\n Checking synostgd-disk log'
+grep synostgd-disk /var/log/messages | tail -10
+
 echo
+
 
