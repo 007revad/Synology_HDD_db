@@ -29,6 +29,8 @@
 # Change how synoinfo.conf is backed up and restored to prevent issue #73
 
 # DONE
+# Bug fix for NVMe drives with / in the model name for non-device tree Synology models.
+#
 # Bug fix for script not updating itself if .sh file had been renamed.
 #
 # Bug fix for missing executable permissions if .sh file had been renamed.
@@ -218,7 +220,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v3.1.64"
+scriptver="v3.1.65"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -1159,7 +1161,8 @@ updatedb(){
             # example:
             # {"success":1,"list":[{"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
             #if sed -i "s/$startstring/$startstring$string/" "$2"; then
-            if sed -i "s/${startstring//\//\\/}/${startstring//\//\\/}$string/" "$2"; then
+            #if sed -i "s/${startstring//\//\\/}/${startstring//\//\\/}$string/" "$2"; then
+            if sed -i "s/$startstring/$startstring${string//\//\\/}/" "$2"; then
                 echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
             else
                 ding
