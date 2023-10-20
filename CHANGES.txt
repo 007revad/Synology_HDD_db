@@ -1,3 +1,6 @@
+v3.1.65
+- Bug fix for NVMe drives with / in the model name for non-device tree Synology models.
+
 v3.1.64
 - Added -e --email option to disable coloured output to make task scheduler emails easier to read.
 - Bug fix for script not updating itself if .sh file had been renamed.
