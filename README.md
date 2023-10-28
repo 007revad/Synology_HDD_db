@@ -107,6 +107,12 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr --showedits
 
 Thank you to the following paypal donators and GitHub sponsors
 
+- Mir Hekmat
+- Joseph Skup
+- Dirk Kurfuerst
+- Gareth Locke
+- Rory de Ruijter
+- Nathan O'Farrell
 - Harry Bos
 - Mark-Philipp Wolfger
 - Filip Kraus
