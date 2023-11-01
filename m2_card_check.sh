@@ -183,14 +183,14 @@ echo -e '\n Checking devicetree Power_limit'
 cat /sys/firmware/devicetree/base/power_limit && echo
 
 
-echo -e '\n Checking if nvme drives in PCIe card with synonvme'
+echo -e '\n Checking if nvme drives in PCIe card are detected with synonvme'
 printf 'nvme0: '; synonvme --m2-card-model-get /dev/nvme0
 printf 'nvme1: '; synonvme --m2-card-model-get /dev/nvme1
 printf 'nvme2: '; synonvme --m2-card-model-get /dev/nvme2
 printf 'nvme3: '; synonvme --m2-card-model-get /dev/nvme3
 
 
-echo -e '\n Checking if nvme drives in PCIe card with synodisk'
+echo -e '\n Checking if nvme drives in PCIe card are detected with synodisk'
 printf 'nvme0: '; synodisk --m2-card-model-get /dev/nvme0n1
 printf 'nvme1: '; synodisk --m2-card-model-get /dev/nvme1n1
 printf 'nvme2: '; synodisk --m2-card-model-get /dev/nvme2n1
