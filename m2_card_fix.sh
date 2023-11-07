@@ -2,11 +2,40 @@
 
 # Check script is running as root
 if [[ $( whoami ) != "root" ]]; then
-    echo -e "${Error}ERROR${Off} This script must be run as sudo or root!"
+    echo "This script must be run as sudo or root!"
 fi
+
+# Set fans to cool mode if PCIe card installed
+synosetkeyvalue /etc.defaults/synoinfo.conf support_fan_adjust_by_ext_nic "cool"
+synosetkeyvalue /etc/synoinfo.conf support_fan_adjust_by_ext_nic "cool"
 
 
 url="https://raw.githubusercontent.com/007revad/Synology_HDD_db/develop/"
+
+
+model=$(cat /proc/sys/kernel/syno_hw_version)
+modelname="$model"
+
+#if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1823xs+" ]];
+if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1621+" ]] ||\
+    [[ $modelname == "DS1520+" ]] || [[ $modelname == "RS822rp+" ]] ||\
+    [[ $modelname == "RS822+" ]] || [[ $modelname == "RS1221rp+" ]] ||\
+    [[ $modelname == "RS1221+" ]];
+then
+    echo "$modelname"
+else
+    echo "$modelname not supported"
+    exit
+fi
+
+
+buildnumber="64570"
+currentbldnum=$(synogetkeyvalue /etc.defaults/VERSION buildnumber)
+
+if [[ $buildnumber != "$currentbldnum" ]]; then
+    echo "$currentbldnum not supported"
+    exit
+fi
 
 
 # Backup /usr/lib/libsynonvme.so.1
@@ -15,7 +44,8 @@ if ! cp -p "/usr/lib/libsynonvme.so.1" "/usr/lib/libsynonvme.so.1.bak.72-u3"; th
 fi
 
 # Download libsynonvme.so.1
-if curl -kL "${url}lib/DS1821+_libsynonvme.so.1" -o "/tmp/libsynonvme.so.1"; then
+echo -e "\nDownloading 64570_libsynonvme.so.1"
+if curl -kL "${url}lib/${buildnumber}_libsynonvme.so.1" -o "/tmp/libsynonvme.so.1"; then
     # Check we didn't download a 404 web page
     downloaded=$(wc -c "/tmp/libsynonvme.so.1" | awk '{print $1}')
     if [[ $downloaded == "54154" ]]; then
@@ -47,7 +77,8 @@ if ! cp -p "/usr/syno/bin/synonvme" "/usr/syno/bin/synonvme.bak.72-u3"; then
 fi
 
 # Download synonvme
-if curl -kL "${url}bin/DS1821+_synonvme" -o "/tmp/synonvme"; then
+echo -e "\nDownloading 64570_synonvme"
+if curl -kL "${url}bin/${buildnumber}_synonvme" -o "/tmp/synonvme"; then
     # Check we didn't download a 404 web page
     downloaded=$(wc -c "/tmp/synonvme" | awk '{print $1}')
     if [[ $downloaded == "17241" ]]; then
