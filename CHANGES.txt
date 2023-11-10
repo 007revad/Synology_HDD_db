@@ -1,6 +1,7 @@
 v3.2.66
 - Updated so E10M20-T1, M2D20 and M2D18 now work in models that use device tree and are using DSM 7.2 Update 2, Update 3, 7.2.1 and 7.2.1 Update 1.
-- Fixed bug where memory was shown in MB but with GB unit. 
+- Fixed bug where memory was shown in MB but with GB unit.
+- Removed -i, --immutable option.
 
 v3.1.65
 - Bug fix for NVMe drives with / in the model name for non-device tree Synology models. Issue #154
