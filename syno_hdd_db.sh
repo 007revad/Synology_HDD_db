@@ -29,7 +29,11 @@
 # Change how synoinfo.conf is backed up and restored to prevent issue #73
 
 # DONE
-# Bug fix for NVMe drives with / in the model name for non-device tree Synology models.
+# Updated so E10M20-T1, M2D20 and M2D18 now work in models that use device tree,
+# and are using DSM 7.2 Update 2, Update 3, 7.2.1 and 7.2.1 Update 1.
+#
+# Fixed bug where memory was shown in MB but with GB unit. 
+#
 #
 # Bug fix for script not updating itself if .sh file had been renamed.
 #
@@ -53,6 +57,8 @@
 # Added enabling M2D18 for RS822RP+, RS822+, RS1221RP+ and RS1221+ with older DSM version.
 #
 # Fixed enabling E10M20-T1, M2D20 and M2D18 cards in models that don't officially support them.
+#
+# Enable NVMe drive use for models that do not have NVMe drives enabled.
 #
 # Fixed bugs where the calculated amount of installed memory could be incorrect:
 #   - If last memory socket was empty an invalid unit of bytes could be used. Issue #106
@@ -220,7 +226,7 @@
 # Optionally disable "support_disk_compatibility".
 
 
-scriptver="v3.1.65"
+scriptver="v3.2.66"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -251,8 +257,6 @@ Options:
   -r, --ram             Disable memory compatibility checking (DSM 7.x only),
                         and sets max memory to the amount of installed memory
   -w, --wdda            Disable WD WDDA
-  -i, --immutable       Enable immutable snapshots on models older than
-                        20-series (DSM 7.2 and newer only).
   -e, --email           Disable colored text in output scheduler emails.
       --restore         Undo all changes made by the script
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
@@ -307,7 +311,7 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
                 ram=yes
                 ;;
             -i|--immutable)     # Enable "support_worm" (immutable snapshots)
-                immutable=yes
+                immutable=yes   # Does not work for models without support_worm=yes already
                 ;;
             -w|--wdda)          # Disable "support_memory_compatibility"
                 wdda=no
@@ -791,6 +795,7 @@ getm2info(){
 getcardmodel(){
     # Get M.2 card model (if M.2 drives found)
     # $1 is /dev/nvme0n1 etc
+    isinm2card=""
     if [[ ${#nvmelist[@]} -gt "0" ]]; then
         cardmodel=$(synodisk --m2-card-model-get "$1")
         if [[ $cardmodel =~ M2D[0-9][0-9] ]]; then
@@ -802,6 +807,7 @@ getcardmodel(){
                 m2carddblist+=("${model}_${cardmodel,,}.db")            # M.2 card's db file
             fi
             m2cardlist+=("$cardmodel")                                  # M.2 card
+            isinm2card="yes"
         elif [[ $cardmodel =~ E[0-9][0-9]+M.+ ]]; then
             # Ethernet + M2 adaptor card
             if [[ -f "${model}_${cardmodel,,}${version}.db" ]]; then
@@ -811,13 +817,16 @@ getcardmodel(){
                 m2carddblist+=("${model}_${cardmodel,,}.db")            # M.2 card's db file
             fi
             m2cardlist+=("$cardmodel")                                  # M.2 card
+            isinm2card="yes"
         fi
     fi
 }
 
 m2_pool_support(){
-    if [[ -f /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support ]]; then  # GitHub issue #86, 87
-        echo 1 > /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support
+    if [[ $isinm2card != "yes" ]]; then
+        if [[ -f /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support ]]; then  # GitHub issue #86, 87
+            echo 1 > /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support
+        fi
     fi
 }
 
@@ -1161,8 +1170,7 @@ updatedb(){
             # example:
             # {"success":1,"list":[{"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
             #if sed -i "s/$startstring/$startstring$string/" "$2"; then
-            #if sed -i "s/${startstring//\//\\/}/${startstring//\//\\/}$string/" "$2"; then
-            if sed -i "s/$startstring/$startstring${string//\//\\/}/" "$2"; then
+            if sed -i "s/${startstring//\//\\/}/${startstring//\//\\/}$string/" "$2"; then
                 echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
             else
                 ding
@@ -1257,69 +1265,241 @@ enable_card(){
     fi
 }
 
+
+dts_m2_card(){
+# $1 is the card model
+# $2 is the dts file
+
+# Remove last }; so we can append to dts file
+sed -i '/^};/d' "$2"
+
+# Append PCIe M.2 card node to dts file
+if [[ $1 == E10M20-T1 ]] || [[ $1 == M2D20 ]]; then
+    cat >> "$2" <<EOM2D
+
+	$1 {
+		compatible = "Synology";
+		model = "synology_${1,,}";
+
+		m2_card@1 {
+
+			nvme {
+				pcie_postfix = "00.0,08.0,00.0";
+				port_type = "ssdcache";
+			};
+		};
+
+		m2_card@2 {
+
+			nvme {
+				pcie_postfix = "00.0,04.0,00.0";
+				port_type = "ssdcache";
+			};
+		};
+	};
+};
+EOM2D
+
+elif [[ $1 == M2D18 ]]; then
+    cat >> "$2" <<EOM2D18
+
+	M2D18 {
+		compatible = "Synology";
+		model = "synology_m2d18";
+
+		m2_card@1 {
+
+			ahci {
+				pcie_postfix = "00.0,03.0,00.0";
+				ata_port = <0x00>;
+			};
+
+			nvme {
+				pcie_postfix = "00.0,04.0,00.0";
+				port_type = "ssdcache";
+			};
+		};
+
+		m2_card@2 {
+
+			ahci {
+				pcie_postfix = "00.0,03.0,00.0";
+				ata_port = <0x01>;
+			};
+
+			nvme {
+				pcie_postfix = "00.0,05.0,00.0";
+				port_type = "ssdcache";
+			};
+		};
+	};
+};
+EOM2D18
+
+fi
+}
+
+
+download_dtc(){
+    # Download dtc from github
+    echo "Downloading dtc" >&2
+    if cd /var/services/tmp; then
+        url="https://github.com/${repo}/raw/main/bin/dtc"
+        #if curl -kLJO -m 30 --connect-timeout 5 "$url"; then
+        if curl -kLO -m 30 --connect-timeout 5 "$url"; then
+            mv /var/services/tmp/dtc /usr/sbin/dtc
+            chmod 755 /usr/sbin/dtc
+        fi
+    else
+        echo -e "${Error}ERROR${Off} Failed to cd to /var/services/tmp!" >&2
+    fi
+}
+
+
+edit_dts(){
+
+#set -x  # debug
+
+    # $1 is M.2 card model
+    # Edit model.dts if needed
+    if ! grep "$1" "$dtb_file" >/dev/null; then
+        dts_m2_card "$1" "$dts_file"
+        #echo "Added $1 to model${hwrev}.dtb" >&2
+        echo -e "Added ${Yellow}$1${Off} to ${Cyan}model${hwrev}.dtb${Off}" >&2
+#    else
+        #echo "$1 already exists in model${hwrev}.dtb" >&2
+#        echo -e "${Yellow}$1${Off} already exists in ${Cyan}model${hwrev}.dtb${Off}" >&2
+    fi
+
+#set +x  # debug
+
+}
+
+
+set_pwr_limit(){
+    if ! grep "$pwr_limit" "$dts_file" >/dev/null; then
+        # Save current power_limit
+        pwr_lmt_old=$(grep power_limit "$dts_file" | cut -d\" -f2)
+
+        # Find line to insert power_limit
+        pwrlim_line=$(awk '! NF { print NR }' "$dts_file" | head -n 2 | tail -n 1)
+
+        power_limit="	power_limit = \"$pwr_limit\";"
+        #echo "$power_limit" >&2  # debug
+
+        if grep power_limit "$dts_file" >/dev/null; then
+            filehead=$(head -n $((pwrlim_line -2)) "$dts_file")
+        else
+            filehead=$(head -n $((pwrlim_line -1)) "$dts_file")
+        fi
+        #echo "$filehead" >&2  # debug
+
+        filetail=$(tail -n +$((pwrlim_line +1)) "$dts_file")
+        #echo "$filetail" >&2  # debug
+
+        echo "$filehead" > "$dts_file"
+        echo -e "$power_limit\n" >> "$dts_file"
+        echo "$filetail" >> "$dts_file"
+
+        # Show result
+        echo -e "Updated power limit in ${Cyan}model${hwrev}.dtb${Off}" >&2
+        echo "  Old power_limit $pwr_lmt_old" >&2
+        echo "  New power_limit $pwr_limit" >&2
+    fi
+}
+
+
 check_modeldtb(){
     # $1 is E10M20-T1 or M2D20 or M2D18 or M2D17
-    if [[ -f /etc.defaults/model.dtb ]]; then
-        if ! grep --text "$1" /etc.defaults/model.dtb >/dev/null; then
-            if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1621+" ]] ||\
-                [[ $modelname == "DS1520+" ]] || [[ $modelname == "RS822rp+" ]] ||\
-                [[ $modelname == "RS822+" ]] || [[ $modelname == "RS1221rp+" ]] ||\
-                [[ $modelname == "RS1221+" ]];
-            then
-                echo "" >&2
-                if [[ -f ./dtb/${modelname}_model.dtb ]]; then
-                    # Edited device tree blob exists in dtb folder with script
-                    blob="./dtb/${modelname}_model.dtb"
-                elif [[ -f ./${modelname}_model.dtb ]]; then
-                    # Edited device tree blob exists with script
-                    blob="./${modelname}_model.dtb"
-                else
-                    # Download edited device tree blob model.dtb from github
-                    if cd /var/services/tmp; then
-                        echo -e "Downloading ${modelname}_model.dtb" >&2
-                        repo=https://github.com/007revad/Synology_HDD_db
-                        url=${repo}/raw/main/dtb/${modelname}_model.dtb
-                        curl -LJO -m 30 --connect-timeout 5 "$url"
-                        echo "" >&2
-                        cd "$scriptpath" || echo -e "${Error}ERROR${Off} Failed to cd to script location!"
-                    else
-                        echo -e "${Error}ERROR${Off} /var/services/tmp does not exist!" >&2
-                    fi
+    if [[ -f /etc.defaults/model.dtb ]]; then  # Is device tree model
+        # Get syn_hw_revision, r1 or r2 etc (or just a linefeed if not a revision)
+        hwrevision=$(cat /proc/sys/kernel/syno_hw_revision)
 
-                    # Check we actually downloaded the file
-                    if [[ -f /var/services/tmp/${modelname}_model.dtb ]]; then
-                        blob="/var/services/tmp/${modelname}_model.dtb"
-                    else
-                        echo -e "${Error}ERROR${Off} Failed to download ${modelname}_model.dtb!" >&2
-                    fi
-                fi
-                if [[ -f $blob ]]; then
-                    # Backup model.dtb
-                    if ! backupdb "/etc.defaults/model.dtb"; then
-                        echo -e "${Error}ERROR${Off} Failed to backup /etc.defaults/model.dtb!" >&2
-                    else                
-                        # Move and rename downloaded model.dtb
-                        if mv "$blob" "/etc.defaults/model.dtb"; then
-                            echo -e "Enabled ${Yellow}$1${Off} in ${Cyan}model.dtb${Off}" >&2
-                        else
-                            echo -e "${Error}ERROR${Off} Failed to add support for ${1}" >&2
-                        fi
+        # If syno_hw_revision is r1 or r2 it's a real Synology,
+        # and I need to edit model_rN.dtb instead of model.dtb
+        if [[ $hwrevision =~ r[0-9] ]]; then
+            #echo "hwrevision: $hwrevision" >&2  # debug
+            hwrev="_$hwrevision"
+        fi
 
-                        # Fix permissions if needed
-                        octal=$(stat -c "%a %n" "/etc.defaults/model.dtb" | cut -d" " -f1)
-                        if [[ ! $octal -eq 644 ]]; then
-                            chmod 644 "/etc.defaults/model.dtb"
-                        fi
-                    fi
-                else
-                    #echo -e "${Error}ERROR${Off} Missing file ${modelname}_model.dtb" >&2
-                    echo -e "${Error}ERROR${Off} Missing file $blob" >&2
+
+        dtb_file="/etc.defaults/model${hwrev}.dtb"
+        dts_file="/etc.defaults/model${hwrev}.dts"
+        dtb2_file="/etc/model${hwrev}.dtb"
+
+
+        # NVMe power_limit
+        if grep power_limit /run/model.dtb >/dev/null; then
+
+            if [ -f /sys/firmware/devicetree/base/power_limit ]; then
+                pwrval=$(cat /sys/firmware/devicetree/base/power_limit | cut -d"," -f1)
+                # Check pwrval is float or numeric
+                if [[ ! $pwrval =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+                    pwrval="100"
                 fi
             else
-                echo -e "\n${Cyan}Contact 007revad to get an edited model.dtb file for your model.${Off}" >&2
+                pwrval="100"
             fi
+
+            pwr_limit=""
+            nvme_drives=$(ls /sys/class/nvme | wc -w)
+            for i in $(seq 0 $((nvme_drives -1))); do 
+                [ "$i" -eq 0 ] && pwr_limit="$pwrval" || pwr_limit="${pwr_limit},$pwrval"
+            done
+
+            #echo "power_limit $pwr_limit" >&2  # debug
+        fi
+
+        # Check power_limit and adapter card already in model.dtb
+        if grep "$pwr_limit" "$dtb_file" >/dev/null && grep "$1" "$dtb_file" >/dev/null
+        then
+            echo -e "${Yellow}$1${Off} already exists in ${Cyan}model${hwrev}.dtb${Off}" >&2
+            return
+        fi
+
+
+        # Check if dtc exists and is executable
+        if [[ ! -x /usr/sbin/dtc ]]; then
+            if [[ -f ./bin/dtc ]]; then
+                cp -f ./bin/dtc /usr/sbin/dtc
+                chmod 755 /usr/sbin/dtc
+            else
+                download_dtc
+            fi
+        fi
+
+        # Check again if dtc exists and is executable
+        if [[ -x /usr/sbin/dtc ]]; then
+
+            # Backup model.dtb
+            if ! backupdb "$dtb_file"; then
+                echo -e "${Error}ERROR${Off} Failed to backup ${dtb_file}!" >&2
+            fi
+
+            # Output model.dtb to model.dts
+            dtc -q -I dtb -O dts -o "$dts_file" "$dtb_file"  # -q Suppress warnings
+            chmod 644 "$dts_file"
+
+            # Edit model.dts
+            #edit_dts "E10M20-T1"  # test
+            #edit_dts "M2D20"      # test
+            #edit_dts "M2D18"      # test
+            edit_dts "$1"
+
+            [[ -n $pwr_limit ]] && set_pwr_limit
+
+            # Compile model.dts to model.dtb
+            dtc -q -I dts -O dtb -o "$dtb_file" "$dts_file"  # -q Suppress warnings
+
+            # Set owner and permissions for model.dtb
+            chmod a+r "$dtb_file"
+            chown root:root "$dtb_file"
+            cp -pu "$dtb_file" "$dtb2_file"  # Copy dtb file to /etc
+
+            # Delete model.dts
+            rm  "$dts_file"
         else
-            echo -e "${Yellow}$1${Off} already enabled in ${Cyan}model.dtb${Off}" >&2
+            echo -e "${Error}ERROR${Off} Missing /usr/sbin/dtc or not executable!" >&2
         fi
     fi
 }
@@ -1334,7 +1514,7 @@ for c in "${m2cards[@]}"; do
             echo ""
             enable_card "$m2cardconf" E10M20-T1_sup_nic "E10M20-T1 NIC"
             enable_card "$m2cardconf" E10M20-T1_sup_nvme "E10M20-T1 NVMe"
-            enable_card "$m2cardconf" E10M20-T1_sup_sata "E10M20-T1 SATA"
+            #enable_card "$m2cardconf" E10M20-T1_sup_sata "E10M20-T1 SATA"
             check_modeldtb "$c"
         ;;
         M2D20)
@@ -1429,7 +1609,7 @@ if [[ ${model:0:3} != "dva" ]]; then
     fi
 fi
 
-# Optionally disable SynoMemCheck.service for DVA models
+# Disable SynoMemCheck.service for DVA models
 if [[ ${model:0:3} == "dva" ]]; then
     memcheck="/usr/lib/systemd/system/SynoMemCheck.service"
     if [[ $(synogetkeyvalue "$memcheck" ExecStart) == "/usr/syno/bin/syno_mem_check" ]]; then
@@ -1476,7 +1656,7 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
                 if [[ $ramtotal == "$setting" ]]; then
                     #echo -e "\nSet max memory to $ramtotal MB."
                     ramgb=$((ramtotal / 1024))
-                    echo -e "\nSet max memory to $ramtotal GB."
+                    echo -e "\nSet max memory to $ramgb GB."
                 else
                     echo -e "\n${Error}ERROR${Off} Failed to change max memory!"
                 fi
@@ -1490,7 +1670,7 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
                 if [[ $settingbak == "$setting" ]]; then
                     #echo -e "\nSet max memory to $ramtotal MB."
                     ramgb=$((ramtotal / 1024))
-                    echo -e "\nRestored max memory to $ramtotal GB."
+                    echo -e "\nRestored max memory to $ramgb GB."
                 else
                     echo -e "\n${Error}ERROR${Off} Failed to restore max memory!"
                 fi
@@ -1506,6 +1686,37 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
             fi
         else
             echo -e "\n${Error}ERROR${Off} Total memory size is not numeric: '$ramtotal'"
+        fi
+    fi
+fi
+
+
+
+# Enable nvme support                   This probably should be before we look for NVMe drives.
+#                                       But it probably also needs a reboot after we change it.
+if [[ $m2 != "no" ]]; then
+    # Check if nvme support is enabled
+    setting="$(get_key_value $synoinfo supportnvme)"
+    enabled=""
+    if [[ ! $setting ]]; then
+        # Add supportnvme="yes"
+        synosetkeyvalue "$synoinfo" supportnvme "yes"
+        enabled="yes"
+    elif [[ $setting == "no" ]]; then
+        # Change supportnvme="no" to "yes"
+        synosetkeyvalue "$synoinfo" supportnvme "yes"
+        enabled="yes"
+    elif [[ $setting == "yes" ]]; then
+        echo -e "\nNVMe support already enabled."
+    fi
+
+    # Check if we enabled nvme support
+    setting="$(get_key_value $synoinfo supportnvme)"
+    if [[ $enabled == "yes" ]]; then
+        if [[ $setting == "yes" ]]; then
+            echo -e "\nEnabled NVMe support."
+        else
+            echo -e "\n${Error}ERROR${Off} Failed to enable NVMe support!"
         fi
     fi
 fi
