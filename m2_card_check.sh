@@ -17,6 +17,8 @@ if [[ $( whoami ) != "root" ]]; then
     exit 1
 fi
 
+model=$(cat /proc/sys/kernel/syno_hw_version)
+echo "$model"
 
 os_name="DSM"
 productversion=$(get_key_value /etc.defaults/VERSION productversion)
@@ -55,6 +57,51 @@ ls -l /etc.defaults/model.dtb
 ls -l /etc/model.dtb
 ls -l /run/model.dtb
 
+
+echo -e '\n Checking if default power_limit="14.85,9.075" is in model.dtb files'
+files=( "/etc.defaults/model.dtb" "/etc/model.dtb" "/run/model.dtb" )
+for i in "${!files[@]}"; do
+    if ! grep "14.85,9.075" "${files[i]}" >/dev/null; then
+        echo "Missing in ${files[i]}"
+        error=$((error +1))
+    fi
+done
+[[ $error -lt "1" ]] && echo "All OK"
+error=""
+
+echo -e '\n Checking power_limit="14.85,14.85,14.85" is in model.dtb files'
+files=( "/etc.defaults/model.dtb" "/etc/model.dtb" "/run/model.dtb" )
+for i in "${!files[@]}"; do
+    if ! grep "14.85,14.85,14.85" "${files[i]}" >/dev/null; then
+        echo "Missing in ${files[i]}"
+        error=$((error +1))
+    fi
+done
+[[ $error -lt "1" ]] && echo "All OK"
+error=""
+
+echo -e '\n Checking power_limit="14.85,14.85,14.85,14.85" is in model.dtb files'
+files=( "/etc.defaults/model.dtb" "/etc/model.dtb" "/run/model.dtb" )
+for i in "${!files[@]}"; do
+    if ! grep "14.85,14.85,14.85,14.85" "${files[i]}" >/dev/null; then
+        echo "Missing in ${files[i]}"
+        error=$((error +1))
+    fi
+done
+[[ $error -lt "1" ]] && echo "All OK"
+error=""
+
+echo -e '\n Checking power_limit="100,100,100" is in model.dtb files'
+files=( "/etc.defaults/model.dtb" "/etc/model.dtb" "/run/model.dtb" )
+for i in "${!files[@]}"; do
+    if ! grep "100,100,100" "${files[i]}" >/dev/null; then
+        echo "Missing in ${files[i]}"
+        error=$((error +1))
+    fi
+done
+[[ $error -lt "1" ]] && echo "All OK"
+error=""
+
 echo -e '\n Checking power_limit="100,100,100,100" is in model.dtb files'
 files=( "/etc.defaults/model.dtb" "/etc/model.dtb" "/run/model.dtb" )
 for i in "${!files[@]}"; do
@@ -65,6 +112,7 @@ for i in "${!files[@]}"; do
 done
 [[ $error -lt "1" ]] && echo "All OK"
 error=""
+
 
 echo -e '\n Checking E10M20-T1 is in model.dtb files'
 files=( "/etc.defaults/model.dtb" "/etc/model.dtb" "/run/model.dtb" )
@@ -107,23 +155,23 @@ ls -l /usr/syno/etc/adapter_cards.conf
 ls -l /run/adapter_cards.conf
 
 echo -e '\n Checking /usr/syno/etc.defaults/adapter_cards.conf'
-if [[ ! $(get_section_key_value /usr/syno/etc.defaults/adapter_cards.conf E10M20-T1_sup_nic DS1821+) == "yes" ]]; then echo "E10M20-T1_sup_nic NOT set to yes"; error=$((error +1)); fi
-if [[ ! $(get_section_key_value /usr/syno/etc.defaults/adapter_cards.conf E10M20-T1_sup_nvme DS1821+) == "yes" ]]; then echo "E10M20-T1_sup_nvme NOT set to yes"; error=$((error +1)); fi
-if [[ ! $(get_section_key_value /usr/syno/etc.defaults/adapter_cards.conf E10M20-T1_sup_sata DS1821+) == "yes" ]]; then echo "E10M20-T1_sup_sata NOT set to yes"; error=$((error +1)); fi
-if [[ ! $(get_section_key_value /usr/syno/etc.defaults/adapter_cards.conf M2D20_sup_nvme DS1821+) == "yes" ]]; then echo "M2D20_sup_nvme NOT set to yes"; error=$((error +1)); fi
-if [[ ! $(get_section_key_value /usr/syno/etc.defaults/adapter_cards.conf M2D18_sup_nvme DS1821+) == "yes" ]]; then echo "M2D18_sup_nvme NOT set to yes"; error=$((error +1)); fi
-if [[ ! $(get_section_key_value /usr/syno/etc.defaults/adapter_cards.conf M2D18_sup_sata DS1821+) == "yes" ]]; then echo "M2D18_sup_sata NOT set to yes"; error=$((error +1)); fi
+if [[ ! $(get_section_key_value /usr/syno/etc.defaults/adapter_cards.conf E10M20-T1_sup_nic "$model") == "yes" ]]; then echo "E10M20-T1_sup_nic NOT set to yes"; error=$((error +1)); fi
+if [[ ! $(get_section_key_value /usr/syno/etc.defaults/adapter_cards.conf E10M20-T1_sup_nvme "$model") == "yes" ]]; then echo "E10M20-T1_sup_nvme NOT set to yes"; error=$((error +1)); fi
+if [[ ! $(get_section_key_value /usr/syno/etc.defaults/adapter_cards.conf E10M20-T1_sup_sata "$model") == "yes" ]]; then echo "E10M20-T1_sup_sata NOT set to yes"; error=$((error +1)); fi
+if [[ ! $(get_section_key_value /usr/syno/etc.defaults/adapter_cards.conf M2D20_sup_nvme "$model") == "yes" ]]; then echo "M2D20_sup_nvme NOT set to yes"; error=$((error +1)); fi
+if [[ ! $(get_section_key_value /usr/syno/etc.defaults/adapter_cards.conf M2D18_sup_nvme "$model") == "yes" ]]; then echo "M2D18_sup_nvme NOT set to yes"; error=$((error +1)); fi
+if [[ ! $(get_section_key_value /usr/syno/etc.defaults/adapter_cards.conf M2D18_sup_sata "$model") == "yes" ]]; then echo "M2D18_sup_sata NOT set to yes"; error=$((error +1)); fi
 #echo "error: $error"  # debug
 if [[ $error -lt "1" ]]; then echo "All OK"; fi
 error=""
 
 echo -e '\n Checking /usr/syno/etc/adapter_cards.conf'  # Changes persist after DSM upgrade
-if [[ ! $(get_section_key_value /usr/syno/etc/adapter_cards.conf E10M20-T1_sup_nic DS1821+) == "yes" ]]; then echo "E10M20-T1_sup_nic NOT set to yes"; error=$((error +1)); fi
-if [[ ! $(get_section_key_value /usr/syno/etc/adapter_cards.conf E10M20-T1_sup_nvme DS1821+) == "yes" ]]; then echo "E10M20-T1_sup_nvme NOT set to yes"; error=$((error +1)); fi
-if [[ ! $(get_section_key_value /usr/syno/etc/adapter_cards.conf E10M20-T1_sup_sata DS1821+) == "yes" ]]; then echo "E10M20-T1_sup_sata NOT set to yes"; error=$((error +1)); fi
-if [[ ! $(get_section_key_value /usr/syno/etc/adapter_cards.conf M2D20_sup_nvme DS1821+) == "yes" ]]; then echo "M2D20_sup_nvme NOT set to yes"; error=$((error +1)); fi
-if [[ ! $(get_section_key_value /usr/syno/etc/adapter_cards.conf M2D18_sup_nvme DS1821+) == "yes" ]]; then echo "M2D18_sup_nvme NOT set to yes"; error=$((error +1)); fi
-if [[ ! $(get_section_key_value /usr/syno/etc/adapter_cards.conf M2D18_sup_sata DS1821+) == "yes" ]]; then echo "M2D18_sup_sata NOT set to yes"; error=$((error +1)); fi
+if [[ ! $(get_section_key_value /usr/syno/etc/adapter_cards.conf E10M20-T1_sup_nic "$model") == "yes" ]]; then echo "E10M20-T1_sup_nic NOT set to yes"; error=$((error +1)); fi
+if [[ ! $(get_section_key_value /usr/syno/etc/adapter_cards.conf E10M20-T1_sup_nvme "$model") == "yes" ]]; then echo "E10M20-T1_sup_nvme NOT set to yes"; error=$((error +1)); fi
+if [[ ! $(get_section_key_value /usr/syno/etc/adapter_cards.conf E10M20-T1_sup_sata "$model") == "yes" ]]; then echo "E10M20-T1_sup_sata NOT set to yes"; error=$((error +1)); fi
+if [[ ! $(get_section_key_value /usr/syno/etc/adapter_cards.conf M2D20_sup_nvme "$model") == "yes" ]]; then echo "M2D20_sup_nvme NOT set to yes"; error=$((error +1)); fi
+if [[ ! $(get_section_key_value /usr/syno/etc/adapter_cards.conf M2D18_sup_nvme "$model") == "yes" ]]; then echo "M2D18_sup_nvme NOT set to yes"; error=$((error +1)); fi
+if [[ ! $(get_section_key_value /usr/syno/etc/adapter_cards.conf M2D18_sup_sata "$model") == "yes" ]]; then echo "M2D18_sup_sata NOT set to yes"; error=$((error +1)); fi
 #echo "error: $error"  # debug
 if [[ $error -lt "1" ]]; then echo "All OK"; fi
 error=""
@@ -140,8 +188,8 @@ if [[ $error -lt "1" ]]; then echo "All OK"; fi
 error=""
 
 
-# grep "DS1821+=no" /usr/syno/etc.defaults/adapter_cards.conf
-# grep "DS1821+=no" /usr/syno/etc/adapter_cards.conf
+# grep "${model}=no" /usr/syno/etc.defaults/adapter_cards.conf
+# grep "${model}=no" /usr/syno/etc/adapter_cards.conf
 
 # cat /run/adapter_cards.conf
 
@@ -212,10 +260,17 @@ echo -e '\n Checking synostgd-disk log'
 printf -- '-%.0s' {1..40} && echo
 echo "Current date/time:   $(date +"%Y-%m-%d %T")"
 epoch=$(grep "Current time" /var/log/synobootup.log | tail -1 | awk '{print $8}')
-echo "Last boot date/time: $(date -d @$epoch +"%Y-%m-%d %T")"
-booted="$(date -d @$epoch +"%Y-%m-%dT%H:%M")"
-printf -- '-%.0s' {1..40} && echo
-grep synostgd-disk /var/log/messages | tail -10 | grep "${booted}" ||\
-    echo "No synostgd-disk logs since last boot"
-printf -- '-%.0s' {1..40} && echo
+if [[ $epoch ]]; then
+    echo "Last boot date/time: $(date -d @$epoch +"%Y-%m-%d %T")"
+    booted="$(date -d @$epoch +"%Y-%m-%dT%H:%M")"
+    printf -- '-%.0s' {1..40} && echo
+    grep synostgd-disk /var/log/messages | tail -10 | grep "${booted}" ||\
+        echo "No synostgd-disk logs since last boot"
+    printf -- '-%.0s' {1..40} && echo
+else
+    echo "synobootup.log empty"
+    printf -- '-%.0s' {1..40} && echo
+fi
+
+exit
 
