@@ -103,3 +103,8 @@ if ! rm "/tmp/synonvme"; then
     echo "Failed to delete /tmp/synonvme"
 fi
 
+echo -e "\nYou MUST reboot now. Or you won't be able to access DSM webui."
+echo "Reboot now? [y/n]"
+read -r answer
+if [[ ${answer,,} != "y" ]]; then exit; fi
+reboot
