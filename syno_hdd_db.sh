@@ -749,10 +749,8 @@ fixdrivemodel(){
 
 getdriveinfo(){
     # $1 is /sys/block/sata1 etc
-
-    # Skip USB drives
     usb=$(grep "$(basename -- "$1")" /proc/mounts | grep "[Uu][Ss][Bb]" | cut -d" " -f1-2)
-    if [[ ! $usb ]]; then
+    if [[ ! $usb ]]; then  # Skip USB drives
 
         # Get drive model
         hdmodel=$(cat "$1/device/model")
