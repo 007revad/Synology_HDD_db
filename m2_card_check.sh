@@ -42,6 +42,47 @@ printf '/etc.defaults/synoinfo.conf: '$(get_key_value /etc.defaults/synoinfo.con
 printf '/etc/synoinfo.conf:          '$(get_key_value /etc/synoinfo.conf supportnvme)'\n'
 
 
+echo -e '\n Checking md5 hash of libsynonvme.so.1'
+case `md5sum -b /usr/lib/libsynonvme.so.1 | awk '{print $1}'` in
+    2b41e149acdb7281f6145f9fae214285)
+        # 7.2-64570		libsynonvme.so.1	2b41e149acdb7281f6145f9fae214285
+        echo "libsynonvme.so.1 is 7.2-64570 version"
+    ;;
+    1726d502a568c0843d43a2d95bcc6566)
+        # 7.2-64570-1	libsynonvme.so.1	1726d502a568c0843d43a2d95bcc6566
+        # 7.2-64570-2	libsynonvme.so.1	1726d502a568c0843d43a2d95bcc6566
+        # 7.2-64570-3	libsynonvme.so.1	1726d502a568c0843d43a2d95bcc6566
+        echo "libsynonvme.so.1 is 7.2-64570-1, 2 or 3 version"
+    ;;
+    b4f3463cf353978209171b5fc5a4bc2c)
+        # 7.2.1-69057-1	libsynonvme.so.1	b4f3463cf353978209171b5fc5a4bc2c
+        echo "libsynonvme.so.1 is 7.2.1-69057-1 version"
+    ;;
+    *)
+        echo "synonvme is unknown version: $md5"
+    ;;
+esac
+
+echo -e '\n Checking md5 hash of synonvme'
+md5=$(md5sum -b /usr/syno/bin/synonvme | awk '{print $1}')
+case "$md5" in
+    ef36da23c30c17aeef6af943a958a124)
+        # 7.2-64570		synonvme	ef36da23c30c17aeef6af943a958a124
+        echo "synonvme is 7.2-64570 version"
+    ;;
+    97d51425e6ac48ce1ed5fafd8810d359)
+        # 7.2-64570-1	synonvme	97d51425e6ac48ce1ed5fafd8810d359
+        # 7.2-64570-2	synonvme	97d51425e6ac48ce1ed5fafd8810d359
+        # 7.2-64570-3	synonvme	97d51425e6ac48ce1ed5fafd8810d359
+        # 7.2.1-69057-1	synonvme	97d51425e6ac48ce1ed5fafd8810d359
+        echo "synonvme is 7.2-64570-1 to 7.2.1-69057-1 version"
+    ;;
+    *)
+        echo "synonvme is unknown version: $md5"
+    ;;
+esac
+
+
 echo -e '\n Checking permissions and owner of libsynonvme.so.1'
 echo " Which should be -rw-r--r-- 1 root root"
 ls -l /usr/lib/libsynonvme.so.1
@@ -256,21 +297,12 @@ echo -e '\n Checking nvme block devices in /sys/block'
 ls /sys/block | grep nv
 
 
-echo -e '\n Checking synostgd-disk log'
+echo -e '\n Checking synoscgi log'
 printf -- '-%.0s' {1..40} && echo
 echo "Current date/time:   $(date +"%Y-%m-%d %T")"
-epoch=$(grep "Current time" /var/log/synobootup.log | tail -1 | awk '{print $8}')
-if [[ $epoch ]]; then
-    echo "Last boot date/time: $(date -d @$epoch +"%Y-%m-%d %T")"
-    booted="$(date -d @$epoch +"%Y-%m-%dT%H:%M")"
-    printf -- '-%.0s' {1..40} && echo
-    grep synostgd-disk /var/log/messages | tail -10 | grep "${booted}" ||\
-        echo "No synostgd-disk logs since last boot"
-    printf -- '-%.0s' {1..40} && echo
-else
-    echo "synobootup.log empty"
-    printf -- '-%.0s' {1..40} && echo
-fi
+echo "Last boot date/time: $(uptime --since)"
+booted="$(uptime --since | cut -d":" -f 1-2)"
+printf -- '-%.0s' {1..40} && echo
+grep nvme /var/log/synoscgi.log | tail -5 || echo "No synostgd-disk logs since last boot"
 
 exit
-
