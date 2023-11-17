@@ -745,7 +745,7 @@ fixdrivemodel(){
         hdmodel=${hdmodel#"FUJISTU "}   # Remove "FUJISTU " from start of model name
         hdmodel=${hdmodel#"APPLE HDD "} # Remove "APPLE HDD " from start of model name
     fi
-}
+} 
 
 getdriveinfo(){ 
     # $1 is /sys/block/sata1 etc
