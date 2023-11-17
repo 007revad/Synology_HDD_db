@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-fixdrivemodel(){ 
+TEST_fixdrivemodel(){ 
     # Remove " 00Y" from end of Samsung/Lenovo SSDs  # Github issue #13
     if [[ $1 =~ MZ.*" 00Y" ]]; then
         hdmodel=$(printf "%s" "$1" | sed 's/ 00Y.*//')
