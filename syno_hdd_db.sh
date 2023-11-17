@@ -728,12 +728,14 @@ fi
 
 fixdrivemodel(){ 
     # Remove " 00Y" from end of Samsung/Lenovo SSDs  # Github issue #13
-    if [[ $1 ]]; then
+    if [[ $1 =~ MZ.*" 00Y" ]]; 
+    then
         hdmodel=$(printf "%s" "$1" | sed 's/ 00Y.*//')
     fi
 
     # Brands that return "BRAND <model>" and need "BRAND " removed.
-    if [[ $1 ]]; then
+    if [[ $1 =~ ^[A-Za-z]{1,7}" ".* ]]; 
+    then
         # See Smartmontools database in /var/lib/smartmontools/drivedb.db
         hdmodel=${hdmodel#"WDC "}       # Remove "WDC " from start of model name
         hdmodel=${hdmodel#"HGST "}      # Remove "HGST " from start of model name
