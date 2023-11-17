@@ -728,10 +728,10 @@ fi
 
 fixdrivemodel(){ 
     if [[ $1 =~ MZ.*" 00Y" ]]; then
-        hdmodel=$(printf "%s" "$1" | sed 's/ 00Y.*//')
+        echo 
     fi
     if [[ $1 =~ ^[A-Za-z]{1,7}" ".* ]]; then
-	echo
+	echo 
     fi
 }
 
