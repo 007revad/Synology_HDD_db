@@ -239,11 +239,11 @@ fi
 
 #echo -e "bash version: $(bash --version | head -1 | cut -d' ' -f4)\n"  # debug
 
-ding(){
+ding(){ 
     printf \\a
 }
 
-usage(){
+usage(){ 
     cat <<EOF
 $script $scriptver - by 007revad
 
@@ -270,7 +270,7 @@ EOF
 }
 
 
-scriptversion(){
+scriptversion(){ 
     cat <<EOF
 $script $scriptver - by 007revad
 
@@ -439,7 +439,7 @@ echo "Using options: ${args[*]}"
 #------------------------------------------------------------------------------
 # Check latest release with GitHub API
 
-syslog_set(){
+syslog_set(){ 
     if [[ ${1,,} == "info" ]] || [[ ${1,,} == "warn" ]] || [[ ${1,,} == "err" ]]; then
         if [[ $autoupdate == "yes" ]]; then
             # Add entry to Synology system log
@@ -493,7 +493,7 @@ echo "Running from: ${scriptpath}/$scriptfile"
 #echo "scriptver: $scriptver"  # debug
 
 
-cleanup_tmp(){
+cleanup_tmp(){ 
     cleanup_err=
 
     # Delete downloaded .tar.gz file
@@ -726,7 +726,7 @@ fi
 # Get list of installed SATA, SAS and M.2 NVMe/SATA drives,
 # PCIe M.2 cards and connected Expansion Units.
 
-fixdrivemodel(){
+fixdrivemodel(){ 
     # Remove " 00Y" from end of Samsung/Lenovo SSDs  # Github issue #13
     if [[ $1 =~ MZ.*" 00Y" ]]; then
         hdmodel=$(printf "%s" "$1" | sed 's/ 00Y.*//')
@@ -747,7 +747,7 @@ fixdrivemodel(){
     fi
 }
 
-getdriveinfo(){
+getdriveinfo(){ 
     # $1 is /sys/block/sata1 etc
     usb=$(grep "$(basename -- "$1")" /proc/mounts | grep "[Uu][Ss][Bb]" | cut -d" " -f1-2)
     if [[ ! $usb ]]; then  # Skip USB drives
@@ -774,7 +774,7 @@ getdriveinfo(){
     fi
 }
 
-getm2info(){
+getm2info(){ 
     # $1 is /sys/block/nvme0n1 etc
     nvmemodel=$(cat "$1/device/model")
     nvmemodel=$(printf "%s" "$nvmemodel" | xargs)  # trim leading and trailing white space
@@ -790,7 +790,7 @@ getm2info(){
     fi
 }
 
-getcardmodel(){
+getcardmodel(){ 
     # Get M.2 card model (if M.2 drives found)
     # $1 is /dev/nvme0n1 etc
     isinm2card=""
@@ -820,7 +820,7 @@ getcardmodel(){
     fi
 }
 
-m2_pool_support(){
+m2_pool_support(){ 
     if [[ $isinm2card != "yes" ]]; then
         if [[ -f /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support ]]; then  # GitHub issue #86, 87
             echo 1 > /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support
@@ -1013,7 +1013,7 @@ fi
 # Don't check .db.new as new installs don't have a .db.new file
 
 
-getdbtype(){
+getdbtype(){ 
     # Detect drive db type
     if grep -F '{"disk_compatbility_info":' "$1" >/dev/null; then
         # DSM 7 drive db files start with {"disk_compatbility_info":
@@ -1029,7 +1029,7 @@ getdbtype(){
 }
 
 
-backupdb(){
+backupdb(){ 
     # Backup database file if needed
     if [[ ! -f "$1.bak" ]]; then
         if [[ $(basename "$1") == "synoinfo.conf" ]]; then
@@ -1069,7 +1069,7 @@ done
 #------------------------------------------------------------------------------
 # Edit db files
 
-editcount(){
+editcount(){ 
     # Count drives added to host db files
     if [[ $1 =~ .*\.db$ ]]; then
         db1Edits=$((db1Edits +1))
@@ -1079,7 +1079,7 @@ editcount(){
 }
 
 
-editdb7(){
+editdb7(){ 
     if [[ $1 == "append" ]]; then  # model not in db file
         #if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # append
         if sed -i "s/}}}/}},\"${hdmodel//\//\\/}\":{$fwstrng$default/" "$2"; then  # append
@@ -1114,7 +1114,7 @@ editdb7(){
 }
 
 
-updatedb(){
+updatedb(){ 
     hdmodel=$(printf "%s" "$1" | cut -d"," -f 1)
     fwrev=$(printf "%s" "$1" | cut -d"," -f 2)
 
@@ -1239,7 +1239,7 @@ done
 # RS822RP+, RS822+, RS1221RP+ and RS1221+ with DSM older than 7.2 need
 # device tree blob file from DSM 7.2 to support M2D18
 
-enable_card(){
+enable_card(){ 
     # $1 is the file
     # $2 is the section
     # $3 is the card model and mode
@@ -1264,7 +1264,7 @@ enable_card(){
 }
 
 
-dts_m2_card(){
+dts_m2_card(){ 
 # $1 is the card model
 # $2 is the dts file
 
@@ -1338,7 +1338,7 @@ fi
 }
 
 
-download_dtc(){
+download_dtc(){ 
     # Download dtc from github
     echo "Downloading dtc" >&2
     if cd /var/services/tmp; then
@@ -1354,7 +1354,7 @@ download_dtc(){
 }
 
 
-edit_dts(){
+edit_dts(){ 
 
 #set -x  # debug
 
@@ -1374,7 +1374,7 @@ edit_dts(){
 }
 
 
-set_pwr_limit(){
+set_pwr_limit(){ 
     if ! grep "$pwr_limit" "$dts_file" >/dev/null; then
         # Save current power_limit
         pwr_lmt_old=$(grep power_limit "$dts_file" | cut -d\" -f2)
@@ -1407,7 +1407,7 @@ set_pwr_limit(){
 }
 
 
-check_modeldtb(){
+check_modeldtb(){ 
     # $1 is E10M20-T1 or M2D20 or M2D18 or M2D17
     if [[ -f /etc.defaults/model.dtb ]]; then  # Is device tree model
         # Get syn_hw_revision, r1 or r2 etc (or just a linefeed if not a revision)
