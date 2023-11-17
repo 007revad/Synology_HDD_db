@@ -728,7 +728,7 @@ fi
 
 fixdrivemodel(){ 
     # Remove " 00Y" from end of Samsung/Lenovo SSDs  # Github issue #13
-    if [[ $1 =~ MZ.*" 00Y" ]]; then
+    if [[ $1 ]]; then
         hdmodel=$(printf "%s" "$1" | sed 's/ 00Y.*//')
     fi
 
