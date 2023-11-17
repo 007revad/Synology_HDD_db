@@ -16,7 +16,8 @@ url="https://raw.githubusercontent.com/007revad/Synology_HDD_db/develop/"
 model=$(cat /proc/sys/kernel/syno_hw_version)
 modelname="$model"
 
-#if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1823xs+" ]];
+#if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1621+" ]] ||\
+#    [[ $modelname == "DS1823xs+" ]] || [[ $modelname == "FS2500" ]];
 if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1621+" ]] ||\
     [[ $modelname == "DS1520+" ]] || [[ $modelname == "RS822rp+" ]] ||\
     [[ $modelname == "RS822+" ]] || [[ $modelname == "RS1221rp+" ]] ||\
