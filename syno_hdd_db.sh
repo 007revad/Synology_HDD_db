@@ -729,8 +729,8 @@ fi
 fixdrivemodel(){ 
     if [[ $1 =~ MZ.*" 00Y" ]]; then
         echo 
-    fi
-    if [[ $1 =~ ^[A-Za-z]{1,7}" ".* ]]; then
+    #fi
+    #if [[ $1 =~ ^[A-Za-z]{1,7}" ".* ]]; then
 	echo 
     fi
 }
