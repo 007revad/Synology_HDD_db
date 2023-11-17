@@ -726,7 +726,8 @@ fi
 # Get list of installed SATA, SAS and M.2 NVMe/SATA drives,
 # PCIe M.2 cards and connected Expansion Units.
 
-fixdrivemodel(){ 
+fixdrivemodel()
+{ 
     # Remove " 00Y" from end of Samsung/Lenovo SSDs  # Github issue #13
     if [[ $1 =~ MZ.*" 00Y" ]]; then
         hdmodel=$(printf "%s" "$1" | sed 's/ 00Y.*//')
