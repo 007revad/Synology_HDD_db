@@ -727,7 +727,6 @@ fi
 # PCIe M.2 cards and connected Expansion Units.
 
 fixdrivemodel(){ 
-    echo
     # Remove " 00Y" from end of Samsung/Lenovo SSDs  # Github issue #13
     if [[ $1 =~ MZ.*" 00Y" ]]; then
         hdmodel=$(printf "%s" "$1" | sed 's/ 00Y.*//')
@@ -746,7 +745,8 @@ fixdrivemodel(){
         hdmodel=${hdmodel#"FUJISTU "}   # Remove "FUJISTU " from start of model name
         hdmodel=${hdmodel#"APPLE HDD "} # Remove "APPLE HDD " from start of model name
     fi
-} 
+}
+
 
 getdriveinfo(){ 
     # $1 is /sys/block/sata1 etc
