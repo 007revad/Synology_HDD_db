@@ -727,10 +727,10 @@ fi
 # PCIe M.2 cards and connected Expansion Units.
 
 fixdrivemodel(){ 
-    if [[ $1 =~ MZ.*" 00Y" ]]; then
+    if [[ $1 ]]; then
         echo 
-    #fi
-    #if [[ $1 =~ ^[A-Za-z]{1,7}" ".* ]]; then
+    fi
+    if [[ $1 ]]; then
 	echo 
     fi
 }
