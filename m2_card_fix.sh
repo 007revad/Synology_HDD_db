@@ -33,7 +33,7 @@ buildnumber="64570"
 buildnumber2="69057"
 currentbldnum=$(synogetkeyvalue /etc.defaults/VERSION buildnumber)
 
-if [[ $buildnumber != "$currentbldnum" ]] && [[ $buildnumber1 != "$currentbldnum" ]]; then
+if [[ $buildnumber != "$currentbldnum" ]] && [[ $buildnumber2 != "$currentbldnum" ]]; then
     echo "$currentbldnum not supported"
     exit
 fi
