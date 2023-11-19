@@ -19,9 +19,8 @@ modelname="$model"
 #if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1621+" ]] ||\
 #    [[ $modelname == "DS1823xs+" ]] || [[ $modelname == "FS2500" ]];
 if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1621+" ]] ||\
-    [[ $modelname == "DS1520+" ]] || [[ $modelname == "RS822rp+" ]] ||\
-    [[ $modelname == "RS822+" ]] || [[ $modelname == "RS1221rp+" ]] ||\
-    [[ $modelname == "RS1221+" ]];
+    [[ $modelname == "RS822+" ]] || [[ $modelname == "RS822rp+" ]] ||\
+    [[ $modelname == "RS1221+" ]] || [[ $modelname == "RS1221rp+" ]] ||;
 then
     echo "$modelname"
 else
@@ -31,9 +30,10 @@ fi
 
 
 buildnumber="64570"
+buildnumber2="69057"
 currentbldnum=$(synogetkeyvalue /etc.defaults/VERSION buildnumber)
 
-if [[ $buildnumber != "$currentbldnum" ]]; then
+if [[ $buildnumber != "$currentbldnum" ]] || [[ $buildnumber1 != "$currentbldnum" ]]; then
     echo "$currentbldnum not supported"
     exit
 fi
