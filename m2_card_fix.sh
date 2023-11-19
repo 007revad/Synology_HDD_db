@@ -20,7 +20,7 @@ modelname="$model"
 #    [[ $modelname == "DS1823xs+" ]] || [[ $modelname == "FS2500" ]];
 if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1621+" ]] ||\
     [[ $modelname == "RS822+" ]] || [[ $modelname == "RS822rp+" ]] ||\
-    [[ $modelname == "RS1221+" ]] || [[ $modelname == "RS1221rp+" ]] ||;
+    [[ $modelname == "RS1221+" ]] || [[ $modelname == "RS1221rp+" ]];
 then
     echo "$modelname"
 else
