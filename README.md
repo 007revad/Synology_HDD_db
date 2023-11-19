@@ -107,6 +107,7 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr --showedits
 
 Thank you to the following PayPal donators and GitHub sponsors
 
+- Mir Hekmat
 - Andrew Tapp
 - Peter Weißflog
 - Mir Hekmat
