@@ -59,7 +59,7 @@ case `md5sum -b /usr/lib/libsynonvme.so.1 | awk '{print $1}'` in
         echo "libsynonvme.so.1 is 7.2.1-69057-1 version"
     ;;
     *)
-        echo "synonvme is unknown version: $md5"
+        echo "libsynonvme.so.1 is unknown version: $md5"
     ;;
 esac
 
@@ -303,6 +303,9 @@ echo "Current date/time:   $(date +"%Y-%m-%d %T")"
 echo "Last boot date/time: $(uptime --since)"
 booted="$(uptime --since | cut -d":" -f 1-2)"
 printf -- '-%.0s' {1..40} && echo
-grep nvme /var/log/synoscgi.log | tail -5 || echo "No synostgd-disk logs since last boot"
+#grep nvme /var/log/synoscgi.log | tail -20 || echo "No synostgd-disk logs since last boot"
+if ! journalctl -b | grep -v HISTORY | grep nvme ; then
+    echo "No nvme logs since last boot"
+fi
 
 exit
