@@ -105,7 +105,7 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr --showedits
 
 **Donators**
 
-Thank you to the following paypal donators and GitHub sponsors
+Thank you to the following PayPal donators, GitHub sponsors and hardware donators
 
 | | | | | 
 |--------------------|--------------------|----------------------|----------------------|
