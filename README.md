@@ -105,43 +105,17 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr --showedits
 
 **Donators**
 
-Thank you to the following PayPal donators and GitHub sponsors
+Thank you to the following PayPal donators, GitHub sponsors and hardware donators
 
-- Neil Tapp
-- Kleissner Investments
-- Angel Scandinavia
-- bcollins
-- Mir Hekmat
-- Andrew Tapp
-- Peter Weißflog
-- Mir Hekmat
-- Joseph Skup
-- Dirk Kurfuerst
-- Gareth Locke
-- Rory de Ruijter
-- Nathan O'Farrell
-- Harry Bos
-- Mark-Philipp Wolfger
-- Filip Kraus
-- John Pham
-- Alejandro Bribian Rix
-- Daniel Hofer
-- Bogdan-Stefan Rotariu
-- Kevin Boatswain
-- anschluss-org
-- Yemeth
-- Patrick Thomas
-- Manuel Marquez Corral
-- Evrard Franck
-- Chad Palmer
-- 侯​永政
-- CHEN​HAN-YING
-- Eric Wells
-- Massimiliano Pesce
-- JasonEMartin
-- Gerrit Klussmann
-- Alain Aube
-- Robert Kraut
-- Charles-Edouard Poisnel
-- Oliver Busch
-- And the anonymous donors and private sponsors
+| | | | | 
+|--------------------|--------------------|----------------------|----------------------|
+| Neil Tapp | zen1605 | Kleissner Investments | Angel Scandinavia |
+| bcollins | Peter jackson | Mir Hekmat | Andrew Tapp |
+| Peter Weißflog | Joseph Skup | Dirk Kurfuerst | Gareth Locke |
+| Rory de Ruijter | Nathan O'Farrell | Harry Bos | Mark-Philipp Wolfger |
+| Filip Kraus | John Pham | Alejandro Bribian Rix | Daniel Hofer |
+| Bogdan-Stefan Rotariu | Kevin Boatswain | anschluss-org | Yemeth |
+| Patrick Thomas | Manuel Marquez Corral | Evrard Franck | Chad Palmer |
+| 侯​永政 | CHEN​HAN-YING | Eric Wells | Massimiliano Pesce |
+| JasonEMartin | Gerrit Klussmann | Alain Aube | Robert Kraut |
+| Charles-Edouard Poisnel | Oliver Busch | anonymous donors | private sponsors |
