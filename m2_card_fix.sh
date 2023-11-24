@@ -3,6 +3,7 @@
 # Check script is running as root
 if [[ $( whoami ) != "root" ]]; then
     echo "This script must be run as sudo or root!"
+    exit
 fi
 
 # Set fans to cool mode if PCIe card installed
@@ -16,11 +17,9 @@ url="https://raw.githubusercontent.com/007revad/Synology_HDD_db/develop/"
 model=$(cat /proc/sys/kernel/syno_hw_version)
 modelname="$model"
 
+
 if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1621+" ]] ||\
-    [[ $modelname == "DS1823xs+" ]] || [[ $modelname == "FS2500" ]];
-#if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1621+" ]] ||\
-#    [[ $modelname == "RS822+" ]] || [[ $modelname == "RS822rp+" ]] ||\
-#    [[ $modelname == "RS1221+" ]] || [[ $modelname == "RS1221rp+" ]];
+    [[ $modelname == "DS1823xs+" ]];
 then
     echo "$modelname"
 else
@@ -30,13 +29,23 @@ fi
 
 
 buildnumber="64570"
-buildnumber2="69057"
 currentbldnum=$(synogetkeyvalue /etc.defaults/VERSION buildnumber)
+productversion=$(synogetkeyvalue /etc.defaults/VERSION productversion)
+nano=$(synogetkeyvalue /etc.defaults/VERSION nano)
+os_name=$(synogetkeyvalue /etc.defaults/VERSION os_name)
 
-if [[ $buildnumber != "$currentbldnum" ]] && [[ $buildnumber2 != "$currentbldnum" ]]; then
-    echo "$currentbldnum not supported"
-    exit
+if [[ $nano -gt "0" ]]; then
+    nanoshow=" Update $nano"
 fi
+
+if [[ ${currentbldnum}$nano -lt "${buildnumber}1" ]]; then
+    echo "$os_name ${productversion}-${currentbldnum}$nanoshow does not need fixing"
+    exit
+else
+    echo "$os_name ${productversion}-${currentbldnum}$nanoshow"
+fi
+
+#exit  # debug
 
 
 # Backup /usr/lib/libsynonvme.so.1
@@ -104,8 +113,22 @@ if ! rm "/tmp/synonvme"; then
     echo "Failed to delete /tmp/synonvme"
 fi
 
+
+# Cleanup core dumps caused by replacing libsynonvme.so.1 and synonvme
+for volume in /volume*; do
+    if [[ $volume =~ /volume[0-9]{1,2}$ ]] && [[ $volume != /volume0 ]]; then
+        if find "$volume"/@*.core* > /dev/null 2>&1 ; then
+            # Delete all core dumps
+            echo "Deleting all core dumps on ${volume}"
+            find "$volume"/@*.core* -delete
+        fi
+    fi
+done
+
+
 echo -e "\nYou MUST reboot now. Or you won't be able to access DSM webui."
 echo "Reboot now? [y/n]"
 read -r answer
 if [[ ${answer,,} != "y" ]]; then exit; fi
 reboot
+
