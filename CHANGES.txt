@@ -1,7 +1,14 @@
-v3.2.66
-- Updated so E10M20-T1, M2D20 and M2D18 now work in models that use device tree and are using DSM 7.2 Update 2 and Update 3.
+v3.2.67-RC
+- Updated so E10M20-T1, M2D20 and M2D18 now work in models that use device tree and are using:
+    - DSM 7.2 Update 2 and 3, 7.2.1, 7.2.1 Update 1, 2 and 3.
+- Now edits model.dtb instead of downloading a pre-edited version.
+- Fix for Unknown vendor causing "Unsupported firmware version" warning. Issue #161
+- Now supports NVMe drives that show as Unknown brand in storage manager: Issue #161
+    - ADATA, Corsair, Gigabyte, HS/MAXIO, MSI, Netac, Phison, PNY
+    - SK Hynix, Solidigm, SPCC/Lexar, TEAMGROUP, UMIS, ZHITAI
 - Fixed bug where memory was shown in MB but with GB unit.
 - Removed -i, --immutable option.
+- Minor bug fixes.
 
 v3.1.65
 - Bug fix for NVMe drives with / in the model name for non-device tree Synology models. Issue #154
