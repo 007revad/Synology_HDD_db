@@ -1,1 +1,0 @@
-These model.dtb files are no longer needed.
