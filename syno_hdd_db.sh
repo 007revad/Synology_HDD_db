@@ -1574,61 +1574,65 @@ fi
 
 
 # Enable nvme support
-if [[ $m2 != "no" ]]; then
-    # Check if nvme support is enabled
-    setting="$(get_key_value $synoinfo supportnvme)"
-    enabled=""
-    if [[ ! $setting ]]; then
-        # Add supportnvme="yes"
-        synosetkeyvalue "$synoinfo" supportnvme "yes"
-        enabled="yes"
-    elif [[ $setting == "no" ]]; then
-        # Change supportnvme="no" to "yes"
-        synosetkeyvalue "$synoinfo" supportnvme "yes"
-        enabled="yes"
-    elif [[ $setting == "yes" ]]; then
-        echo -e "\nNVMe support already enabled."
-    fi
+if ls /dev | grep nvme >/dev/null ; then
+    if [[ $m2 != "no" ]]; then
+        # Check if nvme support is enabled
+        setting="$(get_key_value $synoinfo supportnvme)"
+        enabled=""
+        if [[ ! $setting ]]; then
+            # Add supportnvme="yes"
+            synosetkeyvalue "$synoinfo" supportnvme "yes"
+            enabled="yes"
+        elif [[ $setting == "no" ]]; then
+            # Change supportnvme="no" to "yes"
+            synosetkeyvalue "$synoinfo" supportnvme "yes"
+            enabled="yes"
+        elif [[ $setting == "yes" ]]; then
+            echo -e "\nNVMe support already enabled."
+        fi
 
-    # Check if we enabled nvme support
-    setting="$(get_key_value $synoinfo supportnvme)"
-    if [[ $enabled == "yes" ]]; then
-        if [[ $setting == "yes" ]]; then
-            echo -e "\nEnabled NVMe support."
-        else
-            echo -e "\n${Error}ERROR${Off} Failed to enable NVMe support!"
+        # Check if we enabled nvme support
+        setting="$(get_key_value $synoinfo supportnvme)"
+        if [[ $enabled == "yes" ]]; then
+            if [[ $setting == "yes" ]]; then
+                echo -e "\nEnabled NVMe support."
+            else
+                echo -e "\n${Error}ERROR${Off} Failed to enable NVMe support!"
+            fi
         fi
     fi
 fi
 
 
 # Enable m2 volume support
-if [[ $m2 != "no" ]]; then
-    if [[ $m2exists == "yes" ]]; then
-        # Check if m2 volume support is enabled
-        smp=support_m2_pool
-        setting="$(get_key_value $synoinfo ${smp})"
-        enabled=""
-        if [[ ! $setting ]]; then
-            # Add support_m2_pool="yes"
-            #echo 'support_m2_pool="yes"' >> "$synoinfo"
-            synosetkeyvalue "$synoinfo" "$smp" "yes"
-            enabled="yes"
-        elif [[ $setting == "no" ]]; then
-            # Change support_m2_pool="no" to "yes"
-            synosetkeyvalue "$synoinfo" "$smp" "yes"
-            enabled="yes"
-        elif [[ $setting == "yes" ]]; then
-            echo -e "\nM.2 volume support already enabled."
-        fi
+if ls /dev | grep nv[em] >/dev/null ; then
+    if [[ $m2 != "no" ]]; then
+        if [[ $m2exists == "yes" ]]; then
+            # Check if m2 volume support is enabled
+            smp=support_m2_pool
+            setting="$(get_key_value $synoinfo ${smp})"
+            enabled=""
+            if [[ ! $setting ]]; then
+                # Add support_m2_pool="yes"
+                #echo 'support_m2_pool="yes"' >> "$synoinfo"
+                synosetkeyvalue "$synoinfo" "$smp" "yes"
+                enabled="yes"
+            elif [[ $setting == "no" ]]; then
+                # Change support_m2_pool="no" to "yes"
+                synosetkeyvalue "$synoinfo" "$smp" "yes"
+                enabled="yes"
+            elif [[ $setting == "yes" ]]; then
+                echo -e "\nM.2 volume support already enabled."
+            fi
 
-        # Check if we enabled m2 volume support
-        setting="$(get_key_value $synoinfo ${smp})"
-        if [[ $enabled == "yes" ]]; then
-            if [[ $setting == "yes" ]]; then
-                echo -e "\nEnabled M.2 volume support."
-            else
-                echo -e "\n${Error}ERROR${Off} Failed to enable m2 volume support!"
+            # Check if we enabled m2 volume support
+            setting="$(get_key_value $synoinfo ${smp})"
+            if [[ $enabled == "yes" ]]; then
+                if [[ $setting == "yes" ]]; then
+                    echo -e "\nEnabled M.2 volume support."
+                else
+                    echo -e "\n${Error}ERROR${Off} Failed to enable m2 volume support!"
+                fi
             fi
         fi
     fi
