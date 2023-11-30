@@ -30,7 +30,7 @@
 # Fixed bug where memory was shown in MB but with GB unit. 
 
 
-scriptver="v3.2.67"
+scriptver="v3.2.68"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -434,19 +434,40 @@ fi
 
 
 #------------------------------------------------------------------------------
-# Restore changes from backups
+# Set file variables
 
+if [[ -f /etc.defaults/model.dtb ]]; then  # Is device tree model
+    # Get syn_hw_revision, r1 or r2 etc (or just a linefeed if not a revision)
+    hwrevision=$(cat /proc/sys/kernel/syno_hw_revision)
+
+    # If syno_hw_revision is r1 or r2 it's a real Synology,
+    # and I need to edit model_rN.dtb instead of model.dtb
+    if [[ $hwrevision =~ r[0-9] ]]; then
+        #echo "hwrevision: $hwrevision"  # debug
+        hwrev="_$hwrevision"
+    fi
+
+    dtb_file="/etc.defaults/model${hwrev}.dtb"
+    dtb2_file="/etc/model${hwrev}.dtb"
+    #dts_file="/etc.defaults/model${hwrev}.dts"
+    dts_file="/tmp/model${hwrev}.dts"
+fi
+
+adapter_cards="/usr/syno/etc.defaults/adapter_cards.conf"
+adapter_cards2="/usr/syno/etc/adapter_cards.conf"
 dbpath=/var/lib/disk-compatibility/
 synoinfo="/etc.defaults/synoinfo.conf"
-adapter_cards="/usr/syno/etc.defaults/adapter_cards.conf"
-modeldtb="/etc.defaults/model.dtb"
+
+
+#------------------------------------------------------------------------------
+# Restore changes from backups
 
 if [[ $restore == "yes" ]]; then
     dbbakfiles=($(find $dbpath -maxdepth 1 \( -name "*.db.new.bak" -o -name "*.db.bak" \)))
     echo
 
     if [[ ${#dbbakfiles[@]} -gt "0" ]] || [[ -f ${synoinfo}.bak ]] ||\
-        [[ -f ${modeldtb}.bak ]] || [[ -f ${adapter_cards}.bak ]] ; then
+        [[ -f ${dtb_file}.bak ]] || [[ -f ${adapter_cards}.bak ]] ; then
 
         # Restore synoinfo.conf from backup
         if [[ -f ${synoinfo}.bak ]]; then
@@ -459,22 +480,40 @@ if [[ $restore == "yes" ]]; then
         fi
 
         # Restore adapter_cards.conf from backup
+        # /usr/syno/etc.defaults/adapter_cards.conf
         if [[ -f ${adapter_cards}.bak ]]; then
             if cp -p "${adapter_cards}.bak" "${adapter_cards}"; then
-                echo -e "Restored $(basename -- "$adapter_cards")\n"
+                echo -e "Restored ${adapter_cards}\n"
             else
                 restoreerr=1
-                echo -e "${Error}ERROR${Off} Failed to restore adapter_cards.conf!\n"
+                echo -e "${Error}ERROR${Off} Failed to restore ${adapter_cards}!\n"
+            fi
+        fi
+        # /usr/syno/etc/adapter_cards.conf
+        if [[ -f ${adapter_cards2}.bak ]]; then
+            if cp -p "${adapter_cards2}.bak" "${adapter_cards2}"; then
+                echo -e "Restored ${adapter_cards2}\n"
+            else
+                restoreerr=1
+                echo -e "${Error}ERROR${Off} Failed to restore ${adapter_cards2}!\n"
             fi
         fi
 
-        # Restore modeldtb from backup
-        if [[ -f ${modeldtb}.bak ]]; then
-            if cp -p "${modeldtb}.bak" "${modeldtb}"; then
-                echo -e "Restored $(basename -- "$modeldtb")\n"
+        # Restore model.dtb from backup
+        if [[ -f ${dtb_file}.bak ]]; then
+            # /etc.default/model.dtb
+            if cp -p "${dtb_file}.bak" "${dtb_file}"; then
+                echo -e "Restored ${dtb_file}\n"
             else
                 restoreerr=1
-                echo -e "${Error}ERROR${Off} Failed to restore model.dtb!\n"
+                echo -e "${Error}ERROR${Off} Failed to restore ${dtb_file}!\n"
+            fi
+            # Restore /etc/model.dtb from /etc.default/model.dtb
+            if cp -p "${dtb_file}.bak" "${dtb2_file}"; then
+                echo -e "Restored ${dtb2_file}\n"
+            else
+                restoreerr=1
+                echo -e "${Error}ERROR${Off} Failed to restore ${dtb2_file}!\n"
             fi
         fi
 
@@ -519,7 +558,7 @@ if [[ $restore == "yes" ]]; then
             echo -e "\nRestore successful."
         fi
     else
-        echo "Nothing to restore."
+        echo -e "Nothing to restore."
     fi
     exit
 fi
@@ -910,10 +949,15 @@ backupdb(){
         if [[ $(basename "$1") == "synoinfo.conf" ]]; then
             echo "" >&2  # Formatting for stdout
         fi
-        if cp -p "$1" "$1.bak"; then
-            echo -e "Backed up $(basename -- "${1}")" >&2
+        if [[ $2 == "long" ]]; then
+            fname="$1"
         else
-            echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${1}")!" >&2
+            fname=$(basename -- "${1}")
+        fi
+        if cp -p "$1" "$1.bak"; then
+            echo -e "Backed up ${fname}" >&2
+        else
+            echo -e "${Error}ERROR 5${Off} Failed to backup ${fname}!" >&2
             return 1
         fi
     fi
@@ -984,7 +1028,6 @@ editdb7(){
             echo -e "\n${Error}ERROR 6c${Off} Failed to update $(basename -- "$2")${Off}"
             #exit 6
         fi
-
     fi
 }
 
@@ -1015,7 +1058,7 @@ updatedb(){
 
             if grep '"disk_compatbility_info":{}' "$2" >/dev/null; then
                 # Replace "disk_compatbility_info":{} with
-	        # "disk_compatbility_info":{"WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}}
+                # "disk_compatbility_info":{"WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}}
                 #echo "Edit empty db file:"  # debug
                 editdb7 "empty" "$2"
 
@@ -1116,16 +1159,29 @@ enable_card(){
     # $2 is the section
     # $3 is the card model and mode
     if [[ -f $1 ]] && [[ -n $2 ]] && [[ -n $3 ]]; then
+        backupdb "$adapter_cards" long
+        backupdb "$adapter_cards2" long
+
         # Check if section exists
         if ! grep '^\['"$2"'\]$' "$1" >/dev/null; then
             echo -e "Section [$2] not found in $(basename -- "$1")!" >&2
             return
         fi
         # Check if already enabled
-        val=$(get_section_key_value "$1" "$2" "$modelname")
+        #
+        # No idea if "cat /proc/sys/kernel/syno_hw_version" returns upper or lower case RP
+        # "/usr/syno/etc.defaults/adapter_cards.conf" uses lower case rp but upper case RS
+        # So we'll convert RP to rp when needed.
+        #
+        modelrplowercase=${modelname//RP/rp}
+        val=$(get_section_key_value "$1" "$2" "$modelrplowercase")
         if [[ $val != "yes" ]]; then
-            if set_section_key_value "$1" "$2" "$modelname" yes; then
+            # /usr/syno/etc.defaults/adapter_cards.conf
+            if set_section_key_value "$1" "$2" "$modelrplowercase" yes; then
+                # /usr/syno/etc/adapter_cards.conf
+                set_section_key_value "$adapter_cards2" "$2" "$modelrplowercase" yes
                 echo -e "Enabled ${Yellow}$3${Off} for ${Cyan}$modelname${Off}" >&2
+                rebootmsg=yes
             else
                 echo -e "${Error}ERROR 9${Off} Failed to enable $3 for ${modelname}!" >&2
             fi
@@ -1134,7 +1190,6 @@ enable_card(){
         fi
     fi
 }
-
 
 dts_m2_card(){ 
 # $1 is the card model
@@ -1208,9 +1263,35 @@ elif [[ $1 == M2D18 ]]; then
 };
 EOM2D18
 
+elif [[ $1 == M2D17 ]]; then
+    cat >> "$2" <<EOM2D17
+
+	M2D17 {
+		compatible = "Synology";
+		model = "synology_m2d17";
+		power_limit = "9.9,9.9";
+
+		m2_card@1 {
+
+			ahci {
+				pcie_postfix = "00.0,03.0,00.0";
+				ata_port = <0x00>;
+			};
+		};
+
+		m2_card@2 {
+
+			ahci {
+				pcie_postfix = "00.0,03.0,00.0";
+				ata_port = <0x01>;
+			};
+		};
+	};
+};
+EOM2D17
+
 fi
 }
-
 
 install_binfile(){ 
     # install_binfile <file> <file-url> <destination> <chmod> <bundled-path> <hash>
@@ -1235,7 +1316,7 @@ install_binfile(){
         fi
         if [[ ${reply,,} == "y" ]]; then
             echo -e "\nDownloading ${1}"
-            if ! curl -kLO -m 30 --connect-timeout 5 "$2" -o "/tmp/$1"; then
+            if ! curl -kL -m 30 --connect-timeout 5 "$2" -o "/tmp/$1"; then
                 echo -e "${Error}ERROR${Off} Failed to download ${1}!"
                 return
             fi
@@ -1263,37 +1344,9 @@ install_binfile(){
     cp -p "$binfile" "$3"
 }
 
-edit_dts(){ 
-    # $1 is M.2 card model
-    # Edit model.dts if needed
-    if ! grep "$1" "$dtb_file" >/dev/null; then
-        dts_m2_card "$1" "$dts_file"
-        #echo "Added $1 to model${hwrev}.dtb" >&2
-        echo -e "Added ${Yellow}$1${Off} to ${Cyan}model${hwrev}.dtb${Off}" >&2
-#    else
-        #echo "$1 already exists in model${hwrev}.dtb" >&2
-#        echo -e "${Yellow}$1${Off} already exists in ${Cyan}model${hwrev}.dtb${Off}" >&2
-    fi
-}
-
-
-check_modeldtb(){ 
+edit_modeldtb(){ 
     # $1 is E10M20-T1 or M2D20 or M2D18 or M2D17
     if [[ -f /etc.defaults/model.dtb ]]; then  # Is device tree model
-        # Get syn_hw_revision, r1 or r2 etc (or just a linefeed if not a revision)
-        hwrevision=$(cat /proc/sys/kernel/syno_hw_revision)
-
-        # If syno_hw_revision is r1 or r2 it's a real Synology,
-        # and I need to edit model_rN.dtb instead of model.dtb
-        if [[ $hwrevision =~ r[0-9] ]]; then
-            #echo "hwrevision: $hwrevision"  # debug
-            hwrev="_$hwrevision"
-        fi
-
-        dtb_file="/etc.defaults/model${hwrev}.dtb"
-        dts_file="/etc.defaults/model${hwrev}.dts"
-        dtb2_file="/etc/model${hwrev}.dtb"
-
         # Check if dtc exists and is executable
         if [[ ! -x $(which dtc) ]]; then
             md5hash="01381dabbe86e13a2f4a8017b5552918"
@@ -1307,16 +1360,22 @@ check_modeldtb(){
         if [[ -x /usr/sbin/dtc ]]; then
 
             # Backup model.dtb
-            if ! backupdb "$dtb_file"; then
-                echo -e "${Error}ERROR${Off} Failed to backup ${dtb_file}!" >&2
-            fi
+            backupdb "$dtb_file" long
 
             # Output model.dtb to model.dts
             dtc -q -I dtb -O dts -o "$dts_file" "$dtb_file"  # -q Suppress warnings
             chmod 644 "$dts_file"
 
             # Edit model.dts
-            edit_dts "$1"
+            for c in "${cards[@]}"; do
+                # Edit model.dts if needed
+                if ! grep "$c" "$dtb_file" >/dev/null; then
+                    dts_m2_card "$c" "$dts_file"
+                    echo -e "Added ${Yellow}$c${Off} to ${Cyan}model${hwrev}.dtb${Off}" >&2
+                else
+                    echo -e "${Yellow}$c${Off} already exists in ${Cyan}model${hwrev}.dtb${Off}" >&2
+                fi
+            done
 
             # Compile model.dts to model.dtb
             dtc -q -I dts -O dtb -o "$dtb_file" "$dts_file"  # -q Suppress warnings
@@ -1325,6 +1384,7 @@ check_modeldtb(){
             chmod a+r "$dtb_file"
             chown root:root "$dtb_file"
             cp -pu "$dtb_file" "$dtb2_file"  # Copy dtb file to /etc
+            rebootmsg=yes
         else
             echo -e "${Error}ERROR${Off} Missing /usr/sbin/dtc or not executable!" >&2
         fi
@@ -1333,42 +1393,29 @@ check_modeldtb(){
 
 
 for c in "${m2cards[@]}"; do
-    #echo ""
-    m2cardconf="/usr/syno/etc.defaults/adapter_cards.conf"
-    m2card2conf="/usr/syno/etc/adapter_cards.conf"
     case "$c" in
         E10M20-T1)
-            backupdb "$m2cardconf"
             echo ""
-            enable_card "$m2cardconf" E10M20-T1_sup_nic "E10M20-T1 NIC"
-            enable_card "$m2cardconf" E10M20-T1_sup_nvme "E10M20-T1 NVMe"
-            #enable_card "$m2cardconf" E10M20-T1_sup_sata "E10M20-T1 SATA"
-            enable_card "$m2card2conf" E10M20-T1_sup_nic "E10M20-T1 NIC"
-            enable_card "$m2card2conf" E10M20-T1_sup_nvme "E10M20-T1 NVMe"
-            #enable_card "$m2card2conf" E10M20-T1_sup_sata "E10M20-T1 SATA"
-            check_modeldtb "$c"
+            enable_card "$adapter_cards" E10M20-T1_sup_nic "E10M20-T1 NIC"
+            enable_card "$adapter_cards" E10M20-T1_sup_nvme "E10M20-T1 NVMe"
+            #enable_card "$adapter_cards" E10M20-T1_sup_sata "E10M20-T1 SATA"
+            cards=(E10M20-T1) && edit_modeldtb
         ;;
         M2D20)
-            backupdb "$m2cardconf"
             echo ""
-            enable_card "$m2cardconf" M2D20_sup_nvme "M2D20 NVMe"
-            enable_card "$m2card2conf" M2D20_sup_nvme "M2D20 NVMe"
-            check_modeldtb "$c"
+            enable_card "$adapter_cards" M2D20_sup_nvme "M2D20 NVMe"
+            cards=(M2D20) && edit_modeldtb
         ;;
         M2D18)
-            backupdb "$m2cardconf"
             echo ""
-            enable_card "$m2cardconf" M2D18_sup_nvme "M2D18 NVMe"
-            enable_card "$m2cardconf" M2D18_sup_sata "M2D18 SATA"
-            enable_card "$m2card2conf" M2D18_sup_nvme "M2D18 NVMe"
-            enable_card "$m2card2conf" M2D18_sup_sata "M2D18 SATA"
-            check_modeldtb "$c"
+            enable_card "$adapter_cards" M2D18_sup_nvme "M2D18 NVMe"
+            enable_card "$adapter_cards" M2D18_sup_sata "M2D18 SATA"
+            cards=(M2D18) && edit_modeldtb
         ;;
         M2D17)
-            backupdb "$m2cardconf"
             echo ""
-            enable_card "$m2cardconf" M2D17_sup_sata "M2D17 SATA"
-            enable_card "$m2card2conf" M2D17_sup_sata "M2D17 SATA"
+            enable_card "$adapter_cards" M2D17_sup_sata "M2D17 SATA"
+            cards=(M2D17) && edit_modeldtb
         ;;
         *)
             echo "Unknown M2 card type: $c"
