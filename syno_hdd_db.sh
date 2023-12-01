@@ -30,7 +30,7 @@
 # Fixed bug where memory was shown in MB but with GB unit. 
 
 
-scriptver="v3.2.68"
+scriptver="v3.2.69"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -701,7 +701,6 @@ getm2info(){
 getcardmodel(){ 
     # Get M.2 card model (if M.2 drives found)
     # $1 is /dev/nvme0n1 etc
-    isinm2card=""
     if [[ ${#nvmelist[@]} -gt "0" ]]; then
         cardmodel=$(synodisk --m2-card-model-get "$1")
         if [[ $cardmodel =~ M2D[0-9][0-9] ]]; then
@@ -713,7 +712,6 @@ getcardmodel(){
                 m2carddblist+=("${model}_${cardmodel,,}.db")            # M.2 card's db file
             fi
             m2cardlist+=("$cardmodel")                                  # M.2 card
-            isinm2card="yes"
         elif [[ $cardmodel =~ E[0-9][0-9]+M.+ ]]; then
             # Ethernet + M2 adaptor card
             if [[ -f "${model}_${cardmodel,,}${version}.db" ]]; then
@@ -723,17 +721,14 @@ getcardmodel(){
                 m2carddblist+=("${model}_${cardmodel,,}.db")            # M.2 card's db file
             fi
             m2cardlist+=("$cardmodel")                                  # M.2 card
-            isinm2card="yes"
         fi
     fi
 }
 
 m2_pool_support(){ 
     # M.2 drives in M2 adaptor card do not support storage pools
-    if [[ $isinm2card != "yes" ]]; then
-        if [[ -f /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support ]]; then  # GitHub issue #86, 87
-            echo 1 > /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support
-        fi
+    if [[ -f /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support ]]; then  # GitHub issue #86, 87
+        echo 1 > /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support
     fi
 }
 
