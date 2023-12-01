@@ -30,7 +30,7 @@
 # Fixed bug where memory was shown in MB but with GB unit. 
 
 
-scriptver="v3.2.69"
+scriptver="v3.2.68"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
