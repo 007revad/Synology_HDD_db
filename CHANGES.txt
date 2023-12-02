@@ -1,6 +1,6 @@
 v3.2.68
 - Updated so E10M20-T1, M2D20, M2D18 and M2D17 now work in models that use device tree and are using:
-    - DSM 7.2 Update 2 and 3, 7.2.1, 7.2.1 Update 1, 2 and 3.
+    - DSM 7.2 Update 2 and 3, 7.2.1, 7.2.1 Update 1, 2 and 3. Issue #132, #148
 - Now edits model.dtb instead of downloading a pre-edited version.
 - Improvements to --restore option.
 - Fix for Unknown vendor causing "Unsupported firmware version" warning. Issue #161
