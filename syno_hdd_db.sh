@@ -16,8 +16,8 @@
 #--------------------------------------------------------------------------------------------------
 
 # CHANGES
-# Updated so E10M20-T1, M2D20 and M2D18 now work in models that use device tree,
-# and are using DSM 7.2 Update 2 and 3, 7.2.1, 7.2.1 Update 1, 2 and 3.
+# Updated so E10M20-T1, M2D20, M2D18 and M2D17 now work in models that use devicetree
+# and are using DSM 7.2 Update 2 or 3, 7.2.1, 7.2.1 Update 1, 2 or 3.
 #
 # Now edits model.dtb instead of downloading a pre-edited version.
 #
@@ -28,6 +28,8 @@
 #   - SK Hynix, Solidigm, SPCC/Lexar, TEAMGROUP, UMIS, ZHITAI
 #
 # Fixed bug where memory was shown in MB but with GB unit. 
+#
+# Bug fixes and improvements to --restore option.
 
 
 scriptver="v3.2.68"
@@ -463,54 +465,71 @@ synoinfo="/etc.defaults/synoinfo.conf"
 # Restore changes from backups
 
 if [[ $restore == "yes" ]]; then
-    dbbakfiles=($(find $dbpath -maxdepth 1 \( -name "*.db.new.bak" -o -name "*.db.bak" \)))
-    echo
+    dbbaklist=($(find $dbpath -maxdepth 1 \( -name "*.db.new.bak" -o -name "*.db.bak" \)))
+    # Sort array
+    IFS=$'\n'
+    dbbakfiles=($(sort <<<"${dbbaklist[*]}"))
+    unset IFS
 
+    echo ""
     if [[ ${#dbbakfiles[@]} -gt "0" ]] || [[ -f ${synoinfo}.bak ]] ||\
         [[ -f ${dtb_file}.bak ]] || [[ -f ${adapter_cards}.bak ]] ; then
 
         # Restore synoinfo.conf from backup
         if [[ -f ${synoinfo}.bak ]]; then
-            if cp -p "${synoinfo}.bak" "${synoinfo}"; then
-                echo -e "Restored $(basename -- "$synoinfo")\n"
-            else
-                restoreerr=1
-                echo -e "${Error}ERROR${Off} Failed to restore synoinfo.conf!\n"
-            fi
+            keyvalues=("support_disk_compatibility" "support_memory_compatibility")
+            keyvalues+=("mem_max_mb" "supportnvme" "support_m2_pool" "support_wdda")
+            for v in "${!keyvalues[@]}"; do
+                defaultval="$(get_key_value ${synoinfo}.bak "${keyvalues[v]}")"
+                currentval="$(get_key_value ${synoinfo} "${keyvalues[v]}")"
+                if [[ $currentval != "$defaultval" ]]; then
+                    if synosetkeyvalue "$synoinfo" "${keyvalues[v]}" "$defaultval";
+                    then
+                        echo "Restored ${keyvalues[v]} = $defaultval"
+                    fi
+                fi
+            done
         fi
+
+        # Delete "drive_db_test_url=127.0.0.1" line (and line break) from synoinfo.conf
+        sed -i "/drive_db_test_url=*/d" "$synoinfo"
+        sed -i "/drive_db_test_url=*/d" /etc/synoinfo.conf
 
         # Restore adapter_cards.conf from backup
         # /usr/syno/etc.defaults/adapter_cards.conf
         if [[ -f ${adapter_cards}.bak ]]; then
             if cp -p "${adapter_cards}.bak" "${adapter_cards}"; then
-                echo -e "Restored ${adapter_cards}\n"
+                echo "Restored ${adapter_cards}"
             else
                 restoreerr=1
                 echo -e "${Error}ERROR${Off} Failed to restore ${adapter_cards}!\n"
             fi
-        fi
-        # /usr/syno/etc/adapter_cards.conf
-        if [[ -f ${adapter_cards2}.bak ]]; then
-            if cp -p "${adapter_cards2}.bak" "${adapter_cards2}"; then
-                echo -e "Restored ${adapter_cards2}\n"
+            # /usr/syno/etc/adapter_cards.conf
+            if cp -p "${adapter_cards}.bak" "${adapter_cards2}"; then
+                echo -e "Restored ${adapter_cards2}"
             else
                 restoreerr=1
                 echo -e "${Error}ERROR${Off} Failed to restore ${adapter_cards2}!\n"
             fi
+
+            # Make sure they don't lose E10M20-T1 network connection
+            modelrplowercase=${modelname//RP/rp}
+            set_section_key_value ${adapter_cards} E10M20-T1_sup_nic "$modelrplowercase"
+            set_section_key_value ${adapter_cards2} E10M20-T1_sup_nic "$modelrplowercase"
         fi
 
         # Restore model.dtb from backup
         if [[ -f ${dtb_file}.bak ]]; then
             # /etc.default/model.dtb
             if cp -p "${dtb_file}.bak" "${dtb_file}"; then
-                echo -e "Restored ${dtb_file}\n"
+                echo "Restored ${dtb_file}"
             else
                 restoreerr=1
                 echo -e "${Error}ERROR${Off} Failed to restore ${dtb_file}!\n"
             fi
             # Restore /etc/model.dtb from /etc.default/model.dtb
             if cp -p "${dtb_file}.bak" "${dtb2_file}"; then
-                echo -e "Restored ${dtb2_file}\n"
+                echo -e "Restored ${dtb2_file}"
             else
                 restoreerr=1
                 echo -e "${Error}ERROR${Off} Failed to restore ${dtb2_file}!\n"
@@ -518,6 +537,8 @@ if [[ $restore == "yes" ]]; then
         fi
 
         # Restore .db files from backups
+        echo ""
+        # /var/lib/disk-compatibility
         for f in "${!dbbakfiles[@]}"; do
             replaceme="${dbbakfiles[f]%.bak}"  # Remove .bak
             if cp -p "${dbbakfiles[f]}" "$replaceme"; then
@@ -540,9 +561,6 @@ if [[ $restore == "yes" ]]; then
             fi
         done
 
-        # Delete "drive_db_test_url=127.0.0.1" line (inc. line break) from /etc/synoinfo.conf
-        sed -i "/drive_db_test_url=*/d" /etc/synoinfo.conf
-
         # Update .db files from Synology
         syno_disk_db_update --update
 
@@ -558,7 +576,7 @@ if [[ $restore == "yes" ]]; then
             echo -e "\nRestore successful."
         fi
     else
-        echo -e "Nothing to restore."
+        echo "Nothing to restore."
     fi
     exit
 fi
