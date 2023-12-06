@@ -111,7 +111,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 | | | | | 
 |--------------------|--------------------|----------------------|----------------------|
-| | Mikescher | Matthias Pfaff | cpharada |
+| Darryl Harper | Mikescher | Matthias Pfaff | cpharada |
 | Neil Tapp | zen1605 | Kleissner Investments | Angel Scandinavia |
 | bcollins | Peter jackson | Mir Hekmat | Andrew Tapp |
 | Peter Weißflog | Joseph Skup | Dirk Kurfuerst | Gareth Locke |
