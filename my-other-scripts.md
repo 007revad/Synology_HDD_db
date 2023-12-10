@@ -31,5 +31,8 @@
 - **<a href="https://github.com/007revad/Synology_DSM_reinstall">Synology_DSM_reinstall</a>**
   - Easily re-install the same DSM version without losing any data or settings
 
+- **<a href=https://github.com/007revad/Download_Synology_Archive>Download_Synology_Archive</a>**
+  - Download all or part of the Synology archive
+
 - **<a href="https://github.com/007revad/ScriptNotify">ScriptNotify</a>**
   - DSM 7 package to allow your scripts to send DSM notifications
