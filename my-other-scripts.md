@@ -5,7 +5,7 @@
 
 - **<a href="https://github.com/007revad/Synology_enable_M2_volume">Synology_enable_M2_volume</a>**
   - Enable creating volumes with non-Synology M.2 drives.
-  - Enable Health Info for non-Synology NVMe drives.
+  - Enable Health Info for non-Synology NVMe drives (not in DSM 7.2.1 or later).
 
 - **<a href="https://github.com/007revad/Synology_M2_volume">Synology_M2_volume</a>**
   - Easily create an M.2 volume on Synology NAS.
@@ -30,6 +30,15 @@
 
 - **<a href="https://github.com/007revad/Synology_DSM_reinstall">Synology_DSM_reinstall</a>**
   - Easily re-install the same DSM version without losing any data or settings
+
+- **<a href="https://github.com/007revad/Synology_Cleanup_Coredumps">Synology_Cleanup_Coredumps</a>**
+  - Cleanup memory core dumps from crashed processes
+ 
+- **<a href="https://github.com/007revad/Docker_Autocompose">Docker_Autocompose</a>**
+  - Create .yml files from your docker existing containers
+
+- **<a href="https://github.com/007revad/Download_Synology_Archive">Download_Synology_Archive</a>**
+  - Download all or part of the Synology archive
 
 - **<a href="https://github.com/007revad/ScriptNotify">ScriptNotify</a>**
   - DSM 7 package to allow your scripts to send DSM notifications
