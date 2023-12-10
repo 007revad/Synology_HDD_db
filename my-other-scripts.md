@@ -5,7 +5,7 @@
 
 - **<a href="https://github.com/007revad/Synology_enable_M2_volume">Synology_enable_M2_volume</a>**
   - Enable creating volumes with non-Synology M.2 drives.
-  - Enable Health Info for non-Synology NVMe drives.
+  - Enable Health Info for non-Synology NVMe drives (not in DSM 7.2.1 or later).
 
 - **<a href="https://github.com/007revad/Synology_M2_volume">Synology_M2_volume</a>**
   - Easily create an M.2 volume on Synology NAS.
