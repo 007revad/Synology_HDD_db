@@ -1,3 +1,6 @@
+v3.2.69
+- Added KIOXIA vendor id.
+
 v3.2.68
 - Updated so E10M20-T1, M2D20, M2D18 and M2D17 now work in models that use device tree and are using:
     - DSM 7.2 Update 2 and 3, 7.2.1, 7.2.1 Update 1, 2 and 3. Issue #132, #148
