@@ -604,6 +604,7 @@ vendor_from_id(){
         0x1cfa) vendor=Corsair ;;  # Memory only?
         0x1d97) vendor=SPCC/Lexar ;;  # 2 brands with same vid
         0x1dbe) vendor=ADATA ;;
+	0x1e0f) vendor=KIOXIA ;;
         0x1e49) vendor=ZHITAI ;;
         0x1e4b) vendor=HS/MAXIO ;;  # 2 brands with same vid
         0x1f40) vendor=Netac ;;
