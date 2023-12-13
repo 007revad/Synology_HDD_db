@@ -13,6 +13,9 @@
 - **<a href="https://github.com/007revad/Synology_enable_M2_card">Synology_enable_M2_card</a>**
   - Enable Synology M.2 PCIe cards in Synology NAS that don't officially support them.
 
+- **<a href="https://github.com/007revad/Synology_enable_eunit">Synology_enable_eunit</a>**
+  - Enable an unsupported Synology eSATA Expansion Unit models.
+
 - **<a href="https://github.com/007revad/Synology_enable_Deduplication">Synology_enable_Deduplication</a>**
   - Enable deduplication with non-Synology SSDs and unsupported NAS models.
 
