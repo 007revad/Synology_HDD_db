@@ -32,7 +32,7 @@
 # Bug fixes and improvements to --restore option.
 
 
-scriptver="v3.2.68"
+scriptver="v3.2.69"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
