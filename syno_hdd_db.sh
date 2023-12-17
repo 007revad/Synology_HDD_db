@@ -16,6 +16,17 @@
 #--------------------------------------------------------------------------------------------------
 
 # CHANGES
+# Now enables creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards.
+#  - E10M20-T1, M2D20, M2D18 and M2D17
+#
+# Added new vendor ids for Apacer, aigo, Lexar and Transcend NVMe drives.
+#
+# Now includes syno_hdd_vendor.txt so users can add their NVMe drive's vendor id.
+#   - syno_hdd_vendor.txt needs to be in the same folder as syno_hdd_db.sh
+#
+# Now warns if script is located on an M.2 volume.
+#
+#
 # Updated so E10M20-T1, M2D20, M2D18 and M2D17 now work in models that use devicetree
 # and are using DSM 7.2 Update 2 or 3, 7.2.1, 7.2.1 Update 1, 2 or 3.
 #
@@ -32,7 +43,7 @@
 # Bug fixes and improvements to --restore option.
 
 
-scriptver="v3.2.69"
+scriptver="v3.3.70"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -298,6 +309,14 @@ echo "Running from: ${scriptpath}/$scriptfile"
 #echo "scriptver: $scriptver"  # debug
 
 
+# Warn if script located on M.2 drive
+scriptvol=$(echo "$scriptpath" | cut -d"/" -f2)
+result="$(lsblk | grep -B 4 /"$scriptvol" | grep nvme)"
+if [[ -n $result ]]; then
+    echo "${Yellow}WARNING${Off} Don't store this script on an NVMe volume!"
+fi
+
+
 cleanup_tmp(){ 
     cleanup_err=
 
@@ -459,6 +478,9 @@ adapter_cards="/usr/syno/etc.defaults/adapter_cards.conf"
 adapter_cards2="/usr/syno/etc/adapter_cards.conf"
 dbpath=/var/lib/disk-compatibility/
 synoinfo="/etc.defaults/synoinfo.conf"
+strgmgr="/var/packages/StorageManager/target/ui/storage_panel.js"
+vidfile="/usr/syno/etc.defaults/pci_vendor_ids.conf"
+vidfile2="/usr/syno/etc/pci_vendor_ids.conf"
 
 
 #------------------------------------------------------------------------------
@@ -536,9 +558,21 @@ if [[ $restore == "yes" ]]; then
             fi
         fi
 
-        # Restore .db files from backups
+        # Restore storage_panel.js from backup
+        strgmgrver="$(synopkg version StorageManager)"
+        if [[ -f "${strgmgr}.$strgmgrver" ]]; then
+            if cp -p "${strgmgr}.$strgmgrver" "$strgmgr"; then
+                echo "Restored $(basename -- "$strgmgr")"
+            else
+                restoreerr=1
+                echo -e "${Error}ERROR${Off} Failed to restore $(basename -- "$strgmgr")!\n"
+            fi
+        else
+            echo "No backup of $(basename -- "$strgmgr") found."
+        fi
+
         echo ""
-        # /var/lib/disk-compatibility
+        # Restore .db files from backups
         for f in "${!dbbakfiles[@]}"; do
             replaceme="${dbbakfiles[f]%.bak}"  # Remove .bak
             if cp -p "${dbbakfiles[f]}" "$replaceme"; then
@@ -601,16 +635,33 @@ vendor_from_id(){
         0x1b1c) vendor=Corsair ;;
         0x1c5c) vendor="SK Hynix" ;;
         0x1cc4) vendor=UMIS ;;
-        0x1cfa) vendor=Corsair ;;  # Memory only?
+        0x1cfa) vendor=Corsair ;;     # Memory only?
         0x1d97) vendor=SPCC/Lexar ;;  # 2 brands with same vid
         0x1dbe) vendor=ADATA ;;
-	0x1e0f) vendor=KIOXIA ;;
+        0x1e0f) vendor=KIOXIA ;;
         0x1e49) vendor=ZHITAI ;;
-        0x1e4b) vendor=HS/MAXIO ;;  # 2 brands with same vid
+        0x1e4b) vendor=HS/MAXIO ;;    # 2 brands with same vid
         0x1f40) vendor=Netac ;;
+
+        0x1bdc) vendor=Apacer;;
+        0x0ed1) vendor=aigo ;;
+        0x05dc) vendor=Lexar ;;
+        0x1d79) vendor=Transcend;;
         *)
-            echo -e "\n${Error}WARNING{OFF} No vendor found for id $1" >&2
-            echo -e "Contact 007revad to get your drive added.\n" >&2
+            # Get vendor from syno_hdd_vendor.txt
+            vidlist="$scriptpath/syno_hdd_vendor.txt"
+            if [[ -r "$vidlist" ]]; then
+                val=$(synogetkeyvalue "$vidlist" "$1")
+                if synogetkeyvalue "$vidlist" "$1"; then
+                    vendor="$val"
+                else
+                    echo -e "\n${Yellow}WARNING{OFF} No vendor found for vid $1" >&2
+                    echo -e "You can add your drive's vendor to: "
+                    echo "$vidlist"
+                fi
+            else
+                echo -e "\n${Error}ERROR{OFF} $vidlist not found!" >&2
+            fi
         ;;
     esac
 }
@@ -618,17 +669,20 @@ vendor_from_id(){
 set_vendor(){ 
     # Add missing vendors to /usr/syno/etc.defaults/pci_vendor_ids.conf
     if [[ $vendor ]]; then
-        if ! grep "$vid" "$vidfile" >/dev/null; then
-            synosetkeyvalue "$vidfile" "${vid,,}" "$vendor"
-            val=$(synogetkeyvalue "$vidfile" "${vid,,}")
-            if [[ $val == "${vendor}" ]]; then
-                echo "Added $vendor to pci_vendor_ids" >&2
-            else
-                echo "Failed to add $vendor to pci_vendor_ids!" >&2
+        # DS1817+, DS1517+, RS1219+, RS818+ don't have pci_vendor_ids.conf
+        if [[ "$vidfile" ]]; then
+            if ! grep "$vid" "$vidfile" >/dev/null; then
+                synosetkeyvalue "$vidfile" "${vid,,}" "$vendor"
+                val=$(synogetkeyvalue "$vidfile" "${vid,,}")
+                if [[ $val == "${vendor}" ]]; then
+                    echo "Added $vendor to pci_vendor_ids" >&2
+                else
+                    echo "Failed to add $vendor to pci_vendor_ids!" >&2
+                fi
             fi
-        fi
-        if ! grep "$vid" "$vidfile2" >/dev/null; then
-            synosetkeyvalue "$vidfile2" "${vid,,}" "$vendor"
+            if ! grep "$vid" "$vidfile2" >/dev/null; then
+                synosetkeyvalue "$vidfile2" "${vid,,}" "$vendor"
+            fi
         fi
     fi
 }
@@ -645,9 +699,6 @@ get_vid(){
         fi
     fi
 }
-
-vidfile="/usr/syno/etc.defaults/pci_vendor_ids.conf"
-vidfile2="/usr/syno/etc/pci_vendor_ids.conf"
 
 fixdrivemodel(){ 
     # Remove " 00Y" from end of Samsung/Lenovo SSDs  # Github issue #13
@@ -1311,7 +1362,7 @@ install_binfile(){
     # install_binfile <file> <file-url> <destination> <chmod> <bundled-path> <hash>
     # example:
     #  file_url="https://raw.githubusercontent.com/${repo}/main/bin/dtc"
-    #  install_binfile dtc "$file_url" /usr/bin/bc a+x bin/dtc
+    #  install_binfile dtc "$file_url" /usr/bin/dtc a+x bin/dtc
 
     if [[ -f "${scriptpath}/$5" ]]; then
         binfile="${scriptpath}/$5"
@@ -1713,6 +1764,37 @@ if [[ $wdda == "no" ]]; then
         fi
     elif [[ $setting == "no" ]]; then
         echo -e "\nSupport WDDA already disabled."
+    fi
+fi
+
+
+# Enabled creating pool on drives in M.2 adaptor card
+if [[ -f "$strgmgr" ]]; then
+    # StorageManager package is installed
+    if [[ ${#m2cards[@]} -gt "0" ]]; then
+
+        if grep 'notSupportM2Pool_addOnCard' "$strgmgr" >/dev/null; then
+            # Backup storage_panel.js"
+            strgmgrver="$(synopkg version StorageManager)"
+            if [[ ! -f "${1}.$strgmgrver" ]]; then
+                if cp -p "$strgmgr" "${strgmgr}.$strgmgrver"; then
+                    echo -e "Backed up $(basename -- "$strgmgr")"
+                else
+                    echo -e "${Error}ERROR${Off} Failed to backup $(basename -- "$strgmgr")!"
+                fi
+            fi
+
+            sed -i 's/notSupportM2Pool_addOnCard:this.T("disk_info","disk_reason_m2_add_on_card"),//g' "$strgmgr"
+            sed -i 's/},{isConditionInvalid:0<this.pciSlot,invalidReason:"notSupportM2Pool_addOnCard"//g' "$strgmgr"
+            # Check if we edited file
+            if ! grep 'notSupportM2Pool_addOnCard' "$strgmgr" >/dev/null; then
+                echo "Enabled creating pool on drives in M.2 adaptor card."
+            else
+                echo -e "${Error}ERROR${Off} Failed to enable creating pool on drives in M.2 adaptor card!"
+            fi
+        else
+            echo "Creating pool in UI on drives in M.2 adaptor card already enabled."
+        fi
     fi
 fi
 
