@@ -25,25 +25,9 @@
 #   - syno_hdd_vendor.txt needs to be in the same folder as syno_hdd_db.sh
 #
 # Now warns if script is located on an M.2 volume.
-#
-#
-# Updated so E10M20-T1, M2D20, M2D18 and M2D17 now work in models that use devicetree
-# and are using DSM 7.2 Update 2 or 3, 7.2.1, 7.2.1 Update 1, 2 or 3.
-#
-# Now edits model.dtb instead of downloading a pre-edited version.
-#
-# Fix for Unknown vendor causing "Unsupported firmware version" warning. Issue #161
-#
-# Now supports NVMe drives that show as Unknown brand in storage manager: Issue #161
-#   - ADATA, Corsair, Gigabyte, HS/MAXIO, MSI, Netac, Phison, PNY
-#   - SK Hynix, Solidigm, SPCC/Lexar, TEAMGROUP, UMIS, ZHITAI
-#
-# Fixed bug where memory was shown in MB but with GB unit. 
-#
-# Bug fixes and improvements to --restore option.
 
 
-scriptver="v3.3.70"
+scriptver="v3.3.71"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -1776,6 +1760,7 @@ if [[ -f "$strgmgr" ]]; then
         if grep 'notSupportM2Pool_addOnCard' "$strgmgr" >/dev/null; then
             # Backup storage_panel.js"
             strgmgrver="$(synopkg version StorageManager)"
+            echo ""
             if [[ ! -f "${1}.$strgmgrver" ]]; then
                 if cp -p "$strgmgr" "${strgmgr}.$strgmgrver"; then
                     echo -e "Backed up $(basename -- "$strgmgr")"
@@ -1788,12 +1773,12 @@ if [[ -f "$strgmgr" ]]; then
             sed -i 's/},{isConditionInvalid:0<this.pciSlot,invalidReason:"notSupportM2Pool_addOnCard"//g' "$strgmgr"
             # Check if we edited file
             if ! grep 'notSupportM2Pool_addOnCard' "$strgmgr" >/dev/null; then
-                echo "Enabled creating pool on drives in M.2 adaptor card."
+                echo -e "Enabled creating pool on drives in M.2 adaptor card."
             else
                 echo -e "${Error}ERROR${Off} Failed to enable creating pool on drives in M.2 adaptor card!"
             fi
         else
-            echo "Creating pool in UI on drives in M.2 adaptor card already enabled."
+            echo -e "\nCreating pool in UI on drives in M.2 adaptor card already enabled."
         fi
     fi
 fi
@@ -1853,6 +1838,4 @@ if [[ $dsm -eq "6" ]] || [[ $rebootmsg == "yes" ]]; then
     echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
 fi
 
-
 exit
-
