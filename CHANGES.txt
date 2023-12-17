@@ -1,6 +1,8 @@
 v3.3.70
 - Now enables creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards:
-  - E10M20-T1, M2D20, M2D18 and M2D17
+  - E10M20-T1, M2D20, M2D18 and M2D17.
+  - DSM 7.2.1 and above only.
+  - Script needs to run after each boot.
 - Added new vendor ids for Apacer, aigo, Lexar and Transcend NVMe drives.
 - Now includes syno_hdd_vendor.txt so users can add their NVMe drive's vendor id.
    - syno_hdd_vendor.txt needs to be in the same folder as syno_hdd_db.sh
