@@ -1761,7 +1761,7 @@ if [[ -f "$strgmgr" ]]; then
             # Backup storage_panel.js"
             strgmgrver="$(synopkg version StorageManager)"
             echo ""
-            if [[ ! -f "${1}.$strgmgrver" ]]; then
+            if [[ ! -f "${strgmgr}.$strgmgrver" ]]; then
                 if cp -p "$strgmgr" "${strgmgr}.$strgmgrver"; then
                     echo -e "Backed up $(basename -- "$strgmgr")"
                 else
