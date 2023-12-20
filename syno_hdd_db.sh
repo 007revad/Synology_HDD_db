@@ -388,6 +388,27 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                 syslog_set warn "$script failed to copy $tag to script location"
                             fi
 
+                            # Copy new syno_hdd_vendor_ids.txt file
+                            vidstxt="syno_hdd_vendor_ids.txt"
+                            if [[ $scriptpath =~ /volume* ]]; then
+                                if [[ ! -f "$scriptpath/$vidstxt" ]]; then  # Don't overwrite file
+                                    # Copy new syno_hdd_vendor_ids.txt file to script location
+                                    if ! cp -p "/tmp/$script-$shorttag/$vidstxt" "$scriptpath"; then
+                                        if [[ $autoupdate != "yes" ]]; then copyerr=1; fi
+                                        echo -e "${Error}ERROR${Off} Failed to copy"\
+                                            "$script-$shorttag/$vidstxt to:\n $scriptpath"
+                                    else
+                                        # Set permissions on CHANGES.txt
+                                        if ! chmod 664 "$scriptpath/$vidstxt"; then
+                                            if [[ $autoupdate != "yes" ]]; then permerr=1; fi
+                                            echo -e "${Error}ERROR${Off} Failed to set permissions on:"
+                                            echo "$scriptpath/$vidstxt"
+                                        fi
+                                        vids_txt=" and syno_hdd_vendor_ids.txt"
+                                    fi
+                                fi
+                            fi
+
                             # Copy new CHANGES.txt file
                             if [[ $scriptpath =~ /volume* ]]; then
                                 # Copy new CHANGES.txt file to script location
@@ -411,7 +432,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
 
                             # Notify of success (if there were no errors)
                             if [[ $copyerr != 1 ]] && [[ $permerr != 1 ]]; then
-                                echo -e "\n$tag$changestxt downloaded to: ${scriptpath}\n"
+                                echo -e "\n$tag$changestxt$vids_txt downloaded to: ${scriptpath}\n"
                                 syslog_set info "$script successfully updated to $tag"
 
                                 # Reload script
