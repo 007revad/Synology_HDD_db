@@ -25,25 +25,9 @@
 #   - syno_hdd_vendor.txt needs to be in the same folder as syno_hdd_db.sh
 #
 # Now warns if script is located on an M.2 volume.
-#
-#
-# Updated so E10M20-T1, M2D20, M2D18 and M2D17 now work in models that use devicetree
-# and are using DSM 7.2 Update 2 or 3, 7.2.1, 7.2.1 Update 1, 2 or 3.
-#
-# Now edits model.dtb instead of downloading a pre-edited version.
-#
-# Fix for Unknown vendor causing "Unsupported firmware version" warning. Issue #161
-#
-# Now supports NVMe drives that show as Unknown brand in storage manager: Issue #161
-#   - ADATA, Corsair, Gigabyte, HS/MAXIO, MSI, Netac, Phison, PNY
-#   - SK Hynix, Solidigm, SPCC/Lexar, TEAMGROUP, UMIS, ZHITAI
-#
-# Fixed bug where memory was shown in MB but with GB unit. 
-#
-# Bug fixes and improvements to --restore option.
 
 
-scriptver="v3.3.70"
+scriptver="v3.3.71"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -311,8 +295,9 @@ echo "Running from: ${scriptpath}/$scriptfile"
 
 # Warn if script located on M.2 drive
 scriptvol=$(echo "$scriptpath" | cut -d"/" -f2)
-result="$(lsblk | grep -B 4 /"$scriptvol" | grep nvme)"
-if [[ -n $result ]]; then
+vg=$(lvdisplay | grep /volume_"${volume#volume}" | cut -d"/" -f3)
+md=$(pvdisplay | grep -B 1 "$vg" | grep /dev/ | cut -d"/" -f3)
+if cat /proc/mdstat | grep "$md" | grep nvme >/dev/null; then
     echo "${Yellow}WARNING${Off} Don't store this script on an NVMe volume!"
 fi
 
@@ -404,6 +389,27 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                 syslog_set warn "$script failed to copy $tag to script location"
                             fi
 
+                            # Copy new syno_hdd_vendor_ids.txt file
+                            vidstxt="syno_hdd_vendor_ids.txt"
+                            if [[ $scriptpath =~ /volume* ]]; then
+                                if [[ ! -f "$scriptpath/$vidstxt" ]]; then  # Don't overwrite file
+                                    # Copy new syno_hdd_vendor_ids.txt file to script location
+                                    if ! cp -p "/tmp/$script-$shorttag/$vidstxt" "$scriptpath"; then
+                                        if [[ $autoupdate != "yes" ]]; then copyerr=1; fi
+                                        echo -e "${Error}ERROR${Off} Failed to copy"\
+                                            "$script-$shorttag/$vidstxt to:\n $scriptpath"
+                                    else
+                                        # Set permissions on syno_hdd_vendor_ids.txt
+                                        if ! chmod 755 "$scriptpath/$vidstxt"; then
+                                            if [[ $autoupdate != "yes" ]]; then permerr=1; fi
+                                            echo -e "${Error}ERROR${Off} Failed to set permissions on:"
+                                            echo "$scriptpath/$vidstxt"
+                                        fi
+                                        vids_txt=", syno_hdd_vendor_ids.txt"
+                                    fi
+                                fi
+                            fi
+
                             # Copy new CHANGES.txt file
                             if [[ $scriptpath =~ /volume* ]]; then
                                 # Copy new CHANGES.txt file to script location
@@ -418,7 +424,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                         echo -e "${Error}ERROR${Off} Failed to set permissions on:"
                                         echo "$scriptpath/CHANGES.txt"
                                     fi
-                                    changestxt=" and changes.txt"
+                                    changestxt=", changes.txt"
                                 fi
                             fi
 
@@ -427,7 +433,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
 
                             # Notify of success (if there were no errors)
                             if [[ $copyerr != 1 ]] && [[ $permerr != 1 ]]; then
-                                echo -e "\n$tag$changestxt downloaded to: ${scriptpath}\n"
+                                echo -e "\n$tag$changestxt$vids_txt downloaded to: ${scriptpath}\n"
                                 syslog_set info "$script successfully updated to $tag"
 
                                 # Reload script
@@ -1776,7 +1782,8 @@ if [[ -f "$strgmgr" ]]; then
         if grep 'notSupportM2Pool_addOnCard' "$strgmgr" >/dev/null; then
             # Backup storage_panel.js"
             strgmgrver="$(synopkg version StorageManager)"
-            if [[ ! -f "${1}.$strgmgrver" ]]; then
+            echo ""
+            if [[ ! -f "${strgmgr}.$strgmgrver" ]]; then
                 if cp -p "$strgmgr" "${strgmgr}.$strgmgrver"; then
                     echo -e "Backed up $(basename -- "$strgmgr")"
                 else
@@ -1788,12 +1795,12 @@ if [[ -f "$strgmgr" ]]; then
             sed -i 's/},{isConditionInvalid:0<this.pciSlot,invalidReason:"notSupportM2Pool_addOnCard"//g' "$strgmgr"
             # Check if we edited file
             if ! grep 'notSupportM2Pool_addOnCard' "$strgmgr" >/dev/null; then
-                echo "Enabled creating pool on drives in M.2 adaptor card."
+                echo -e "Enabled creating pool on drives in M.2 adaptor card."
             else
                 echo -e "${Error}ERROR${Off} Failed to enable creating pool on drives in M.2 adaptor card!"
             fi
         else
-            echo "Creating pool in UI on drives in M.2 adaptor card already enabled."
+            echo -e "\nCreating pool in UI on drives in M.2 adaptor card already enabled."
         fi
     fi
 fi
@@ -1853,6 +1860,4 @@ if [[ $dsm -eq "6" ]] || [[ $rebootmsg == "yes" ]]; then
     echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
 fi
 
-
 exit
-

@@ -1,3 +1,8 @@
+v3.3.71
+- Bug fix for enabling creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards. 
+- Bug fix for not copying syno_hdd_db_vendors.txt to script location when script updates itself.
+- Bug fix for checking if script located on NVMe drive.
+
 v3.3.70
 - Now enables creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards:
   - E10M20-T1, M2D20, M2D18 and M2D17.
