@@ -404,7 +404,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                             echo -e "${Error}ERROR${Off} Failed to set permissions on:"
                                             echo "$scriptpath/$vidstxt"
                                         fi
-                                        vids_txt=" and syno_hdd_vendor_ids.txt"
+                                        vids_txt=", syno_hdd_vendor_ids.txt"
                                     fi
                                 fi
                             fi
@@ -423,7 +423,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                         echo -e "${Error}ERROR${Off} Failed to set permissions on:"
                                         echo "$scriptpath/CHANGES.txt"
                                     fi
-                                    changestxt=" and changes.txt"
+                                    changestxt=", changes.txt"
                                 fi
                             fi
 
