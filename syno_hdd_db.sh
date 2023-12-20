@@ -398,8 +398,8 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                         echo -e "${Error}ERROR${Off} Failed to copy"\
                                             "$script-$shorttag/$vidstxt to:\n $scriptpath"
                                     else
-                                        # Set permissions on CHANGES.txt
-                                        if ! chmod 664 "$scriptpath/$vidstxt"; then
+                                        # Set permissions on syno_hdd_vendor_ids.txt
+                                        if ! chmod 755 "$scriptpath/$vidstxt"; then
                                             if [[ $autoupdate != "yes" ]]; then permerr=1; fi
                                             echo -e "${Error}ERROR${Off} Failed to set permissions on:"
                                             echo "$scriptpath/$vidstxt"
