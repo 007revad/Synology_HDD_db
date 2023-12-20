@@ -295,7 +295,7 @@ echo "Running from: ${scriptpath}/$scriptfile"
 
 # Warn if script located on M.2 drive
 scriptvol=$(echo "$scriptpath" | cut -d"/" -f2)
-vg=$(lvdisplay | grep /volume_"${volume#volume}" | cut -d"/" -f3)
+vg=$(lvdisplay | grep /volume_"${scriptvol#volume}" | cut -d"/" -f3)
 md=$(pvdisplay | grep -B 1 "$vg" | grep /dev/ | cut -d"/" -f3)
 if cat /proc/mdstat | grep "$md" | grep nvme >/dev/null; then
     echo "${Yellow}WARNING${Off} Don't store this script on an NVMe volume!"
