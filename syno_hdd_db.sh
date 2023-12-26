@@ -804,7 +804,7 @@ getcardmodel(){
 m2_pool_support(){ 
     # M.2 drives in M2 adaptor card do not support storage pools
     if [[ -f /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support ]]; then  # GitHub issue #86, 87
-        echo 1 > /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support
+        echo -n 1 > /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support
     fi
 }
 
