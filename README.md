@@ -112,7 +112,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 | | | | | 
 |--------------------|--------------------|----------------------|----------------------|
-| | | Yunhao Zhang | Matthias Gerhardt |
+| | Enric Escudé Santana | Yunhao Zhang | Matthias Gerhardt |
 | Darryl Harper | Mikescher | Matthias Pfaff | cpharada |
 | Neil Tapp | zen1605 | Kleissner Investments | Angel Scandinavia |
 | bcollins | Peter jackson | Mir Hekmat | Andrew Tapp |
