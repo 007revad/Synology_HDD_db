@@ -21,13 +21,13 @@
 #
 # Added new vendor ids for Apacer, aigo, Lexar and Transcend NVMe drives.
 #
-# Now includes syno_hdd_vendor.txt so users can add their NVMe drive's vendor id.
-#   - syno_hdd_vendor.txt needs to be in the same folder as syno_hdd_db.sh
+# Now includes syno_hdd_vendor_ids.txt so users can add their NVMe drive's vendor id.
+#   - syno_hdd_vendor_ids.txt needs to be in the same folder as syno_hdd_db.sh
 #
 # Now warns if script is located on an M.2 volume.
 
 
-scriptver="v3.3.73"
+scriptver="v3.3.74"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -178,7 +178,7 @@ fi
 # Check script is running as root
 if [[ $( whoami ) != "root" ]]; then
     ding
-    echo -e "${Error}ERROR${Off} This script must be run as root or sudo!"
+    echo -e "${Error}ERROR${Off} This script must be run as sudo or root!"
     exit 1
 fi
 
@@ -654,16 +654,16 @@ vendor_from_id(){
         0x05dc) vendor=Lexar ;;
         0x1d79) vendor=Transcend;;
         *)
-            # Get vendor from syno_hdd_vendor.txt
-            vidlist="$scriptpath/syno_hdd_vendor.txt"
+            # Get vendor from syno_hdd_vendor_ids.txt
+            vidlist="$scriptpath/syno_hdd_vendor_ids.txt"
             if [[ -r "$vidlist" ]]; then
                 val=$(synogetkeyvalue "$vidlist" "$1")
-                if synogetkeyvalue "$vidlist" "$1"; then
+                if [[ -n "$val" ]]; then
                     vendor="$val"
                 else
-                    echo -e "\n${Yellow}WARNING{OFF} No vendor found for vid $1" >&2
-                    echo -e "You can add your drive's vendor to: "
-                    echo "$vidlist"
+                    echo -e "\n${Yellow}WARNING${Off} No vendor found for vid $1" >&2
+                    echo -e "You can add ${Cyan}$1${Off} and your drive's vendor to: " >&2
+                    echo "$vidlist" >&2
                 fi
             else
                 echo -e "\n${Error}ERROR{OFF} $vidlist not found!" >&2
@@ -681,9 +681,9 @@ set_vendor(){
                 synosetkeyvalue "$vidfile" "${vid,,}" "$vendor"
                 val=$(synogetkeyvalue "$vidfile" "${vid,,}")
                 if [[ $val == "${vendor}" ]]; then
-                    echo "Added $vendor to pci_vendor_ids" >&2
+                    echo -e "\nAdded $vendor to pci_vendor_ids" >&2
                 else
-                    echo "Failed to add $vendor to pci_vendor_ids!" >&2
+                    echo -e "\nFailed to add $vendor to pci_vendor_ids!" >&2
                 fi
             fi
             if ! grep "$vid" "$vidfile2" >/dev/null; then
@@ -1774,7 +1774,7 @@ if [[ $wdda == "no" ]]; then
 fi
 
 
-# Enabled creating pool on drives in M.2 adaptor card
+# Enable creating pool on drives in M.2 adaptor card
 if [[ -f "$strgmgr" ]]; then
     # StorageManager package is installed
     if [[ ${#m2cards[@]} -gt "0" ]]; then
