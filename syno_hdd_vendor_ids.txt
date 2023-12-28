@@ -1,4 +1,6 @@
-# You can add your drive's vendor id and vendor name here
+# You can add your drive's vendor id and vendor name here.
+#
+# If the script does not warn you about a missing vendor id you don't need to edit this file.
 
 0x1dbe="ADATA"
 0x0ed1="aigo"
