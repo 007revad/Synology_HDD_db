@@ -1,3 +1,6 @@
+v3.3.73
+- Bug fix for vendor id.
+
 v3.3.72
 - Bug fix for enabling creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards. 
 - Bug fix for not copying syno_hdd_db_vendors.txt to script location when script updates itself.
