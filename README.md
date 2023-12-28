@@ -100,7 +100,7 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr --showedits
 
 ### vendor_ids.txt
 
-If the script does not warn you about a missing vendor id you don't need to edit syno_hdd_vendor_ids.txt
+You only need to edit syno_hdd_vendor_ids.txt if the script warns you about a missing vendor id.
 
 If DSM doesn't know the brand of your NVMe drives they will show up in Storage Manager as Unknown brand, and Unrecognised firmware version.
 
