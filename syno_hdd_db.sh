@@ -27,7 +27,7 @@
 # Now warns if script is located on an M.2 volume.
 
 
-scriptver="v3.3.73"
+scriptver="v3.3.74"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 
@@ -1121,11 +1121,13 @@ updatedb(){
         else
             fwstrng=\"$fwrev\"
             fwstrng="$fwstrng":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
-            fwstrng="$fwstrng":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]},
+            fwstrng="$fwstrng":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true,
+            fwstrng="$fwstrng"\"smart_test_ignore\":false,\"smart_attr_ignore\":false}]},
 
             default=\"default\"
             default="$default":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
-            default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]}}}
+            default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true,
+            default="$default"\"smart_test_ignore\":false,\"smart_attr_ignore\":false}]}}},
 
             if grep '"disk_compatbility_info":{}' "$2" >/dev/null; then
                 # Replace "disk_compatbility_info":{} with
