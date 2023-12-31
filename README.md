@@ -126,7 +126,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  |  |  | Alec Wilhere |
+|  |  | Ez Hosting | Alec Wilhere |
 | Reece Lyne | Enric Escudé Santana | Yunhao Zhang | Matthias Gerhardt |
 | Darryl Harper | Mikescher | Matthias Pfaff | cpharada |
 | Neil Tapp | zen1605 | Kleissner Investments | Angel Scandinavia |
