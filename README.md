@@ -124,9 +124,10 @@ In this case the script will show you the vendor ID and advise you to add it to 
 
 Thank you to the following PayPal donators, GitHub sponsors and hardware donators
 
-| | | | | 
+|  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-| | Enric Escudé Santana | Yunhao Zhang | Matthias Gerhardt |
+|  |  | Ez Hosting | Alec Wilhere |
+| Reece Lyne | Enric Escudé Santana | Yunhao Zhang | Matthias Gerhardt |
 | Darryl Harper | Mikescher | Matthias Pfaff | cpharada |
 | Neil Tapp | zen1605 | Kleissner Investments | Angel Scandinavia |
 | bcollins | Peter jackson | Mir Hekmat | Andrew Tapp |
