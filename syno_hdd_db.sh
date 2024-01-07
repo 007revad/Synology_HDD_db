@@ -27,7 +27,7 @@
 # Now warns if script is located on an M.2 volume.
 
 
-scriptver="v3.3.75"
+scriptver="v3.4.76"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -633,6 +633,7 @@ vendor_from_id(){
     # Vendor ids missing in /usr/syno/etc.defaults/pci_vendor_ids.conf
     # $1 is vendor id
     # https://devicehunt.com/all-pci-vendors
+    # https://pci-ids.ucw.cz/
     vendor=""
     case "${1,,}" in
         0x10ec) vendor=TEAMGROUP ;;
@@ -1130,7 +1131,7 @@ updatedb(){
             default=\"default\"
             default="$default":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
             default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true,
-            default="$default"\"smart_test_ignore\":false,\"smart_attr_ignore\":false}]}}},
+            default="$default"\"smart_test_ignore\":false,\"smart_attr_ignore\":false}]}}}
 
             if grep '"disk_compatbility_info":{}' "$2" >/dev/null; then
                 # Replace "disk_compatbility_info":{} with
@@ -1175,6 +1176,18 @@ updatedb(){
     fi
 }
 
+
+# Fix ,, instead of , bug caused by v3.3.75
+if [[ "${#db1list[@]}" -gt "0" ]]; then
+    for i in "${!db1list[@]}"; do
+        sed -i "s/,,/,/" 
+    done
+fi
+if [[ "${#db2list[@]}" -gt "0" ]]; then
+    for i in "${!db2list[@]}"; do
+        sed -i "s/,,/,/" 
+    done
+fi
 
 # HDDs and SATA SSDs
 num="0"
