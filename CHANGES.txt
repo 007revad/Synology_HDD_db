@@ -1,11 +1,9 @@
 v3.3.75
+- Include smart_test_ignore and smart_attr_ignore in db files.
 - Now saves changes.txt as <script-filename>_changes.txt when updating the script.
     - To not overwrite changes.txt if my other scripts are in the same folder.
 - Bug fix for detecting if script is located on M.2 drive.
 - Minor bug fix.
-
-v3.3.74
-- Include smart_test_ignore and smart_attr_ignore in db files.
 
 v3.3.73
 - Bug fix for vendor id.
