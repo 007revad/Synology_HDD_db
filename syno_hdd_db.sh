@@ -27,7 +27,7 @@
 # Now warns if script is located on an M.2 volume.
 
 
-scriptver="v3.4.76"
+scriptver="v3.4.77"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1180,12 +1180,12 @@ updatedb(){
 # Fix ,, instead of , bug caused by v3.3.75
 if [[ "${#db1list[@]}" -gt "0" ]]; then
     for i in "${!db1list[@]}"; do
-        sed -i "s/,,/,/" 
+        sed -i "s/,,/,/"  "${db1list[i]}"
     done
 fi
 if [[ "${#db2list[@]}" -gt "0" ]]; then
     for i in "${!db2list[@]}"; do
-        sed -i "s/,,/,/" 
+        sed -i "s/,,/,/"  "${db2list[i]}"
     done
 fi
 
