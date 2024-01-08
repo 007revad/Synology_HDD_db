@@ -78,6 +78,8 @@ See <a href=how_to_schedule.md/>How to schedule a script in Synology Task Schedu
 
 ### Running the script via SSH
 
+[How to enable SSH and login to DSM via SSH](https://kb.synology.com/en-global/DSM/tutorial/How_to_login_to_DSM_with_root_permission_via_SSH_Telnet)
+
 You run the script in a shell with sudo -i or as root.
 
 ```YAML
