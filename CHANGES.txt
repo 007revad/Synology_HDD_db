@@ -1,3 +1,6 @@
+v3.4.78
+- Added check that script is running on Synology NAS.
+
 v3.4.77
 - Include smart_test_ignore and smart_attr_ignore in db files.
 - Now saves changes.txt as <script-filename>_changes.txt when updating the script.
