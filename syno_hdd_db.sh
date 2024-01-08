@@ -27,7 +27,7 @@
 # Now warns if script is located on an M.2 volume.
 
 
-scriptver="v3.4.77"
+scriptver="v3.4.78"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -39,7 +39,13 @@ if [ ! "$(basename "$BASH")" = bash ]; then
     exit 1
 fi
 
-#echo -e "bash version: $(bash --version | head -1 | cut -d' ' -f4)\n"  # debug
+# Check script is running on a Synology NAS
+if ! uname -a | grep -i synology >/dev/null; then
+    echo "This script is NOT running on a Synology NAS!"
+    echo "Copy the script to a folder on the Synology"
+    echo "and run it from there."
+    exit 1
+fi
 
 ding(){ 
     printf \\a

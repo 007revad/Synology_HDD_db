@@ -13,9 +13,6 @@
 - **<a href="https://github.com/007revad/Synology_enable_M2_card">Synology_enable_M2_card</a>**
   - Enable Synology M.2 PCIe cards in Synology NAS that don't officially support them.
 
-- **<a href="https://github.com/007revad/Synology_enable_eunit">Synology_enable_eunit</a>**
-  - Enable an unsupported Synology eSATA Expansion Unit models.
-
 - **<a href="https://github.com/007revad/Synology_enable_Deduplication">Synology_enable_Deduplication</a>**
   - Enable deduplication with non-Synology SSDs and unsupported NAS models.
 
@@ -33,6 +30,9 @@
 
 - **<a href="https://github.com/007revad/Synology_DSM_reinstall">Synology_DSM_reinstall</a>**
   - Easily re-install the same DSM version without losing any data or settings
+
+- **<a href="https://github.com/007revad/Synology_app_mover">Synology_app_mover</a>**
+  - Easily move Synology packages from one volume to another volume
 
 - **<a href="https://github.com/007revad/Synology_Cleanup_Coredumps">Synology_Cleanup_Coredumps</a>**
   - Cleanup memory core dumps from crashed processes
