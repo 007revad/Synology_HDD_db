@@ -4,12 +4,6 @@
 # Github: https://github.com/007revad/Synology_HDD_db
 # Script verified at https://www.shellcheck.net/
 #
-# Easiest solution:
-# Edit /etc.defaults/synoinfo.conf and change support_disk_compatibility="yes" to "no" and reboot.
-# Then all drives can be used without error messages.
-#
-# But lets do this the proper way by adding our drive models to the appropriate .db file.
-#
 # To run in task manager as root (manually or scheduled):
 # /volume1/scripts/syno_hdd_db.sh  # replace /volume1/scripts/ with path to script
 #
@@ -21,208 +15,22 @@
 # sudo -i /volume1/scripts/syno_hdd_db.sh -force -showedits
 #--------------------------------------------------------------------------------------------------
 
-# TODO
-# Maybe also edit the other disk compatibility db in synoboot, used during boot time.
-# It's also parsed and checked and probably in some cases it could be more critical to patch that one instead.
+# CHANGES
+# Now enables creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards.
+#  - E10M20-T1, M2D20, M2D18 and M2D17
 #
-# Solve issue of --restore option restoring files that were backed up with older DSM version.
-# Change how synoinfo.conf is backed up and restored to prevent issue #73
-
-# DONE
-# Bug fix for NVMe drives with / in the model name for non-device tree Synology models.
+# Added new vendor ids for Apacer, aigo, Lexar and Transcend NVMe drives.
 #
-# Bug fix for script not updating itself if .sh file had been renamed.
+# Now includes syno_hdd_vendor_ids.txt so users can add their NVMe drive's vendor id.
+#   - syno_hdd_vendor_ids.txt needs to be in the same folder as syno_hdd_db.sh
 #
-# Bug fix for missing executable permissions if .sh file had been renamed.
-#
-# Bug fix to prevent update loop if script's .tar.gz file already exists in /tmp.
-#
-# Bug fix to prevent update failing if script's temp folder already exists in /tmp.
-#
-# Now only copies CHANGES.txt to script location if script is located on a volume,
-# to prevent putting CHANGES.txt on system partition (/usr/bin, /usr/sbin, /root etc.)
-#
-# Added -e --email option to disable coloured output to make task scheduler emails easier to read.
-#
-#
-# Added support to disable unsupported memory warnings on DVA models.
-#
-# Fixed bug where newly connected expansion units weren't found until up to 24 hours later. #124
-#
-# Added enabling E10M20-T1, M2D20 and M2D18 for DS1821+, DS1621+ and DS1520+.
-# Added enabling M2D18 for RS822RP+, RS822+, RS1221RP+ and RS1221+ with older DSM version.
-#
-# Fixed enabling E10M20-T1, M2D20 and M2D18 cards in models that don't officially support them.
-#
-# Fixed bugs where the calculated amount of installed memory could be incorrect:
-#   - If last memory socket was empty an invalid unit of bytes could be used. Issue #106
-#   - When dmidecode returned MB for one ram module and GB for another ram module. Issue #107
-#
-# Fixed bug displaying the max memory setting if total installed memory was less than the max memory. Issue #107
-#
-# Fixed bug where sata1 drive firmware version was wrong if there was a sata10 drive.
-#
-# Minor bug fix for checking amount of installed memory.
-#
-# Now enables any installed Synology M.2 PCIe cards for models that don't officially support them.
-#
-# Added -i, --immutable option to enable immutable snapshots on models older than '20 series running DSM 7.2.
-#
-# Changed help to show that -r, --ram also sets max memory to the amount of installed memory.
-#
-# Changed the "No M.2 cards found" to "No M.2 PCIe cards found" to make it clearer.
-#
-# Added "You may need to reboot" message when NVMe drives were detected.
-#
-# Fixed HDD/SSD firmware versions always being 4 characters long (for DSM 7.2 and 6.2.4 Update 7).
-#
-# Fixed detecting the amount of installed memory (for DSM 7.2 which now reports GB instead of MB).
-#
-# Fixed USB drives sometimes being detected as internal drives (for DSM 7.2).
-#
-# Fixed error if /run/synostorage/disks/nvme0n1/m2_pool_support doesn't exist yet (for DSM 7.2).
-#
-# Fixed drive db update still being disabled in /etc/synoinfo.conf after script run without -n or --noupdate option.
-#
-# Fixed drive db update still being disabled in /etc/synoinfo.conf after script run with --restore option.
-#
-# Fixed permissions on restored files being incorrect after script run with --restore option.
-#
-# Fixed permissions on backup files.
-#
-# Now skips checking the amount of installed memory in DSM 6 (because it was never working).
-#
-# Now the script reloads itself after updating.
-#
-# Added --autoupdate=AGE option to auto update synology_hdd_db x days after new version released.
-#    Autoupdate logs update success or errors to DSM system log.
-#
-# Added -w, --wdda option to disable WDDA
-#  https://kb.synology.com/en-us/DSM/tutorial/Which_Synology_NAS_supports_WDDA
-#  https://www.youtube.com/watch?v=cLGi8sPLkLY
-#  https://community.synology.com/enu/forum/1/post/159537
-#
-# Added --restore info to --help
-#
-# Updated restore option to download the latest db files from Synology
-#
-# Now warns you if you try to run it in sh with "sh scriptname.sh"
-#
-# Fixed DSM 6 bug where the drives were being duplicated in the .db files each time the script was run.
-#
-# Fixed DSM 6 bug where the .db files were being duplicated as .dbr each time the db files were edited.
-#
-# Fixed bug where expansion units ending in RP or II were not detected.
-#
-# Added a --restore option to undo all changes.
-#
-# Now looks for and edits both v7 and non-v7 db files to solve issue #11 for RS '21 models running DSM 6.2.4.
-# This will also ensure the script still works if:
-#     Synology append different numbers to the db file names in DSM 8 etc.
-#     The detected NAS model name does not match the .db files' model name.
-#
-# Now backs up the .db.new files (as well as the .db files).
-#
-# Now shows max memory in GB instead of MB.
-#
-# Now shows status of "Support disk compatibility" setting even if it wasn't changed.
-#
-# Now shows status of "Support memory compatibility" setting even if it wasn't changed.
-#
-# Improved shell output when editing max memory setting.
-#
-# Changed method of checking if drive is a USB drive to prevent ignoring internal drives on RS models.
-#
-# Changed to not run "synostgdisk --check-all-disks-compatibility" in DSM 6.2.3 (which has no synostgdisk).
-#
-# Now edits max supported memory to match the amount of memory installed, if greater than the current max memory setting.
-#
-# Now allows creating M.2 storage pool and volume all from Storage Manager
-#
-# Now always shows your drive entries in the host db file if -s or --showedits used,
-#    instead of only db file was edited during that run.
-#
-# Changed to show usage if invalid long option used instead of continuing.
-#
-# Fixed bug inserting firmware version for already existing model.
-#
-# Changed to add drives' firmware version to the db files (to support data deduplication).
-#    See https://github.com/007revad/Synology_enable_Deduplication
-#
-# Changed to be able to edit existing drive entries in the db files to add the firmware version.
-#
-# Now supports editing db files that don't currently have any drives listed.
-#
-# Fixed bug where the --noupdate option was coded as --nodbupdate. Now either will work.
-#
-# Fixed bug in re-enable drive db updates
-#
-# Fixed "download new version" failing if script was run via symlink or ./<scriptname>
-#
-# Changed to show if no M.2 cards were found, if M.2 drives were found.
-#
-# Changed latest version check to download to /tmp and extract files to the script's location,
-# replacing the existing .sh and readme.txt files.
-#
-# Added a timeouts when checking for newer script version in case github is down or slow.
-#
-# Added option to disable incompatible memory notifications.
-#
-# Now finds your expansion units' model numbers and adds your drives to their db files.
-#
-# Now adds your M.2 drives to your M.2 PCI cards db files (M2Dxx and E10M20-T1 and future models).
-#
-# Improved flags/options checking and added usage help.
-#
-# Can now download the latest script version for you (if you have user home service enabled in DSM).
-#
-# Now adds 'support_m2_pool="yes"' line for models that don't have support_m2_pool in synoinfo.conf
-#   to (hopefully) prevent losing your SSH created M2 volume when running this script on models 
-#   that DSM 7.2 Beta does not list as supported for creating M2 volumes.
-#
-# Changed Synology model detection to be more reliable (for models that came in different variations).
-#
-# Changed checking drive_db_test_url setting to be more durable.
-#
-# Added removal of " 00Y" from end of Samsung/Lenovo SSDs to fix issue #13.
-#
-# Fixed bug where removable drives were being detected and added to drive database.
-#
-# Fixed bug where "M.2 volume support already enabled" message appeared when NAS had no M.2 drives.
-#
-# Added check that M.2 volume support is enabled (on supported models).
-#
-# Added support for M.2 SATA drives.
-#
-# Can now skip processing M.2 drives by running script with the -m2 flag.
-#
-# Changed method of getting drive and firmware version so script is faster and easier to maintain.
-# - No longer using smartctl or hdparm.
-#
-# Changed SAS drive firmware version detection to support SAS drives that hdparm doesn't work with.
-#
-# Removed error message and aborting if *.db.new not found (clean DSM installs don't have a *.db.new).
-#
-# Force DSM to check disk compatibility so reboot not needed (DSM 6 may still need a reboot).
-#
-# Fixed DSM 6 issue when DSM 6 has the old db file format.
-#
-# Add support for SAS drives.
-#
-# Get HDD/SSD/SAS drive model number with smartctl instead of hdparm.
-#
-# Check if there is a newer script version available.
-#
-# Add support for NVMe drives.
-#
-# Prevent DSM auto updating the drive database.
-#
-# Optionally disable "support_disk_compatibility".
+# Now warns if script is located on an M.2 volume.
 
 
-scriptver="v3.1.65"
+scriptver="v3.4.78"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
+scriptname=syno_hdd_db
 
 # Check BASH variable is bash
 if [ ! "$(basename "$BASH")" = bash ]; then
@@ -231,13 +39,19 @@ if [ ! "$(basename "$BASH")" = bash ]; then
     exit 1
 fi
 
-#echo -e "bash version: $(bash --version | head -1 | cut -d' ' -f4)\n"  # debug
+# Check script is running on a Synology NAS
+if ! uname -a | grep -i synology >/dev/null; then
+    echo "This script is NOT running on a Synology NAS!"
+    echo "Copy the script to a folder on the Synology"
+    echo "and run it from there."
+    exit 1
+fi
 
-ding(){
+ding(){ 
     printf \\a
 }
 
-usage(){
+usage(){ 
     cat <<EOF
 $script $scriptver - by 007revad
 
@@ -251,8 +65,6 @@ Options:
   -r, --ram             Disable memory compatibility checking (DSM 7.x only),
                         and sets max memory to the amount of installed memory
   -w, --wdda            Disable WD WDDA
-  -i, --immutable       Enable immutable snapshots on models older than
-                        20-series (DSM 7.2 and newer only).
   -e, --email           Disable colored text in output scheduler emails.
       --restore         Undo all changes made by the script
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
@@ -266,7 +78,7 @@ EOF
 }
 
 
-scriptversion(){
+scriptversion(){ 
     cat <<EOF
 $script $scriptver - by 007revad
 
@@ -305,9 +117,6 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
                 ;;
             -r|--ram)           # Disable "support_memory_compatibility"
                 ram=yes
-                ;;
-            -i|--immutable)     # Enable "support_worm" (immutable snapshots)
-                immutable=yes
                 ;;
             -w|--wdda)          # Disable "support_memory_compatibility"
                 wdda=no
@@ -376,7 +185,7 @@ fi
 # Check script is running as root
 if [[ $( whoami ) != "root" ]]; then
     ding
-    echo -e "${Error}ERROR${Off} This script must be run as root or sudo!"
+    echo -e "${Error}ERROR${Off} This script must be run as sudo or root!"
     exit 1
 fi
 
@@ -387,11 +196,6 @@ if [[ $dsm -gt "6" ]]; then
 fi
 
 # Get Synology model
-
-# This doesn't work for drives migrated from different model
-#model=$(find /var/lib/disk-compatibility -regextype egrep -regex ".*host(_v7)?\.db$" |\
-#    cut -d"/" -f5 | cut -d"_" -f1 | uniq)
-
 model=$(cat /proc/sys/kernel/syno_hw_version)
 modelname="$model"
 
@@ -426,6 +230,13 @@ elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
     echo -e "\nUsing model: $model"
 fi
 
+
+# Get StorageManager version
+storagemgrver=$(synopkg version StorageManager)
+# Show StorageManager version
+if [[ $storagemgrver ]]; then echo -e "StorageManager $storagemgrver\n"; fi
+
+
 # Show options used
 echo "Using options: ${args[*]}"
 
@@ -435,7 +246,7 @@ echo "Using options: ${args[*]}"
 #------------------------------------------------------------------------------
 # Check latest release with GitHub API
 
-syslog_set(){
+syslog_set(){ 
     if [[ ${1,,} == "info" ]] || [[ ${1,,} == "warn" ]] || [[ ${1,,} == "err" ]]; then
         if [[ $autoupdate == "yes" ]]; then
             # Add entry to Synology system log
@@ -489,7 +300,16 @@ echo "Running from: ${scriptpath}/$scriptfile"
 #echo "scriptver: $scriptver"  # debug
 
 
-cleanup_tmp(){
+# Warn if script located on M.2 drive
+scriptvol=$(echo "$scriptpath" | cut -d"/" -f2)
+vg=$(lvdisplay | grep /volume_"${scriptvol#volume}" | cut -d"/" -f3)
+md=$(pvdisplay | grep -B 1 -E '[ ]'"$vg" | grep /dev/ | cut -d"/" -f3)
+if cat /proc/mdstat | grep "$md" | grep nvme >/dev/null; then
+    echo -e "${Yellow}WARNING${Off} Don't store this script on an NVMe volume!"
+fi
+
+
+cleanup_tmp(){ 
     cleanup_err=
 
     # Delete downloaded .tar.gz file
@@ -568,7 +388,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                             fi
 
                             # Copy new script sh file to script location
-                            if ! cp -p "/tmp/$script-$shorttag/syno_hdd_db.sh" "${scriptpath}/${scriptfile}";
+                            if ! cp -p "/tmp/$script-$shorttag/${scriptname}.sh" "${scriptpath}/${scriptfile}";
                             then
                                 copyerr=1
                                 echo -e "${Error}ERROR${Off} Failed to copy"\
@@ -576,10 +396,33 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                 syslog_set warn "$script failed to copy $tag to script location"
                             fi
 
-                            # Copy new CHANGES.txt file
+                            # Copy new syno_hdd_vendor_ids.txt file
+                            vidstxt="syno_hdd_vendor_ids.txt"
+                            if [[ $scriptpath =~ /volume* ]]; then
+                                if [[ ! -f "$scriptpath/$vidstxt" ]]; then  # Don't overwrite file
+                                    # Copy new syno_hdd_vendor_ids.txt file to script location
+                                    if ! cp -p "/tmp/$script-$shorttag/$vidstxt" "$scriptpath"; then
+                                        if [[ $autoupdate != "yes" ]]; then copyerr=1; fi
+                                        echo -e "${Error}ERROR${Off} Failed to copy"\
+                                            "$script-$shorttag/$vidstxt to:\n $scriptpath"
+                                    else
+                                        # Set permissions on syno_hdd_vendor_ids.txt
+                                        if ! chmod 755 "$scriptpath/$vidstxt"; then
+                                            if [[ $autoupdate != "yes" ]]; then permerr=1; fi
+                                            echo -e "${Error}ERROR${Off} Failed to set permissions on:"
+                                            echo "$scriptpath/$vidstxt"
+                                        fi
+                                        vids_txt=", syno_hdd_vendor_ids.txt"
+                                    fi
+                                fi
+                            fi
+
+                            # Copy new CHANGES.txt file to script location (if script on a volume)
                             if [[ $scriptpath =~ /volume* ]]; then
                                 # Copy new CHANGES.txt file to script location
-                                if ! cp -p "/tmp/$script-$shorttag/CHANGES.txt" "$scriptpath"; then
+                                if ! cp -p "/tmp/$script-$shorttag/CHANGES.txt"\
+                                    "${scriptpath}/${scriptname}_CHANGES.txt";
+                                then
                                     if [[ $autoupdate != "yes" ]]; then copyerr=1; fi
                                     echo -e "${Error}ERROR${Off} Failed to copy"\
                                         "$script-$shorttag/CHANGES.txt to:\n $scriptpath"
@@ -599,7 +442,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
 
                             # Notify of success (if there were no errors)
                             if [[ $copyerr != 1 ]] && [[ $permerr != 1 ]]; then
-                                echo -e "\n$tag$changestxt downloaded to: ${scriptpath}\n"
+                                echo -e "\n$tag ${scriptfile}$vids_txt$changestxt downloaded to: ${scriptpath}\n"
                                 syslog_set info "$script successfully updated to $tag"
 
                                 # Reload script
@@ -627,50 +470,123 @@ fi
 
 
 #------------------------------------------------------------------------------
-# Restore changes from backups
+# Set file variables
 
+if [[ -f /etc.defaults/model.dtb ]]; then  # Is device tree model
+    # Get syn_hw_revision, r1 or r2 etc (or just a linefeed if not a revision)
+    hwrevision=$(cat /proc/sys/kernel/syno_hw_revision)
+
+    # If syno_hw_revision is r1 or r2 it's a real Synology,
+    # and I need to edit model_rN.dtb instead of model.dtb
+    if [[ $hwrevision =~ r[0-9] ]]; then
+        #echo "hwrevision: $hwrevision"  # debug
+        hwrev="_$hwrevision"
+    fi
+
+    dtb_file="/etc.defaults/model${hwrev}.dtb"
+    dtb2_file="/etc/model${hwrev}.dtb"
+    #dts_file="/etc.defaults/model${hwrev}.dts"
+    dts_file="/tmp/model${hwrev}.dts"
+fi
+
+adapter_cards="/usr/syno/etc.defaults/adapter_cards.conf"
+adapter_cards2="/usr/syno/etc/adapter_cards.conf"
 dbpath=/var/lib/disk-compatibility/
 synoinfo="/etc.defaults/synoinfo.conf"
-adapter_cards="/usr/syno/etc.defaults/adapter_cards.conf"
-modeldtb="/etc.defaults/model.dtb"
+strgmgr="/var/packages/StorageManager/target/ui/storage_panel.js"
+vidfile="/usr/syno/etc.defaults/pci_vendor_ids.conf"
+vidfile2="/usr/syno/etc/pci_vendor_ids.conf"
+
+
+#------------------------------------------------------------------------------
+# Restore changes from backups
 
 if [[ $restore == "yes" ]]; then
-    dbbakfiles=($(find $dbpath -maxdepth 1 \( -name "*.db.new.bak" -o -name "*.db.bak" \)))
-    echo
+    dbbaklist=($(find $dbpath -maxdepth 1 \( -name "*.db.new.bak" -o -name "*.db.bak" \)))
+    # Sort array
+    IFS=$'\n'
+    dbbakfiles=($(sort <<<"${dbbaklist[*]}"))
+    unset IFS
 
+    echo ""
     if [[ ${#dbbakfiles[@]} -gt "0" ]] || [[ -f ${synoinfo}.bak ]] ||\
-        [[ -f ${modeldtb}.bak ]] || [[ -f ${adapter_cards}.bak ]] ; then
+        [[ -f ${dtb_file}.bak ]] || [[ -f ${adapter_cards}.bak ]] ; then
 
         # Restore synoinfo.conf from backup
         if [[ -f ${synoinfo}.bak ]]; then
-            if cp -p "${synoinfo}.bak" "${synoinfo}"; then
-                echo -e "Restored $(basename -- "$synoinfo")\n"
-            else
-                restoreerr=1
-                echo -e "${Error}ERROR${Off} Failed to restore synoinfo.conf!\n"
-            fi
+            keyvalues=("support_disk_compatibility" "support_memory_compatibility")
+            keyvalues+=("mem_max_mb" "supportnvme" "support_m2_pool" "support_wdda")
+            for v in "${!keyvalues[@]}"; do
+                defaultval="$(get_key_value ${synoinfo}.bak "${keyvalues[v]}")"
+                currentval="$(get_key_value ${synoinfo} "${keyvalues[v]}")"
+                if [[ $currentval != "$defaultval" ]]; then
+                    if synosetkeyvalue "$synoinfo" "${keyvalues[v]}" "$defaultval";
+                    then
+                        echo "Restored ${keyvalues[v]} = $defaultval"
+                    fi
+                fi
+            done
         fi
+
+        # Delete "drive_db_test_url=127.0.0.1" line (and line break) from synoinfo.conf
+        sed -i "/drive_db_test_url=*/d" "$synoinfo"
+        sed -i "/drive_db_test_url=*/d" /etc/synoinfo.conf
 
         # Restore adapter_cards.conf from backup
+        # /usr/syno/etc.defaults/adapter_cards.conf
         if [[ -f ${adapter_cards}.bak ]]; then
             if cp -p "${adapter_cards}.bak" "${adapter_cards}"; then
-                echo -e "Restored $(basename -- "$adapter_cards")\n"
+                echo "Restored ${adapter_cards}"
             else
                 restoreerr=1
-                echo -e "${Error}ERROR${Off} Failed to restore adapter_cards.conf!\n"
+                echo -e "${Error}ERROR${Off} Failed to restore ${adapter_cards}!\n"
+            fi
+            # /usr/syno/etc/adapter_cards.conf
+            if cp -p "${adapter_cards}.bak" "${adapter_cards2}"; then
+                echo -e "Restored ${adapter_cards2}"
+            else
+                restoreerr=1
+                echo -e "${Error}ERROR${Off} Failed to restore ${adapter_cards2}!\n"
+            fi
+
+            # Make sure they don't lose E10M20-T1 network connection
+            modelrplowercase=${modelname//RP/rp}
+            set_section_key_value ${adapter_cards} E10M20-T1_sup_nic "$modelrplowercase"
+            set_section_key_value ${adapter_cards2} E10M20-T1_sup_nic "$modelrplowercase"
+        fi
+
+        # Restore model.dtb from backup
+        if [[ -f ${dtb_file}.bak ]]; then
+            # /etc.default/model.dtb
+            if cp -p "${dtb_file}.bak" "${dtb_file}"; then
+                echo "Restored ${dtb_file}"
+            else
+                restoreerr=1
+                echo -e "${Error}ERROR${Off} Failed to restore ${dtb_file}!\n"
+            fi
+            # Restore /etc/model.dtb from /etc.default/model.dtb
+            if cp -p "${dtb_file}.bak" "${dtb2_file}"; then
+                echo -e "Restored ${dtb2_file}"
+            else
+                restoreerr=1
+                echo -e "${Error}ERROR${Off} Failed to restore ${dtb2_file}!\n"
             fi
         fi
 
-        # Restore modeldtb from backup
-        if [[ -f ${modeldtb}.bak ]]; then
-            if cp -p "${modeldtb}.bak" "${modeldtb}"; then
-                echo -e "Restored $(basename -- "$modeldtb")\n"
+        # Restore storage_panel.js from backup
+        strgmgrver="$(synopkg version StorageManager)"
+        if [[ -f "${strgmgr}.$strgmgrver" ]]; then
+            if cp -p "${strgmgr}.$strgmgrver" "$strgmgr"; then
+                echo "Restored $(basename -- "$strgmgr")"
             else
                 restoreerr=1
-                echo -e "${Error}ERROR${Off} Failed to restore model.dtb!\n"
+                echo -e "${Error}ERROR${Off} Failed to restore $(basename -- "$strgmgr")!\n"
             fi
+        else
+            echo "No backup of $(basename -- "$strgmgr") found."
         fi
 
+        echo ""
         # Restore .db files from backups
         for f in "${!dbbakfiles[@]}"; do
             replaceme="${dbbakfiles[f]%.bak}"  # Remove .bak
@@ -693,9 +609,6 @@ if [[ $restore == "yes" ]]; then
                 rm "$f" >/dev/null
             fi
         done
-
-        # Delete "drive_db_test_url=127.0.0.1" line (inc. line break) from /etc/synoinfo.conf
-        sed -i "/drive_db_test_url=*/d" /etc/synoinfo.conf
 
         # Update .db files from Synology
         syno_disk_db_update --update
@@ -722,14 +635,95 @@ fi
 # Get list of installed SATA, SAS and M.2 NVMe/SATA drives,
 # PCIe M.2 cards and connected Expansion Units.
 
-fixdrivemodel(){
+vendor_from_id(){ 
+    # Vendor ids missing in /usr/syno/etc.defaults/pci_vendor_ids.conf
+    # $1 is vendor id
+    # https://devicehunt.com/all-pci-vendors
+    # https://pci-ids.ucw.cz/
+    vendor=""
+    case "${1,,}" in
+        0x10ec) vendor=TEAMGROUP ;;
+        0x025e) vendor=Solidigm ;;
+        0x1458) vendor=Gigabyte ;;
+        0x1462) vendor=MSI ;;
+        0x196e) vendor=PNY ;;
+        0x1987) vendor=Phison ;;
+        0x1b1c) vendor=Corsair ;;
+        0x1c5c) vendor="SK Hynix" ;;
+        0x1cc4) vendor=UMIS ;;
+        0x1cfa) vendor=Corsair ;;     # Memory only?
+        0x1d97) vendor=SPCC/Lexar ;;  # 2 brands with same vid
+        0x1dbe) vendor=ADATA ;;
+        0x1e0f) vendor=KIOXIA ;;
+        0x1e49) vendor=ZHITAI ;;
+        0x1e4b) vendor=HS/MAXIO ;;    # 2 brands with same vid
+        0x1f40) vendor=Netac ;;
+
+        0x1bdc) vendor=Apacer;;
+        0x0ed1) vendor=aigo ;;
+        0x05dc) vendor=Lexar ;;
+        0x1d79) vendor=Transcend;;
+        *)
+            # Get vendor from syno_hdd_vendor_ids.txt
+            vidlist="$scriptpath/syno_hdd_vendor_ids.txt"
+            if [[ -r "$vidlist" ]]; then
+                val=$(synogetkeyvalue "$vidlist" "$1")
+                if [[ -n "$val" ]]; then
+                    vendor="$val"
+                else
+                    echo -e "\n${Yellow}WARNING${Off} No vendor found for vid $1" >&2
+                    echo -e "You can add ${Cyan}$1${Off} and your drive's vendor to: " >&2
+                    echo "$vidlist" >&2
+                fi
+            else
+                echo -e "\n${Error}ERROR{OFF} $vidlist not found!" >&2
+            fi
+        ;;
+    esac
+}
+
+set_vendor(){ 
+    # Add missing vendors to /usr/syno/etc.defaults/pci_vendor_ids.conf
+    if [[ $vendor ]]; then
+        # DS1817+, DS1517+, RS1219+, RS818+ don't have pci_vendor_ids.conf
+        if [[ "$vidfile" ]]; then
+            if ! grep "$vid" "$vidfile" >/dev/null; then
+                synosetkeyvalue "$vidfile" "${vid,,}" "$vendor"
+                val=$(synogetkeyvalue "$vidfile" "${vid,,}")
+                if [[ $val == "${vendor}" ]]; then
+                    echo -e "\nAdded $vendor to pci_vendor_ids" >&2
+                else
+                    echo -e "\nFailed to add $vendor to pci_vendor_ids!" >&2
+                fi
+            fi
+            if ! grep "$vid" "$vidfile2" >/dev/null; then
+                synosetkeyvalue "$vidfile2" "${vid,,}" "$vendor"
+            fi
+        fi
+    fi
+}
+
+get_vid(){ 
+    # $1 is /dev/nvme0n1 etc
+    if [[ $1 ]]; then
+        vid=$(nvme id-ctrl "$1" | grep -E ^vid | awk '{print $NF}')
+        if [[ $vid ]]; then
+            val=$(synogetkeyvalue "$vidfile" "${vid,,}")
+            if [[ -z $val ]]; then
+                vendor_from_id "$vid" && set_vendor
+            fi
+        fi
+    fi
+}
+
+fixdrivemodel(){ 
     # Remove " 00Y" from end of Samsung/Lenovo SSDs  # Github issue #13
-    if [[ $1 =~ MZ.*" 00Y" ]]; then
+    if [[ $1 =~ MZ.*' 00Y' ]]; then
         hdmodel=$(printf "%s" "$1" | sed 's/ 00Y.*//')
     fi
 
     # Brands that return "BRAND <model>" and need "BRAND " removed.
-    if [[ $1 =~ ^[A-Za-z]{1,7}" ".* ]]; then
+    if [[ $1 =~ ^[A-Za-z]{3,7}' '.* ]]; then
         # See  Smartmontools database in /var/lib/smartmontools/drivedb.db
         hdmodel=${hdmodel#"WDC "}       # Remove "WDC " from start of model name
         hdmodel=${hdmodel#"HGST "}      # Remove "HGST " from start of model name
@@ -739,11 +733,13 @@ fixdrivemodel(){
         hdmodel=${hdmodel#"Hitachi "}   # Remove "Hitachi " from start of model name
         hdmodel=${hdmodel#"SAMSUNG "}   # Remove "SAMSUNG " from start of model name
         hdmodel=${hdmodel#"FUJISTU "}   # Remove "FUJISTU " from start of model name
+    elif [[ $1 =~ ^'APPLE HDD '.* ]]; then
+        # Old drive brands
         hdmodel=${hdmodel#"APPLE HDD "} # Remove "APPLE HDD " from start of model name
     fi
 }
 
-getdriveinfo(){
+getdriveinfo(){ 
     # $1 is /sys/block/sata1 etc
 
     # Skip USB drives
@@ -772,7 +768,7 @@ getdriveinfo(){
     fi
 }
 
-getm2info(){
+getm2info(){ 
     # $1 is /sys/block/nvme0n1 etc
     nvmemodel=$(cat "$1/device/model")
     nvmemodel=$(printf "%s" "$nvmemodel" | xargs)  # trim leading and trailing white space
@@ -788,7 +784,7 @@ getm2info(){
     fi
 }
 
-getcardmodel(){
+getcardmodel(){ 
     # Get M.2 card model (if M.2 drives found)
     # $1 is /dev/nvme0n1 etc
     if [[ ${#nvmelist[@]} -gt "0" ]]; then
@@ -815,9 +811,10 @@ getcardmodel(){
     fi
 }
 
-m2_pool_support(){
+m2_pool_support(){ 
+    # M.2 drives in M2 adaptor card do not support storage pools
     if [[ -f /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support ]]; then  # GitHub issue #86, 87
-        echo 1 > /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support
+        echo -n 1 > /run/synostorage/disks/"$(basename -- "$1")"/m2_pool_support
     fi
 }
 
@@ -839,6 +836,11 @@ for d in /sys/block/*; do
         nvme*)
             if [[ $d =~ nvme[0-9][0-9]?n[0-9][0-9]?$ ]]; then
                 if [[ $m2 != "no" ]]; then
+                    # Fix unknown vendor id if needed. GitHub issue #161
+                    # "Failed to get disk vendor" from synonvme --vendor-get
+                    # causes "Unsupported firmware version" warning.
+                    get_vid "/dev/$(basename -- "${d}")"
+
                     getm2info "$d" "nvme"
                     # Get M.2 card model if in M.2 card
                     getcardmodel "/dev/$(basename -- "${d}")"
@@ -1006,7 +1008,7 @@ fi
 # Don't check .db.new as new installs don't have a .db.new file
 
 
-getdbtype(){
+getdbtype(){ 
     # Detect drive db type
     if grep -F '{"disk_compatbility_info":' "$1" >/dev/null; then
         # DSM 7 drive db files start with {"disk_compatbility_info":
@@ -1022,16 +1024,21 @@ getdbtype(){
 }
 
 
-backupdb(){
+backupdb(){ 
     # Backup database file if needed
     if [[ ! -f "$1.bak" ]]; then
         if [[ $(basename "$1") == "synoinfo.conf" ]]; then
             echo "" >&2  # Formatting for stdout
         fi
-        if cp -p "$1" "$1.bak"; then
-            echo -e "Backed up $(basename -- "${1}")" >&2
+        if [[ $2 == "long" ]]; then
+            fname="$1"
         else
-            echo -e "${Error}ERROR 5${Off} Failed to backup $(basename -- "${1}")!" >&2
+            fname=$(basename -- "${1}")
+        fi
+        if cp -p "$1" "$1.bak"; then
+            echo -e "Backed up ${fname}" >&2
+        else
+            echo -e "${Error}ERROR 5${Off} Failed to backup ${fname}!" >&2
             return 1
         fi
     fi
@@ -1062,7 +1069,7 @@ done
 #------------------------------------------------------------------------------
 # Edit db files
 
-editcount(){
+editcount(){ 
     # Count drives added to host db files
     if [[ $1 =~ .*\.db$ ]]; then
         db1Edits=$((db1Edits +1))
@@ -1072,7 +1079,7 @@ editcount(){
 }
 
 
-editdb7(){
+editdb7(){ 
     if [[ $1 == "append" ]]; then  # model not in db file
         #if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # append
         if sed -i "s/}}}/}},\"${hdmodel//\//\\/}\":{$fwstrng$default/" "$2"; then  # append
@@ -1102,12 +1109,11 @@ editdb7(){
             echo -e "\n${Error}ERROR 6c${Off} Failed to update $(basename -- "$2")${Off}"
             #exit 6
         fi
-
     fi
 }
 
 
-updatedb(){
+updatedb(){ 
     hdmodel=$(printf "%s" "$1" | cut -d"," -f 1)
     fwrev=$(printf "%s" "$1" | cut -d"," -f 2)
 
@@ -1125,24 +1131,27 @@ updatedb(){
         else
             fwstrng=\"$fwrev\"
             fwstrng="$fwstrng":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
-            fwstrng="$fwstrng":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]},
+            fwstrng="$fwstrng":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true,
+            fwstrng="$fwstrng"\"smart_test_ignore\":false,\"smart_attr_ignore\":false}]},
 
             default=\"default\"
             default="$default":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
-            default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true}]}}}
+            default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true,
+            default="$default"\"smart_test_ignore\":false,\"smart_attr_ignore\":false}]}}}
 
             if grep '"disk_compatbility_info":{}' "$2" >/dev/null; then
-               # Replace  "disk_compatbility_info":{}  with  "disk_compatbility_info":{"WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}}
+                # Replace "disk_compatbility_info":{} with
+                # "disk_compatbility_info":{"WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}}
                 #echo "Edit empty db file:"  # debug
                 editdb7 "empty" "$2"
 
             elif grep '"'"$hdmodel"'":' "$2" >/dev/null; then
-               # Replace  "WD40PURX-64GVNY0":{  with  "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},
+                # Replace "WD40PURX-64GVNY0":{ with "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},
                 #echo "Insert firmware version:"  # debug
                 editdb7 "insert" "$2"
 
             else
-               # Add  "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}
+                # Add "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}
                 #echo "Append drive and firmware:"  # debug
                 editdb7 "append" "$2"
             fi
@@ -1173,6 +1182,18 @@ updatedb(){
     fi
 }
 
+
+# Fix ,, instead of , bug caused by v3.3.75
+if [[ "${#db1list[@]}" -gt "0" ]]; then
+    for i in "${!db1list[@]}"; do
+        sed -i "s/,,/,/"  "${db1list[i]}"
+    done
+fi
+if [[ "${#db2list[@]}" -gt "0" ]]; then
+    for i in "${!db2list[@]}"; do
+        sed -i "s/,,/,/"  "${db2list[i]}"
+    done
+fi
 
 # HDDs and SATA SSDs
 num="0"
@@ -1228,26 +1249,34 @@ done
 #------------------------------------------------------------------------------
 # Enable unsupported Synology M2 PCIe cards
 
-# DS1821+, DS1621+ and DS1520+ also need edited device tree blob file
-# /etc.defaults/model.dtb
-# RS822RP+, RS822+, RS1221RP+ and RS1221+ with DSM older than 7.2 need
-# device tree blob file from DSM 7.2 to support M2D18
-
-enable_card(){
+enable_card(){ 
     # $1 is the file
     # $2 is the section
     # $3 is the card model and mode
     if [[ -f $1 ]] && [[ -n $2 ]] && [[ -n $3 ]]; then
+        backupdb "$adapter_cards" long
+        backupdb "$adapter_cards2" long
+
         # Check if section exists
         if ! grep '^\['"$2"'\]$' "$1" >/dev/null; then
             echo -e "Section [$2] not found in $(basename -- "$1")!" >&2
             return
         fi
         # Check if already enabled
-        val=$(get_section_key_value "$1" "$2" "$modelname")
+        #
+        # No idea if "cat /proc/sys/kernel/syno_hw_version" returns upper or lower case RP
+        # "/usr/syno/etc.defaults/adapter_cards.conf" uses lower case rp but upper case RS
+        # So we'll convert RP to rp when needed.
+        #
+        modelrplowercase=${modelname//RP/rp}
+        val=$(get_section_key_value "$1" "$2" "$modelrplowercase")
         if [[ $val != "yes" ]]; then
-            if set_section_key_value "$1" "$2" "$modelname" yes; then
+            # /usr/syno/etc.defaults/adapter_cards.conf
+            if set_section_key_value "$1" "$2" "$modelrplowercase" yes; then
+                # /usr/syno/etc/adapter_cards.conf
+                set_section_key_value "$adapter_cards2" "$2" "$modelrplowercase" yes
                 echo -e "Enabled ${Yellow}$3${Off} for ${Cyan}$modelname${Off}" >&2
+                rebootmsg=yes
             else
                 echo -e "${Error}ERROR 9${Off} Failed to enable $3 for ${modelname}!" >&2
             fi
@@ -1257,103 +1286,231 @@ enable_card(){
     fi
 }
 
-check_modeldtb(){
-    # $1 is E10M20-T1 or M2D20 or M2D18 or M2D17
-    if [[ -f /etc.defaults/model.dtb ]]; then
-        if ! grep --text "$1" /etc.defaults/model.dtb >/dev/null; then
-            if [[ $modelname == "DS1821+" ]] || [[ $modelname == "DS1621+" ]] ||\
-                [[ $modelname == "DS1520+" ]] || [[ $modelname == "RS822rp+" ]] ||\
-                [[ $modelname == "RS822+" ]] || [[ $modelname == "RS1221rp+" ]] ||\
-                [[ $modelname == "RS1221+" ]];
-            then
-                echo "" >&2
-                if [[ -f ./dtb/${modelname}_model.dtb ]]; then
-                    # Edited device tree blob exists in dtb folder with script
-                    blob="./dtb/${modelname}_model.dtb"
-                elif [[ -f ./${modelname}_model.dtb ]]; then
-                    # Edited device tree blob exists with script
-                    blob="./${modelname}_model.dtb"
-                else
-                    # Download edited device tree blob model.dtb from github
-                    if cd /var/services/tmp; then
-                        echo -e "Downloading ${modelname}_model.dtb" >&2
-                        repo=https://github.com/007revad/Synology_HDD_db
-                        url=${repo}/raw/main/dtb/${modelname}_model.dtb
-                        curl -LJO -m 30 --connect-timeout 5 "$url"
-                        echo "" >&2
-                        cd "$scriptpath" || echo -e "${Error}ERROR${Off} Failed to cd to script location!"
-                    else
-                        echo -e "${Error}ERROR${Off} /var/services/tmp does not exist!" >&2
-                    fi
+dts_m2_card(){ 
+# $1 is the card model
+# $2 is the dts file
 
-                    # Check we actually downloaded the file
-                    if [[ -f /var/services/tmp/${modelname}_model.dtb ]]; then
-                        blob="/var/services/tmp/${modelname}_model.dtb"
-                    else
-                        echo -e "${Error}ERROR${Off} Failed to download ${modelname}_model.dtb!" >&2
-                    fi
-                fi
-                if [[ -f $blob ]]; then
-                    # Backup model.dtb
-                    if ! backupdb "/etc.defaults/model.dtb"; then
-                        echo -e "${Error}ERROR${Off} Failed to backup /etc.defaults/model.dtb!" >&2
-                    else                
-                        # Move and rename downloaded model.dtb
-                        if mv "$blob" "/etc.defaults/model.dtb"; then
-                            echo -e "Enabled ${Yellow}$1${Off} in ${Cyan}model.dtb${Off}" >&2
-                        else
-                            echo -e "${Error}ERROR${Off} Failed to add support for ${1}" >&2
-                        fi
+# Remove last }; so we can append to dts file
+sed -i '/^};/d' "$2"
 
-                        # Fix permissions if needed
-                        octal=$(stat -c "%a %n" "/etc.defaults/model.dtb" | cut -d" " -f1)
-                        if [[ ! $octal -eq 644 ]]; then
-                            chmod 644 "/etc.defaults/model.dtb"
-                        fi
-                    fi
-                else
-                    #echo -e "${Error}ERROR${Off} Missing file ${modelname}_model.dtb" >&2
-                    echo -e "${Error}ERROR${Off} Missing file $blob" >&2
-                fi
-            else
-                echo -e "\n${Cyan}Contact 007revad to get an edited model.dtb file for your model.${Off}" >&2
+# Append PCIe M.2 card node to dts file
+if [[ $1 == E10M20-T1 ]] || [[ $1 == M2D20 ]]; then
+    cat >> "$2" <<EOM2D
+
+	$1 {
+		compatible = "Synology";
+		model = "synology_${1,,}";
+		power_limit = "14.85,14.85";
+
+		m2_card@1 {
+
+			nvme {
+				pcie_postfix = "00.0,08.0,00.0";
+				port_type = "ssdcache";
+			};
+		};
+
+		m2_card@2 {
+
+			nvme {
+				pcie_postfix = "00.0,04.0,00.0";
+				port_type = "ssdcache";
+			};
+		};
+	};
+};
+EOM2D
+
+elif [[ $1 == M2D18 ]]; then
+    cat >> "$2" <<EOM2D18
+
+	M2D18 {
+		compatible = "Synology";
+		model = "synology_m2d18";
+		power_limit = "9.9,9.9";
+
+		m2_card@1 {
+
+			ahci {
+				pcie_postfix = "00.0,03.0,00.0";
+				ata_port = <0x00>;
+			};
+
+			nvme {
+				pcie_postfix = "00.0,04.0,00.0";
+				port_type = "ssdcache";
+			};
+		};
+
+		m2_card@2 {
+
+			ahci {
+				pcie_postfix = "00.0,03.0,00.0";
+				ata_port = <0x01>;
+			};
+
+			nvme {
+				pcie_postfix = "00.0,05.0,00.0";
+				port_type = "ssdcache";
+			};
+		};
+	};
+};
+EOM2D18
+
+elif [[ $1 == M2D17 ]]; then
+    cat >> "$2" <<EOM2D17
+
+	M2D17 {
+		compatible = "Synology";
+		model = "synology_m2d17";
+		power_limit = "9.9,9.9";
+
+		m2_card@1 {
+
+			ahci {
+				pcie_postfix = "00.0,03.0,00.0";
+				ata_port = <0x00>;
+			};
+		};
+
+		m2_card@2 {
+
+			ahci {
+				pcie_postfix = "00.0,03.0,00.0";
+				ata_port = <0x01>;
+			};
+		};
+	};
+};
+EOM2D17
+
+fi
+}
+
+install_binfile(){ 
+    # install_binfile <file> <file-url> <destination> <chmod> <bundled-path> <hash>
+    # example:
+    #  file_url="https://raw.githubusercontent.com/${repo}/main/bin/dtc"
+    #  install_binfile dtc "$file_url" /usr/bin/dtc a+x bin/dtc
+
+    if [[ -f "${scriptpath}/$5" ]]; then
+        binfile="${scriptpath}/$5"
+        echo -e "\nInstalling ${1}"
+    elif [[ -f "${scriptpath}/$(basename -- "$5")" ]]; then
+        binfile="${scriptpath}/$(basename -- "$5")"
+        echo -e "\nInstalling ${1}"
+    else
+        # Download binfile
+        if [[ $autoupdate == "yes" ]]; then
+            reply=y
+        else
+            echo -e "\nNeed to download ${1}"
+            echo -e "${Cyan}Do you want to download ${1}?${Off} [y/n]"
+            read -r -t 30 reply
+        fi
+        if [[ ${reply,,} == "y" ]]; then
+            echo -e "\nDownloading ${1}"
+            if ! curl -kL -m 30 --connect-timeout 5 "$2" -o "/tmp/$1"; then
+                echo -e "${Error}ERROR${Off} Failed to download ${1}!"
+                return
+            fi
+            binfile="/tmp/${1}"
+
+            printf "Downloaded md5: "
+            md5sum -b "$binfile" | awk '{print $1}'
+
+            md5=$(md5sum -b "$binfile" | awk '{print $1}')
+            if [[ $md5 != "$6" ]]; then
+                echo "Expected md5:   $6"
+                echo -e "${Error}ERROR${Off} Downloaded $1 md5 hash does not match!"
+                exit 1
             fi
         else
-            echo -e "${Yellow}$1${Off} already enabled in ${Cyan}model.dtb${Off}" >&2
+            echo -e "${Error}ERROR${Off} Cannot add M2 PCIe card without ${1}!"
+            exit 1
+        fi
+    fi
+
+    # Set binfile executable
+    chmod "$4" "$binfile"
+
+    # Copy binfile to destination
+    cp -p "$binfile" "$3"
+}
+
+edit_modeldtb(){ 
+    # $1 is E10M20-T1 or M2D20 or M2D18 or M2D17
+    if [[ -f /etc.defaults/model.dtb ]]; then  # Is device tree model
+        # Check if dtc exists and is executable
+        if [[ ! -x $(which dtc) ]]; then
+            md5hash="01381dabbe86e13a2f4a8017b5552918"
+            branch="main"
+            file_url="https://raw.githubusercontent.com/${repo}/${branch}/bin/dtc"
+            # install_binfile <file> <file-url> <destination> <chmod> <bundled-path> <hash>
+            install_binfile dtc "$file_url" /usr/sbin/dtc "a+x" bin/dtc "$md5hash"
+        fi
+
+        # Check again if dtc exists and is executable
+        if [[ -x /usr/sbin/dtc ]]; then
+
+            # Backup model.dtb
+            backupdb "$dtb_file" long
+
+            # Output model.dtb to model.dts
+            dtc -q -I dtb -O dts -o "$dts_file" "$dtb_file"  # -q Suppress warnings
+            chmod 644 "$dts_file"
+
+            # Edit model.dts
+            for c in "${cards[@]}"; do
+                # Edit model.dts if needed
+                if ! grep "$c" "$dtb_file" >/dev/null; then
+                    dts_m2_card "$c" "$dts_file"
+                    echo -e "Added ${Yellow}$c${Off} to ${Cyan}model${hwrev}.dtb${Off}" >&2
+                else
+                    echo -e "${Yellow}$c${Off} already exists in ${Cyan}model${hwrev}.dtb${Off}" >&2
+                fi
+            done
+
+            # Compile model.dts to model.dtb
+            dtc -q -I dts -O dtb -o "$dtb_file" "$dts_file"  # -q Suppress warnings
+
+            # Set owner and permissions for model.dtb
+            chmod a+r "$dtb_file"
+            chown root:root "$dtb_file"
+            cp -pu "$dtb_file" "$dtb2_file"  # Copy dtb file to /etc
+            rebootmsg=yes
+        else
+            echo -e "${Error}ERROR${Off} Missing /usr/sbin/dtc or not executable!" >&2
         fi
     fi
 }
 
 
 for c in "${m2cards[@]}"; do
-    #echo ""
-    m2cardconf="/usr/syno/etc.defaults/adapter_cards.conf"
     case "$c" in
         E10M20-T1)
-            backupdb "$m2cardconf"
             echo ""
-            enable_card "$m2cardconf" E10M20-T1_sup_nic "E10M20-T1 NIC"
-            enable_card "$m2cardconf" E10M20-T1_sup_nvme "E10M20-T1 NVMe"
-            enable_card "$m2cardconf" E10M20-T1_sup_sata "E10M20-T1 SATA"
-            check_modeldtb "$c"
+            enable_card "$adapter_cards" E10M20-T1_sup_nic "E10M20-T1 NIC"
+            enable_card "$adapter_cards" E10M20-T1_sup_nvme "E10M20-T1 NVMe"
+            #enable_card "$adapter_cards" E10M20-T1_sup_sata "E10M20-T1 SATA"
+            cards=(E10M20-T1) && edit_modeldtb
         ;;
         M2D20)
-            backupdb "$m2cardconf"
             echo ""
-            enable_card "$m2cardconf" M2D20_sup_nvme "M2D20 NVMe"
-            check_modeldtb "$c"
+            enable_card "$adapter_cards" M2D20_sup_nvme "M2D20 NVMe"
+            cards=(M2D20) && edit_modeldtb
         ;;
         M2D18)
-            backupdb "$m2cardconf"
             echo ""
-            enable_card "$m2cardconf" M2D18_sup_nvme "M2D18 NVMe"
-            enable_card "$m2cardconf" M2D18_sup_sata "M2D18 SATA"
-            check_modeldtb "$c"
+            enable_card "$adapter_cards" M2D18_sup_nvme "M2D18 NVMe"
+            enable_card "$adapter_cards" M2D18_sup_sata "M2D18 SATA"
+            cards=(M2D18) && edit_modeldtb
         ;;
         M2D17)
-            backupdb "$m2cardconf"
             echo ""
-            enable_card "$m2cardconf" M2D17_sup_sata "M2D17 SATA"
+            enable_card "$adapter_cards" M2D17_sup_sata "M2D17 SATA"
+            cards=(M2D17) && edit_modeldtb
         ;;
         *)
             echo "Unknown M2 card type: $c"
@@ -1429,7 +1586,7 @@ if [[ ${model:0:3} != "dva" ]]; then
     fi
 fi
 
-# Optionally disable SynoMemCheck.service for DVA models
+# Disable SynoMemCheck.service for DVA models
 if [[ ${model:0:3} == "dva" ]]; then
     memcheck="/usr/lib/systemd/system/SynoMemCheck.service"
     if [[ $(synogetkeyvalue "$memcheck" ExecStart) == "/usr/syno/bin/syno_mem_check" ]]; then
@@ -1476,7 +1633,7 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
                 if [[ $ramtotal == "$setting" ]]; then
                     #echo -e "\nSet max memory to $ramtotal MB."
                     ramgb=$((ramtotal / 1024))
-                    echo -e "\nSet max memory to $ramtotal GB."
+                    echo -e "\nSet max memory to $ramgb GB."
                 else
                     echo -e "\n${Error}ERROR${Off} Failed to change max memory!"
                 fi
@@ -1490,7 +1647,7 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
                 if [[ $settingbak == "$setting" ]]; then
                     #echo -e "\nSet max memory to $ramtotal MB."
                     ramgb=$((ramtotal / 1024))
-                    echo -e "\nRestored max memory to $ramtotal GB."
+                    echo -e "\nRestored max memory to $ramgb GB."
                 else
                     echo -e "\n${Error}ERROR${Off} Failed to restore max memory!"
                 fi
@@ -1511,33 +1668,66 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
 fi
 
 
-# Enable m2 volume support
-if [[ $m2 != "no" ]]; then
-    if [[ $m2exists == "yes" ]]; then
-        # Check if m2 volume support is enabled
-        smp=support_m2_pool
-        setting="$(get_key_value $synoinfo ${smp})"
+# Enable nvme support
+if ls /dev | grep nvme >/dev/null ; then
+    if [[ $m2 != "no" ]]; then
+        # Check if nvme support is enabled
+        setting="$(get_key_value $synoinfo supportnvme)"
         enabled=""
         if [[ ! $setting ]]; then
-            # Add support_m2_pool="yes"
-            #echo 'support_m2_pool="yes"' >> "$synoinfo"
-            synosetkeyvalue "$synoinfo" "$smp" "yes"
+            # Add supportnvme="yes"
+            synosetkeyvalue "$synoinfo" supportnvme "yes"
             enabled="yes"
         elif [[ $setting == "no" ]]; then
-            # Change support_m2_pool="no" to "yes"
-            synosetkeyvalue "$synoinfo" "$smp" "yes"
+            # Change supportnvme="no" to "yes"
+            synosetkeyvalue "$synoinfo" supportnvme "yes"
             enabled="yes"
         elif [[ $setting == "yes" ]]; then
-            echo -e "\nM.2 volume support already enabled."
+            echo -e "\nNVMe support already enabled."
         fi
 
-        # Check if we enabled m2 volume support
-        setting="$(get_key_value $synoinfo ${smp})"
+        # Check if we enabled nvme support
+        setting="$(get_key_value $synoinfo supportnvme)"
         if [[ $enabled == "yes" ]]; then
             if [[ $setting == "yes" ]]; then
-                echo -e "\nEnabled M.2 volume support."
+                echo -e "\nEnabled NVMe support."
             else
-                echo -e "\n${Error}ERROR${Off} Failed to enable m2 volume support!"
+                echo -e "\n${Error}ERROR${Off} Failed to enable NVMe support!"
+            fi
+        fi
+    fi
+fi
+
+
+# Enable m2 volume support
+if ls /dev | grep nv[em] >/dev/null ; then
+    if [[ $m2 != "no" ]]; then
+        if [[ $m2exists == "yes" ]]; then
+            # Check if m2 volume support is enabled
+            smp=support_m2_pool
+            setting="$(get_key_value $synoinfo ${smp})"
+            enabled=""
+            if [[ ! $setting ]]; then
+                # Add support_m2_pool="yes"
+                #echo 'support_m2_pool="yes"' >> "$synoinfo"
+                synosetkeyvalue "$synoinfo" "$smp" "yes"
+                enabled="yes"
+            elif [[ $setting == "no" ]]; then
+                # Change support_m2_pool="no" to "yes"
+                synosetkeyvalue "$synoinfo" "$smp" "yes"
+                enabled="yes"
+            elif [[ $setting == "yes" ]]; then
+                echo -e "\nM.2 volume support already enabled."
+            fi
+
+            # Check if we enabled m2 volume support
+            setting="$(get_key_value $synoinfo ${smp})"
+            if [[ $enabled == "yes" ]]; then
+                if [[ $setting == "yes" ]]; then
+                    echo -e "\nEnabled M.2 volume support."
+                else
+                    echo -e "\n${Error}ERROR${Off} Failed to enable m2 volume support!"
+                fi
             fi
         fi
     fi
@@ -1608,18 +1798,34 @@ if [[ $wdda == "no" ]]; then
 fi
 
 
-# Optionally enable "support_worm" (immutable snapshots)
-setting="$(get_key_value $synoinfo support_worm)"
-if [[ $immutable == "yes" ]]; then
-    if [[ $setting != "yes" ]]; then
-        # Disable support_memory_compatibility
-        synosetkeyvalue "$synoinfo" support_worm "yes"
-        setting="$(get_key_value "$synoinfo" support_worm)"
-        if [[ $setting == "yes" ]]; then
-            echo -e "\nEnabled Immutable Snapshots."
+# Enable creating pool on drives in M.2 adaptor card
+if [[ -f "$strgmgr" ]]; then
+    # StorageManager package is installed
+    if [[ ${#m2cards[@]} -gt "0" ]]; then
+
+        if grep 'notSupportM2Pool_addOnCard' "$strgmgr" >/dev/null; then
+            # Backup storage_panel.js"
+            strgmgrver="$(synopkg version StorageManager)"
+            echo ""
+            if [[ ! -f "${strgmgr}.$strgmgrver" ]]; then
+                if cp -p "$strgmgr" "${strgmgr}.$strgmgrver"; then
+                    echo -e "Backed up $(basename -- "$strgmgr")"
+                else
+                    echo -e "${Error}ERROR${Off} Failed to backup $(basename -- "$strgmgr")!"
+                fi
+            fi
+
+            sed -i 's/notSupportM2Pool_addOnCard:this.T("disk_info","disk_reason_m2_add_on_card"),//g' "$strgmgr"
+            sed -i 's/},{isConditionInvalid:0<this.pciSlot,invalidReason:"notSupportM2Pool_addOnCard"//g' "$strgmgr"
+            # Check if we edited file
+            if ! grep 'notSupportM2Pool_addOnCard' "$strgmgr" >/dev/null; then
+                echo -e "Enabled creating pool on drives in M.2 adaptor card."
+            else
+                echo -e "${Error}ERROR${Off} Failed to enable creating pool on drives in M.2 adaptor card!"
+            fi
+        else
+            echo -e "\nCreating pool in UI on drives in M.2 adaptor card already enabled."
         fi
-    elif [[ $setting == "no" ]]; then
-        echo -e "\nImmutable Snapshots already enabled."
     fi
 fi
 
@@ -1678,6 +1884,4 @@ if [[ $dsm -eq "6" ]] || [[ $rebootmsg == "yes" ]]; then
     echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
 fi
 
-
 exit
-

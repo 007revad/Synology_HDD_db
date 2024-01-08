@@ -31,6 +31,7 @@ It also has a restore option to undo all the changes made by the script.
 * Enables M2D20, M2D18, M2D17 and E10M20-T1 if present on Synology NAS that don't officially support them.
 * Checks that M.2 volume support is enabled (on models that have M.2 slots or PCIe slots).
 * Enables creating M.2 storage pools and volumes from within Storage Manager **(newer models only?)**.
+    * Including M.2 drives in PCIe adaptor cards like M2D20, M2D18, M2D17 and E10M20-T1 for DSM 7.2.1 and above **(need to run script after each boot)**.
 * Makes DSM recheck disk compatibility so rebooting is not needed if you don't have M.2 drives (DSM 7 only).
     * **If you have M.2 drives you may need to reboot.**
     * Reminds you that you may need to reboot the Synology after running the script.
@@ -40,6 +41,8 @@ It also has a restore option to undo all the changes made by the script.
 ### Download the script
 
 See <a href=images/how_to_download.png/>How to download the script</a> for the easiest way to download the script.
+
+Do ***NOT*** save the script to a M.2 volume. The M.2 volume won't be available until after the script has run.
 
 ### When to run the script
 
@@ -75,6 +78,8 @@ See <a href=how_to_schedule.md/>How to schedule a script in Synology Task Schedu
 
 ### Running the script via SSH
 
+[How to enable SSH and login to DSM via SSH](https://kb.synology.com/en-global/DSM/tutorial/How_to_login_to_DSM_with_root_permission_via_SSH_Telnet)
+
 You run the script in a shell with sudo -i or as root.
 
 ```YAML
@@ -95,6 +100,20 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr --showedits
 
 <p align="leftr"><img src="images/syno_hdd_db.png"></p>
 
+### vendor_ids.txt
+
+You only need to edit syno_hdd_vendor_ids.txt if the script warns you about a missing vendor id.
+
+If DSM doesn't know the brand of your NVMe drives they will show up in Storage Manager as Unknown brand, and Unrecognised firmware version.
+
+<p align="leftr"><img src="images/unknown.png"></p>
+
+In this case the script will show you the vendor ID and advise you to add it to the syno_hdd_vendor_ids.txt file.
+
+<p align="leftr"><img src="images/vendor_ids.png"></p>
+
+<br>
+
 **Credits**
 
 - The idea for this script came from a comment made by Empyrealist on the Synology subreddit.
@@ -105,30 +124,20 @@ sudo -i /path-to-script/syno_hdd_db.sh -nr --showedits
 
 **Donators**
 
-Thank you to the following paypal donators and GitHub sponsors
+Thank you to the following PayPal donators, GitHub sponsors and hardware donators
 
-- Harry Bos
-- Mark-Philipp Wolfger
-- Filip Kraus
-- John Pham
-- Alejandro Bribian Rix
-- Daniel Hofer
-- Bogdan-Stefan Rotariu
-- Kevin Boatswain
-- anschluss-org
-- Yemeth
-- Patrick Thomas
-- Manuel Marquez Corral
-- Evrard Franck
-- Chad Palmer
-- 侯​永政
-- CHEN​HAN-YING
-- Eric Wells
-- Massimiliano Pesce
-- JasonEMartin
-- Gerrit Klussmann
-- Alain Aube
-- Robert Kraut
-- Charles-Edouard Poisnel
-- Oliver Busch
-- And the anonymous donors and private sponsors
+|  |  |  |  | 
+|--------------------|--------------------|----------------------|----------------------|
+|  | Voluntary Commerce LLC | Ez Hosting | Alec Wilhere |
+| Reece Lyne | Enric Escudé Santana | Yunhao Zhang | Matthias Gerhardt |
+| Darryl Harper | Mikescher | Matthias Pfaff | cpharada |
+| Neil Tapp | zen1605 | Kleissner Investments | Angel Scandinavia |
+| bcollins | Peter jackson | Mir Hekmat | Andrew Tapp |
+| Peter Weißflog | Joseph Skup | Dirk Kurfuerst | Gareth Locke |
+| Rory de Ruijter | Nathan O'Farrell | Harry Bos | Mark-Philipp Wolfger |
+| Filip Kraus | John Pham | Alejandro Bribian Rix | Daniel Hofer |
+| Bogdan-Stefan Rotariu | Kevin Boatswain | anschluss-org | Yemeth |
+| Patrick Thomas | Manuel Marquez Corral | Evrard Franck | Chad Palmer |
+| 侯​永政 | CHEN​HAN-YING | Eric Wells | Massimiliano Pesce |
+| JasonEMartin | Gerrit Klussmann | Alain Aube | Robert Kraut |
+| Charles-Edouard Poisnel | Oliver Busch | anonymous donors | private sponsors |

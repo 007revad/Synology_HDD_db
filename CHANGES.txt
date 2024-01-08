@@ -1,3 +1,49 @@
+v3.4.78
+- Added check that script is running on Synology NAS.
+
+v3.4.77
+- Include smart_test_ignore and smart_attr_ignore in db files.
+- Now saves changes.txt as <script-filename>_changes.txt when updating the script.
+    - To not overwrite changes.txt if my other scripts are in the same folder.
+- Bug fix for detecting if script is located on M.2 drive.
+- Bug fix for error when -s or --showedits option was used. Issue #200
+- Minor bug fix.
+
+v3.3.73
+- Bug fix for vendor id.
+
+v3.3.72
+- Bug fix for enabling creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards. 
+- Bug fix for not copying syno_hdd_db_vendors.txt to script location when script updates itself.
+- Bug fix for checking if script located on NVMe drive.
+
+v3.3.70
+- Now enables creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards:
+  - E10M20-T1, M2D20, M2D18 and M2D17.
+  - DSM 7.2.1 and above only.
+  - Script needs to run after each boot.
+- Added new vendor ids for Apacer, aigo, Lexar and Transcend NVMe drives.
+- Now includes syno_hdd_vendor.txt so users can add their NVMe drive's vendor id.
+   - syno_hdd_vendor.txt needs to be in the same folder as syno_hdd_db.sh
+- Now warns if script is located on an M.2 volume.
+
+v3.2.69
+- Added KIOXIA vendor id.
+- Bug fix for wrong version number, which caused an update loop.
+
+v3.2.68
+- Updated so E10M20-T1, M2D20, M2D18 and M2D17 now work in models that use device tree and are using:
+    - DSM 7.2 Update 2 and 3, 7.2.1, 7.2.1 Update 1, 2 and 3. Issue #132, #148
+- Now edits model.dtb instead of downloading a pre-edited version.
+- Improvements to --restore option.
+- Fix for Unknown vendor causing "Unsupported firmware version" warning. Issue #161
+- Now supports NVMe drives that show as Unknown brand in storage manager: Issue #161
+    - ADATA, Corsair, Gigabyte, HS/MAXIO, MSI, Netac, Phison, PNY
+    - SK Hynix, Solidigm, SPCC/Lexar, TEAMGROUP, UMIS, ZHITAI
+- Fixed bug where memory was shown in MB but with GB unit.
+- Removed -i, --immutable option.
+- Minor bug fixes.
+
 v3.1.65
 - Bug fix for NVMe drives with / in the model name for non-device tree Synology models. Issue #154
 
