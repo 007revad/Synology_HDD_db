@@ -27,7 +27,7 @@
 # Now warns if script is located on an M.2 volume.
 
 
-scriptver="v3.4.78"
+scriptver="v3.4.79"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -160,7 +160,7 @@ fi
 
 
 if [[ $debug == "yes" ]]; then
-    # set -x
+    set -x
     export PS4='`[[ $? == 0 ]] || echo "\e[1;31;40m($?)\e[m\n "`:.$LINENO:'
 fi
 
@@ -341,13 +341,14 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
         sort --check=quiet --version-sort >/dev/null ; then
     echo -e "\n${Cyan}There is a newer version of this script available.${Off}"
     echo -e "Current version: ${scriptver}\nLatest version:  $tag"
-    if [[ -f $scriptpath/$script-$shorttag.tar.gz ]]; then
+    scriptdl="$scriptpath/$script-$shorttag"
+    if [[ -f ${scriptdl}.tar.gz ]] || [[ -f ${scriptdl}.zip ]]; then
         # They have the latest version tar.gz downloaded but are using older version
-        echo "https://github.com/$repo/releases/latest"
+        echo "You have the latest version downloaded but are using an older version"
         sleep 10
-    elif [[ -d $scriptpath/$script-$shorttag ]]; then
+    elif [[ -d $scriptdl ]]; then
         # They have the latest version extracted but are using older version
-        echo "https://github.com/$repo/releases/latest"
+        echo "You have the latest version extracted but are using an older version"
         sleep 10
     else
         if [[ $autoupdate == "yes" ]]; then
@@ -428,7 +429,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                         "$script-$shorttag/CHANGES.txt to:\n $scriptpath"
                                 else
                                     # Set permissions on CHANGES.txt
-                                    if ! chmod 664 "$scriptpath/CHANGES.txt"; then
+                                    if ! chmod 664 "$scriptpath/${scriptname}_CHANGES.txt"; then
                                         if [[ $autoupdate != "yes" ]]; then permerr=1; fi
                                         echo -e "${Error}ERROR${Off} Failed to set permissions on:"
                                         echo "$scriptpath/CHANGES.txt"
