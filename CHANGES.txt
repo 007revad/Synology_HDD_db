@@ -1,3 +1,6 @@
+v3.4.79
+- Bug fix for chmod failed on changes.txt
+
 v3.4.78
 - Added check that script is running on Synology NAS.
 
