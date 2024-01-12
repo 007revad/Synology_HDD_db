@@ -381,7 +381,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                 "extract $script-$shorttag.tar.gz!"
                             syslog_set warn "$script failed to extract $script-$shorttag.tar.gz!"
                         else
-                            # Set permissions on script sh files
+                            # Set script sh files as executable
                             if ! chmod a+x "/tmp/$script-$shorttag/"*.sh ; then
                                 permerr=1
                                 echo -e "${Error}ERROR${Off} Failed to set executable permissions"
@@ -393,7 +393,7 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                             then
                                 copyerr=1
                                 echo -e "${Error}ERROR${Off} Failed to copy"\
-                                    "$script-$shorttag .sh file(s) to:\n $scriptpath"
+                                    "$script-$shorttag sh file(s) to:\n $scriptpath/${scriptfile}"
                                 syslog_set warn "$script failed to copy $tag to script location"
                             fi
 
@@ -420,6 +420,13 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
 
                             # Copy new CHANGES.txt file to script location (if script on a volume)
                             if [[ $scriptpath =~ /volume* ]]; then
+                                # Set permissions on CHANGES.txt
+                                if ! chmod 664 "/tmp/$script-$shorttag/CHANGES.txt"; then
+                                    permerr=1
+                                    echo -e "${Error}ERROR${Off} Failed to set permissions on:"
+                                    echo "$scriptpath/CHANGES.txt"
+                                fi
+
                                 # Copy new CHANGES.txt file to script location
                                 if ! cp -p "/tmp/$script-$shorttag/CHANGES.txt"\
                                     "${scriptpath}/${scriptname}_CHANGES.txt";
@@ -428,17 +435,11 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                     echo -e "${Error}ERROR${Off} Failed to copy"\
                                         "$script-$shorttag/CHANGES.txt to:\n $scriptpath"
                                 else
-                                    # Set permissions on CHANGES.txt
-                                    if ! chmod 664 "$scriptpath/${scriptname}_CHANGES.txt"; then
-                                        if [[ $autoupdate != "yes" ]]; then permerr=1; fi
-                                        echo -e "${Error}ERROR${Off} Failed to set permissions on:"
-                                        echo "$scriptpath/CHANGES.txt"
-                                    fi
                                     changestxt=" and changes.txt"
                                 fi
                             fi
 
-                            # Delete downloaded .tar.gz file and extracted tmp files
+                            # Delete downloaded tmp files
                             cleanup_tmp
 
                             # Notify of success (if there were no errors)
