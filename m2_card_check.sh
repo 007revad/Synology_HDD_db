@@ -99,62 +99,6 @@ ls -l /etc/model.dtb
 ls -l /run/model.dtb
 
 
-echo -e '\n Checking if default power_limit="14.85,9.075" is in model.dtb files'
-files=( "/etc.defaults/model.dtb" "/etc/model.dtb" "/run/model.dtb" )
-for i in "${!files[@]}"; do
-    if ! grep "14.85,9.075" "${files[i]}" >/dev/null; then
-        echo "Missing in ${files[i]}"
-        error=$((error +1))
-    fi
-done
-[[ $error -lt "1" ]] && echo "All OK"
-error=""
-
-echo -e '\n Checking power_limit="14.85,14.85,14.85" is in model.dtb files'
-files=( "/etc.defaults/model.dtb" "/etc/model.dtb" "/run/model.dtb" )
-for i in "${!files[@]}"; do
-    if ! grep "14.85,14.85,14.85" "${files[i]}" >/dev/null; then
-        echo "Missing in ${files[i]}"
-        error=$((error +1))
-    fi
-done
-[[ $error -lt "1" ]] && echo "All OK"
-error=""
-
-echo -e '\n Checking power_limit="14.85,14.85,14.85,14.85" is in model.dtb files'
-files=( "/etc.defaults/model.dtb" "/etc/model.dtb" "/run/model.dtb" )
-for i in "${!files[@]}"; do
-    if ! grep "14.85,14.85,14.85,14.85" "${files[i]}" >/dev/null; then
-        echo "Missing in ${files[i]}"
-        error=$((error +1))
-    fi
-done
-[[ $error -lt "1" ]] && echo "All OK"
-error=""
-
-echo -e '\n Checking power_limit="100,100,100" is in model.dtb files'
-files=( "/etc.defaults/model.dtb" "/etc/model.dtb" "/run/model.dtb" )
-for i in "${!files[@]}"; do
-    if ! grep "100,100,100" "${files[i]}" >/dev/null; then
-        echo "Missing in ${files[i]}"
-        error=$((error +1))
-    fi
-done
-[[ $error -lt "1" ]] && echo "All OK"
-error=""
-
-echo -e '\n Checking power_limit="100,100,100,100" is in model.dtb files'
-files=( "/etc.defaults/model.dtb" "/etc/model.dtb" "/run/model.dtb" )
-for i in "${!files[@]}"; do
-    if ! grep "100,100,100,100" "${files[i]}" >/dev/null; then
-        echo "Missing in ${files[i]}"
-        error=$((error +1))
-    fi
-done
-[[ $error -lt "1" ]] && echo "All OK"
-error=""
-
-
 echo -e '\n Checking E10M20-T1 is in model.dtb files'
 files=( "/etc.defaults/model.dtb" "/etc/model.dtb" "/run/model.dtb" )
 for i in "${!files[@]}"; do
