@@ -29,6 +29,8 @@ It also has a restore option to undo all the changes made by the script.
 * Optionally disable DSM's "support_memory_compatibility" to prevent <a href=images/ram_warning.png/>non-Synology memory notifications</a>.
 * Optionally edits max supported memory to match the amount of memory installed, if installed memory is greater than the current max memory setting.
     * DSM only uses the max memory setting when calculating the reserved RAM area size for SSD caches.
+* Optionally disables Western Digital Device Analytics (aka WDDA) to prevent DSM showing a [warning for WD drives that are 3 years old](https://arstechnica.com/gadgets/2023/06/clearly-predatory-western-digital-sparks-panic-anger-for-age-shaming-hdds).
+    * DSM 7.2.1 already has WDDA disabled.
 * Enables M2D20, M2D18, M2D17 and E10M20-T1 if present on Synology NAS that don't officially support them.
 * Checks that M.2 volume support is enabled (on models that have M.2 slots or PCIe slots).
 * Enables creating M.2 storage pools and volumes from within Storage Manager **(newer models only?)**.
@@ -41,9 +43,11 @@ It also has a restore option to undo all the changes made by the script.
 
 ### Download the script
 
-See <a href=images/how_to_download.png/>How to download the script</a> for the easiest way to download the script.
-
-Do ***NOT*** save the script to a M.2 volume. The M.2 volume won't be available until after the script has run.
+1. Download the latest version _Source code (zip)_ from https://github.com/007revad/Synology_HDD_db/releases
+    - See <a href=images/how_to_download.png/>How to download the script</a> for the easiest way to download the script.
+2. Save the download zip file to a folder on the Synology.
+    - Do ***NOT*** save the script to a M.2 volume. The M.2 volume may not be available until after the script has run.
+3. Unzip the zip file.
 
 ### When to run the script
 
@@ -57,12 +61,14 @@ There are optional flags you can use when running the script:
 ```YAML
   -s, --showedits       Show edits made to <model>_host db and db.new file(s)
   -n, --noupdate        Prevent DSM updating the compatible drive databases
-  -m, --m2              Don't process M.2 drives
-  -f, --force           Force DSM to not check drive compatibility
-  -r, --ram             Disable memory compatibility checking (DSM 7.x only),
+  -r, --ram             Disable memory compatibility checking (DSM 7.x only)
                         and sets max memory to the amount of installed memory
-  -w, --wdda            Disable WD WDDA
-  -e, --email           Disable colored text in output scheduler emails.
+  -w, --wdda            Disable WD Device Analytics to prevent DSM showing
+                        a false warning for WD drives that are 3 years old
+                          DSM 7.2.1 already has WDDA disabled
+  -f, --force           Force DSM to not check drive compatibility
+                        Do not use this option unless absolutely needed.
+  -e, --email           Disable colored text in output scheduler emails
       --restore         Undo all changes made by the script
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
                           AGE is how many days old a release must be before
@@ -71,7 +77,11 @@ There are optional flags you can use when running the script:
   -v, --version         Show the script version
 ```
 
-**Note:** If you have some Synology drives and want to update their firmware run the script **without** --noupdate or -n then do the drive database update from Storage Manager and finally run the script again with your preferred options.
+**Notes:** 
+- The -f or --force option is only needed if for some reason your drives still show as unsupported in storage manager.
+    - Only use this option as last resort.
+    - Using this option will prevent data deduplication from being available, and prevent firmware updates on Synology brand drives.
+- If you have some Synology drives and want to update their firmware run the script **without** --noupdate or -n then do the drive database update from Storage Manager and finally run the script again with your preferred options.
 
 ### Scheduling the script in Synology's Task Scheduler
 
@@ -129,6 +139,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
+|  |  |  | Jordan Crawford |
 | Tyler Teal | Voluntary Commerce LLC | Ez Hosting | Alec Wilhere |
 | Reece Lyne | Enric Escudé Santana | Yunhao Zhang | Matthias Gerhardt |
 | Darryl Harper | Mikescher | Matthias Pfaff | cpharada |
