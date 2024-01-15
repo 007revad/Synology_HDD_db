@@ -44,7 +44,6 @@ It also has a restore option to undo all the changes made by the script.
 ### Download the script
 
 1. Download the latest version _Source code (zip)_ from https://github.com/007revad/Synology_HDD_db/releases
-    - See <a href=images/how_to_download.png/>How to download the script</a> for the easiest way to download the script.
 2. Save the download zip file to a folder on the Synology.
     - Do ***NOT*** save the script to a M.2 volume. The M.2 volume may not be available until after the script has run.
 3. Unzip the zip file.
