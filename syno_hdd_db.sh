@@ -40,7 +40,7 @@ if [ ! "$(basename "$BASH")" = bash ]; then
 fi
 
 # Check script is running on a Synology NAS
-if ! uname -a | grep -i synology >/dev/null; then
+if ! /usr/bin/uname -a | grep -i synology >/dev/null; then
     echo "This script is NOT running on a Synology NAS!"
     echo "Copy the script to a folder on the Synology"
     echo "and run it from there."
