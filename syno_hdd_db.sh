@@ -120,7 +120,7 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
             -r|--ram)           # Disable "support_memory_compatibility"
                 ram=yes
                 ;;
-            -w|--wdda)          # Disable "support_memory_compatibility"
+            -w|--wdda)          # Disable "support_wdda"
                 wdda=no
                 ;;
             -e|--email)         # Disable colour text in task scheduler emails
