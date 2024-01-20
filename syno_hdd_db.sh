@@ -40,7 +40,7 @@ if [ ! "$(basename "$BASH")" = bash ]; then
 fi
 
 # Check script is running on a Synology NAS
-if ! uname -a | grep -i synology >/dev/null; then
+if ! /usr/bin/uname -a | grep -i synology >/dev/null; then
     echo "This script is NOT running on a Synology NAS!"
     echo "Copy the script to a folder on the Synology"
     echo "and run it from there."
@@ -60,12 +60,14 @@ Usage: $(basename "$0") [options]
 Options:
   -s, --showedits       Show edits made to <model>_host db and db.new file(s)
   -n, --noupdate        Prevent DSM updating the compatible drive databases
-  -m, --m2              Don't process M.2 drives
-  -f, --force           Force DSM to not check drive compatibility
-  -r, --ram             Disable memory compatibility checking (DSM 7.x only),
+  -r, --ram             Disable memory compatibility checking (DSM 7.x only)
                         and sets max memory to the amount of installed memory
-  -w, --wdda            Disable WD WDDA
-  -e, --email           Disable colored text in output scheduler emails.
+  -w, --wdda            Disable WD Device Analytics to prevent DSM showing
+                        a false warning for WD drives that are 3 years old
+                          DSM 7.2.1 already has WDDA disabled
+  -f, --force           Force DSM to not check drive compatibility
+                        Do not use this option unless absolutely needed
+  -e, --email           Disable colored text in output scheduler emails
       --restore         Undo all changes made by the script
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
                           AGE is how many days old a release must be before
