@@ -27,7 +27,7 @@
 # Now warns if script is located on an M.2 volume.
 
 
-scriptver="v3.4.80"
+scriptver="v3.4.81"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db

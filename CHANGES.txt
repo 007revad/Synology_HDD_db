@@ -1,4 +1,4 @@
-v3.5.81
+v3.4.81
 - Bug fix for false "This script is NOT running on a Synology NAS!" if uname is installed from Entware. Issue #218
 
 v3.4.80
