@@ -27,7 +27,7 @@
 # Now warns if script is located on an M.2 volume.
 
 
-scriptver="v3.4.81"
+scriptver="v3.4.82"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1114,6 +1114,9 @@ editdb7(){
             #exit 6
         fi
     fi
+
+    # Edit existing drives in db with compatibility:unverified  # Issue #224
+    sed -i 's/unverified/support/g' "$2"
 }
 
 
