@@ -1114,9 +1114,6 @@ editdb7(){
             #exit 6
         fi
     fi
-
-    # Edit existing drives in db with compatibility:unverified  # Issue #224
-    sed -i 's/unverified/support/g' "$2"
 }
 
 
@@ -1161,6 +1158,14 @@ updatedb(){
                 # Add "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}
                 #echo "Append drive and firmware:"  # debug
                 editdb7 "append" "$2"
+            fi
+        fi
+
+        # Edit existing drives in db with compatibility:unverified  # Issue #224
+        if grep 'unverified' "$2" >/dev/null; then
+            sed -i 's/unverified/support/g' "$2"
+            if ! grep 'unverified' "$2" >/dev/null; then
+                echo -e "Edited unverified drives in ${Cyan}$(basename -- "$2")${Off}" >&2
             fi
         fi
     elif [[ $dbtype -eq "6" ]]; then
