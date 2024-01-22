@@ -27,7 +27,7 @@
 # Now warns if script is located on an M.2 volume.
 
 
-scriptver="v3.4.81"
+scriptver="v3.4.82"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1160,6 +1160,14 @@ updatedb(){
                 editdb7 "append" "$2"
             fi
         fi
+
+        # Edit existing drives in db with compatibility:unverified  # Issue #224
+        if grep 'unverified' "$2" >/dev/null; then
+            sed -i 's/unverified/support/g' "$2"
+            if ! grep 'unverified' "$2" >/dev/null; then
+                echo -e "Edited unverified drives in ${Cyan}$(basename -- "$2")${Off}" >&2
+            fi
+        fi
     elif [[ $dbtype -eq "6" ]]; then
         if grep "$hdmodel" "$2" >/dev/null; then
             echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
@@ -1790,7 +1798,7 @@ fi
 setting="$(get_key_value $synoinfo support_wdda)"
 if [[ $wdda == "no" ]]; then
     if [[ $setting == "yes" ]]; then
-        # Disable support_memory_compatibility
+        # Disable support_wdda
         synosetkeyvalue "$synoinfo" support_wdda "no"
         setting="$(get_key_value "$synoinfo" support_wdda)"
         if [[ $setting == "no" ]]; then
