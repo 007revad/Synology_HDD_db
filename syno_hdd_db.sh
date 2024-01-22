@@ -1798,7 +1798,7 @@ fi
 setting="$(get_key_value $synoinfo support_wdda)"
 if [[ $wdda == "no" ]]; then
     if [[ $setting == "yes" ]]; then
-        # Disable support_memory_compatibility
+        # Disable support_wdda
         synosetkeyvalue "$synoinfo" support_wdda "no"
         setting="$(get_key_value "$synoinfo" support_wdda)"
         if [[ $setting == "no" ]]; then
