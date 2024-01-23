@@ -58,22 +58,22 @@ You would need to re-run the script after a DSM update. If you have DSM set to a
 
 There are optional flags you can use when running the script:
 ```YAML
-  -s, --showedits       Show edits made to <model>_host db and db.new file(s)
-  -n, --noupdate        Prevent DSM updating the compatible drive databases
+  -s, --showedits       Show edits made to <model>_host db and db.new file(s).
+  -n, --noupdate        Prevent DSM updating the compatible drive databases.
   -r, --ram             Disable memory compatibility checking (DSM 7.x only)
-                        and sets max memory to the amount of installed memory
+                        and sets max memory to the amount of installed memory.
   -w, --wdda            Disable WD Device Analytics to prevent DSM showing
-                        a false warning for WD drives that are 3 years old
-                          DSM 7.2.1 already has WDDA disabled
-  -f, --force           Force DSM to not check drive compatibility
+                        a false warning for WD drives that are 3 years old.
+                          DSM 7.2.1 already has WDDA disabled.
+  -f, --force           Force DSM to not check drive compatibility.
                         Do not use this option unless absolutely needed.
-  -e, --email           Disable colored text in output scheduler emails
-      --restore         Undo all changes made by the script
-      --autoupdate=AGE  Auto update script (useful when script is scheduled)
+  -e, --email           Disable colored text in output scheduler emails.
+      --restore         Undo all changes made by the script.
+      --autoupdate=AGE  Auto update script (useful when script is scheduled).
                           AGE is how many days old a release must be before
-                          auto-updating. AGE must be a number: 0 or greater
-  -h, --help            Show this help message
-  -v, --version         Show the script version
+                          auto-updating. AGE must be a number: 0 or greater.
+  -h, --help            Show this help message.
+  -v, --version         Show the script version.
 ```
 
 **Notes:** 
