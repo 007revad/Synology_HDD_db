@@ -1,5 +1,10 @@
+v3.4.83
+- Fix for drives that exist in the drive database already but have "compatibility not_support".
+  - Affected drives were showing as "Incompatible" in storage manager.
+
 v3.4.82
 - Fix for drives that exist in the drive database already but have "compatibility unverified". Issue #224
+  - Affected drives were showing as "Unverified" in storage manager.
 
 v3.4.81
 - Bug fix for false "This script is NOT running on a Synology NAS!" if uname is installed from Entware. Issue #218
