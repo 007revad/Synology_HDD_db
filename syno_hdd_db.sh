@@ -27,7 +27,7 @@
 # Now warns if script is located on an M.2 volume.
 
 
-scriptver="v3.4.82"
+scriptver="v3.4.83"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -62,11 +62,13 @@ Options:
   -n, --noupdate        Prevent DSM updating the compatible drive databases
   -r, --ram             Disable memory compatibility checking (DSM 7.x only)
                         and sets max memory to the amount of installed memory
+  -f, --force           Force DSM to not check drive compatibility
+                        Do not use this option unless absolutely needed
+  -i, --incompatible    Change incompatible drives to supported
+                        Do not use this option unless absolutely needed
   -w, --wdda            Disable WD Device Analytics to prevent DSM showing
                         a false warning for WD drives that are 3 years old
                           DSM 7.2.1 already has WDDA disabled
-  -f, --force           Force DSM to not check drive compatibility
-                        Do not use this option unless absolutely needed
   -e, --email           Disable colored text in output scheduler emails
       --restore         Undo all changes made by the script
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
@@ -96,7 +98,7 @@ args=("$@")
 
 # Check for flags with getopt
 if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
-    restore,showedits,noupdate,nodbupdate,m2,force,ram,wdda,immutable,email,autoupdate:,help,version,debug \
+    restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,wdda,email,autoupdate:,help,version,debug \
     -- "$@")"; then
     eval set -- "$options"
     while true; do
@@ -116,6 +118,9 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
                 ;;
             -f|--force)         # Disable "support_disk_compatibility"
                 force=yes
+                ;;
+            -i|--incompatible)  # Change incompatible drives to supported
+                incompatible=yes
                 ;;
             -r|--ram)           # Disable "support_memory_compatibility"
                 ram=yes
@@ -1166,6 +1171,16 @@ updatedb(){
             sed -i 's/unverified/support/g' "$2"
             if ! grep 'unverified' "$2" >/dev/null; then
                 echo -e "Edited unverified drives in ${Cyan}$(basename -- "$2")${Off}" >&2
+            fi
+        fi
+
+        # Edit existing drives in db with compatibility:not_support
+        if [[ $incompatible == "yes" ]]; then
+            if grep 'not_support' "$2" >/dev/null; then
+                sed -i 's/not_support/support/g' "$2"
+                if ! grep 'not_support' "$2" >/dev/null; then
+                    echo -e "Edited incompatible drives in ${Cyan}$(basename -- "$2")${Off}" >&2
+                fi
             fi
         fi
     elif [[ $dbtype -eq "6" ]]; then
