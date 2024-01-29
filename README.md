@@ -112,6 +112,14 @@ sudo -s /path-to-script/syno_hdd_db.sh -nr --showedits
 
 <p align="leftr"><img src="images/syno_hdd_db.png"></p>
 
+### Troubleshooting
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| /usr/bin/env: ‘bash\r’: No such file or directory | File has Mac line endings! | [Download latest zip file](https://github.com/007revad/Synology_HDD_db/releases) |
+| Cursor sits there doing nothing | File has Windows line endings! | [Download latest zip file](https://github.com/007revad/Synology_HDD_db/releases) |
+| command substitution: line 2: syntax error | You downloaded the webpage! | [Download latest zip file](https://github.com/007revad/Synology_HDD_db/releases) |
+
 ### vendor_ids.txt
 
 You only need to edit syno_hdd_vendor_ids.txt if the script warns you about a missing vendor id.
