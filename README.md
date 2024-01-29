@@ -140,7 +140,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  | Joshua Gillispie | bizIT Hirschberg | Jordan Crawford |
+| Jürg Baiker | Joshua Gillispie | bizIT Hirschberg | Jordan Crawford |
 | Tyler Teal | Voluntary Commerce LLC | Ez Hosting | Alec Wilhere |
 | Reece Lyne | Enric Escudé Santana | Yunhao Zhang | Matthias Gerhardt |
 | Darryl Harper | Mikescher | Matthias Pfaff | cpharada |
