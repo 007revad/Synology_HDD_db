@@ -1,3 +1,6 @@
+v3.4.84
+- Bug fix when script updates itself and user ran the script from ./scriptname.sh
+
 v3.4.83
 - Fix for drives that exist in the drive database already but have "compatibility not_support".
   - Affected drives were showing as "Incompatible" in storage manager.
