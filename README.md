@@ -118,7 +118,7 @@ sudo -s /path-to-script/syno_hdd_db.sh -nr --showedits
 |-------|-------|----------|
 | /usr/bin/env: ‘bash\r’: No such file or directory | File has Mac line endings! | [Download latest zip file](https://github.com/007revad/Synology_HDD_db/releases) |
 | Cursor sits there doing nothing | File has Windows line endings! | [Download latest zip file](https://github.com/007revad/Synology_HDD_db/releases) |
-| command substitution: line 2: syntax error | You downloaded the webpage! | [Download latest zip file](https://github.com/007revad/Synology_HDD_db/releases) |
+| syntax error near unexpected token | You downloaded the webpage! | [Download latest zip file](https://github.com/007revad/Synology_HDD_db/releases) |
 
 ### vendor_ids.txt
 
