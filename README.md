@@ -148,6 +148,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
+|  | Darren O Connor | Charles Young | J Davis | 
 | Jürg Baiker | Joshua Gillispie | bizIT Hirschberg | Jordan Crawford |
 | Tyler Teal | Voluntary Commerce LLC | Ez Hosting | Alec Wilhere |
 | Reece Lyne | Enric Escudé Santana | Yunhao Zhang | Matthias Gerhardt |
