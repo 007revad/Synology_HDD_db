@@ -139,7 +139,7 @@ In this case the script will show you the vendor ID and advise you to add it to 
 - The idea for this script came from a comment made by Empyrealist on the Synology subreddit.
 - Thanks for the assistance from Alex_of_Chaos on the Synology subreddit.
 - Thanks to dwabraxus and aferende for help detecting connected expansion units.
-- Thanks to bartoque on the Synology subreddit for the tip on making the script download the latest release from github.
+- Thanks to bartoque on the Synology subreddit for the tip on making the script download the latest release from GitHub.
 - Thanks to nicolerenee for pointing out the easiest way to enable creating M.2 storage pools and volumes in Storage Manager.
 
 ### Donators
