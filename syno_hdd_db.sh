@@ -16,6 +16,8 @@
 #--------------------------------------------------------------------------------------------------
 
 # CHANGES
+# Hard coded /usr/syno/bin/<command> for Synology commands (to prevent $PATH issues).
+#
 # Now enables creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards.
 #  - E10M20-T1, M2D20, M2D18 and M2D17
 #
@@ -26,8 +28,14 @@
 #
 # Now warns if script is located on an M.2 volume.
 
+# TODO
+# Enable SMART Attributes button on Storage Manager
+# disabled:e.healthInfoDisabled
+# enabled:e.healthInfoDisabled
+# /var/packages/StorageManager/target/ui/storage_panel.js
 
-scriptver="v3.4.84"
+
+scriptver="v3.4.85"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -197,7 +205,7 @@ if [[ $( whoami ) != "root" ]]; then
 fi
 
 # Get DSM major version
-dsm=$(get_key_value /etc.defaults/VERSION majorversion)
+dsm=$(/usr/syno/bin/get_key_value /etc.defaults/VERSION majorversion)
 if [[ $dsm -gt "6" ]]; then
     version="_v$dsm"
 fi
@@ -212,10 +220,10 @@ modelname="$model"
 echo "$script $scriptver"
 
 # Get DSM full version
-productversion=$(get_key_value /etc.defaults/VERSION productversion)
-buildphase=$(get_key_value /etc.defaults/VERSION buildphase)
-buildnumber=$(get_key_value /etc.defaults/VERSION buildnumber)
-smallfixnumber=$(get_key_value /etc.defaults/VERSION smallfixnumber)
+productversion=$(/usr/syno/bin/get_key_value /etc.defaults/VERSION productversion)
+buildphase=$(/usr/syno/bin/get_key_value /etc.defaults/VERSION buildphase)
+buildnumber=$(/usr/syno/bin/get_key_value /etc.defaults/VERSION buildnumber)
+smallfixnumber=$(/usr/syno/bin/get_key_value /etc.defaults/VERSION smallfixnumber)
 
 # Show DSM full version and model
 if [[ $buildphase == GM ]]; then buildphase=""; fi
@@ -237,11 +245,22 @@ elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
     echo -e "\nUsing model: $model"
 fi
 
-
 # Get StorageManager version
-storagemgrver=$(synopkg version StorageManager)
+storagemgrver=$(/usr/syno/bin/synopkg version StorageManager)
 # Show StorageManager version
 if [[ $storagemgrver ]]; then echo -e "StorageManager $storagemgrver\n"; fi
+
+# Show host drive db version
+if [[ -f "/var/lib/disk-compatibility/${model}_host_v7.version" ]]; then
+    echo -n "${model}_host_v7 version "
+    cat "/var/lib/disk-compatibility/${model}_host_v7.version"
+    echo -e "\n"
+fi
+if [[ -f "/var/lib/disk-compatibility/${model}_host.version" ]]; then
+    echo -n "${model}_host version "
+    cat "/var/lib/disk-compatibility/${model}_host.version"
+    echo -e "\n"
+fi
 
 
 # Show options used
@@ -257,7 +276,7 @@ syslog_set(){
     if [[ ${1,,} == "info" ]] || [[ ${1,,} == "warn" ]] || [[ ${1,,} == "err" ]]; then
         if [[ $autoupdate == "yes" ]]; then
             # Add entry to Synology system log
-            synologset1 sys "$1" 0x11100000 "$2"
+            /usr/syno/bin/synologset1 sys "$1" 0x11100000 "$2"
         fi
     fi
 }
@@ -526,10 +545,10 @@ if [[ $restore == "yes" ]]; then
             keyvalues=("support_disk_compatibility" "support_memory_compatibility")
             keyvalues+=("mem_max_mb" "supportnvme" "support_m2_pool" "support_wdda")
             for v in "${!keyvalues[@]}"; do
-                defaultval="$(get_key_value ${synoinfo}.bak "${keyvalues[v]}")"
-                currentval="$(get_key_value ${synoinfo} "${keyvalues[v]}")"
+                defaultval="$(/usr/syno/bin/get_key_value ${synoinfo}.bak "${keyvalues[v]}")"
+                currentval="$(/usr/syno/bin/get_key_value ${synoinfo} "${keyvalues[v]}")"
                 if [[ $currentval != "$defaultval" ]]; then
-                    if synosetkeyvalue "$synoinfo" "${keyvalues[v]}" "$defaultval";
+                    if /usr/syno/bin/synosetkeyvalue "$synoinfo" "${keyvalues[v]}" "$defaultval";
                     then
                         echo "Restored ${keyvalues[v]} = $defaultval"
                     fi
@@ -560,8 +579,8 @@ if [[ $restore == "yes" ]]; then
 
             # Make sure they don't lose E10M20-T1 network connection
             modelrplowercase=${modelname//RP/rp}
-            set_section_key_value ${adapter_cards} E10M20-T1_sup_nic "$modelrplowercase"
-            set_section_key_value ${adapter_cards2} E10M20-T1_sup_nic "$modelrplowercase"
+            /usr/syno/bin/set_section_key_value ${adapter_cards} E10M20-T1_sup_nic "$modelrplowercase"
+            /usr/syno/bin/set_section_key_value ${adapter_cards2} E10M20-T1_sup_nic "$modelrplowercase"
         fi
 
         # Restore model.dtb from backup
@@ -583,7 +602,7 @@ if [[ $restore == "yes" ]]; then
         fi
 
         # Restore storage_panel.js from backup
-        strgmgrver="$(synopkg version StorageManager)"
+        strgmgrver="$(/usr/syno/bin/synopkg version StorageManager)"
         if [[ -f "${strgmgr}.$strgmgrver" ]]; then
             if cp -p "${strgmgr}.$strgmgrver" "$strgmgr"; then
                 echo "Restored $(basename -- "$strgmgr")"
@@ -620,13 +639,13 @@ if [[ $restore == "yes" ]]; then
         done
 
         # Update .db files from Synology
-        syno_disk_db_update --update
+        /usr/syno/bin/syno_disk_db_update --update
 
         # Enable SynoMemCheck.service for DVA models
         if [[ ${model:0:3} == "dva" ]]; then
             memcheck="/usr/lib/systemd/system/SynoMemCheck.service"
-            if [[ $(synogetkeyvalue "$memcheck" ExecStart) == "/bin/true" ]]; then
-                synosetkeyvalue "$memcheck" ExecStart /usr/syno/bin/syno_mem_check
+            if [[ $(/usr/syno/bin/synogetkeyvalue "$memcheck" ExecStart) == "/bin/true" ]]; then
+                /usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart /usr/syno/bin/syno_mem_check
             fi
         fi
 
@@ -676,7 +695,7 @@ vendor_from_id(){
             # Get vendor from syno_hdd_vendor_ids.txt
             vidlist="$scriptpath/syno_hdd_vendor_ids.txt"
             if [[ -r "$vidlist" ]]; then
-                val=$(synogetkeyvalue "$vidlist" "$1")
+                val=$(/usr/syno/bin/synogetkeyvalue "$vidlist" "$1")
                 if [[ -n "$val" ]]; then
                     vendor="$val"
                 else
@@ -697,8 +716,8 @@ set_vendor(){
         # DS1817+, DS1517+, RS1219+, RS818+ don't have pci_vendor_ids.conf
         if [[ "$vidfile" ]]; then
             if ! grep "$vid" "$vidfile" >/dev/null; then
-                synosetkeyvalue "$vidfile" "${vid,,}" "$vendor"
-                val=$(synogetkeyvalue "$vidfile" "${vid,,}")
+                /usr/syno/bin/synosetkeyvalue "$vidfile" "${vid,,}" "$vendor"
+                val=$(/usr/syno/bin/synogetkeyvalue "$vidfile" "${vid,,}")
                 if [[ $val == "${vendor}" ]]; then
                     echo -e "\nAdded $vendor to pci_vendor_ids" >&2
                 else
@@ -706,7 +725,7 @@ set_vendor(){
                 fi
             fi
             if ! grep "$vid" "$vidfile2" >/dev/null; then
-                synosetkeyvalue "$vidfile2" "${vid,,}" "$vendor"
+                /usr/syno/bin/synosetkeyvalue "$vidfile2" "${vid,,}" "$vendor"
             fi
         fi
     fi
@@ -717,7 +736,7 @@ get_vid(){
     if [[ $1 ]]; then
         vid=$(nvme id-ctrl "$1" | grep -E ^vid | awk '{print $NF}')
         if [[ $vid ]]; then
-            val=$(synogetkeyvalue "$vidfile" "${vid,,}")
+            val=$(/usr/syno/bin/synogetkeyvalue "$vidfile" "${vid,,}")
             if [[ -z $val ]]; then
                 vendor_from_id "$vid" && set_vendor
             fi
@@ -767,9 +786,9 @@ getdriveinfo(){
         #fwrev=$(printf "%s" "$fwrev" | xargs)  # trim leading and trailing white space
 
         device="/dev/$(basename -- "$1")"
-        #fwrev=$(syno_hdd_util --ssd_detect | grep "$device " | awk '{print $2}')      # GitHub issue #86, 87
+        #fwrev=$(/usr/syno/bin/syno_hdd_util --ssd_detect | grep "$device " | awk '{print $2}')      # GitHub issue #86, 87
         # Account for SSD drives with spaces in their model name/number
-        fwrev=$(syno_hdd_util --ssd_detect | grep "$device " | awk '{print $(NF-3)}')  # GitHub issue #86, 87
+        fwrev=$(/usr/syno/bin/syno_hdd_util --ssd_detect | grep "$device " | awk '{print $(NF-3)}')  # GitHub issue #86, 87
 
         if [[ $hdmodel ]] && [[ $fwrev ]]; then
             hdlist+=("${hdmodel},${fwrev}")
@@ -797,7 +816,7 @@ getcardmodel(){
     # Get M.2 card model (if M.2 drives found)
     # $1 is /dev/nvme0n1 etc
     if [[ ${#nvmelist[@]} -gt "0" ]]; then
-        cardmodel=$(synodisk --m2-card-model-get "$1")
+        cardmodel=$(/usr/syno/bin/synodisk --m2-card-model-get "$1")
         if [[ $cardmodel =~ M2D[0-9][0-9] ]]; then
             # M2 adaptor card
             if [[ -f "${model}_${cardmodel,,}${version}.db" ]]; then
@@ -960,7 +979,7 @@ fi
 # Expansion units
 # Create new /var/log/diskprediction log to ensure newly connected ebox is in latest log
 # Otherwise the new /var/log/diskprediction log is only created a midnight.
-syno_disk_data_collector record
+/usr/syno/bin/syno_disk_data_collector record
 
 # Get list of connected expansion units (aka eunit/ebox)
 path="/var/log/diskprediction"
@@ -1102,7 +1121,7 @@ editdb7(){
     elif [[ $1 == "insert" ]]; then  # model and default exists
         #if sed -i "s/\"$hdmodel\":{/\"$hdmodel\":{$fwstrng/" "$2"; then  # insert firmware
         if sed -i "s/\"${hdmodel//\//\\/}\":{/\"${hdmodel//\//\\/}\":{$fwstrng/" "$2"; then  # insert firmware
-            echo -e "Updated ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+            echo -e "Updated ${Yellow}$hdmodel${Off} in ${Cyan}$(basename -- "$2")${Off}"
             #editcount "$2"
         else
             echo -e "\n${Error}ERROR 6b${Off} Failed to update $(basename -- "$2")${Off}"
@@ -1296,12 +1315,12 @@ enable_card(){
         # So we'll convert RP to rp when needed.
         #
         modelrplowercase=${modelname//RP/rp}
-        val=$(get_section_key_value "$1" "$2" "$modelrplowercase")
+        val=$(/usr/syno/bin/get_section_key_value "$1" "$2" "$modelrplowercase")
         if [[ $val != "yes" ]]; then
             # /usr/syno/etc.defaults/adapter_cards.conf
-            if set_section_key_value "$1" "$2" "$modelrplowercase" yes; then
+            if /usr/syno/bin/set_section_key_value "$1" "$2" "$modelrplowercase" yes; then
                 # /usr/syno/etc/adapter_cards.conf
-                set_section_key_value "$adapter_cards2" "$2" "$modelrplowercase" yes
+                /usr/syno/bin/set_section_key_value "$adapter_cards2" "$2" "$modelrplowercase" yes
                 echo -e "Enabled ${Yellow}$3${Off} for ${Cyan}$modelname${Off}" >&2
                 rebootmsg=yes
             else
@@ -1558,12 +1577,12 @@ backupdb "$synoinfo" ||{
 
 # Optionally disable "support_disk_compatibility"
 sdc=support_disk_compatibility
-setting="$(get_key_value $synoinfo $sdc)"
+setting="$(/usr/syno/bin/get_key_value $synoinfo $sdc)"
 if [[ $force == "yes" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_disk_compatibility
-        synosetkeyvalue "$synoinfo" "$sdc" "no"
-        setting="$(get_key_value "$synoinfo" $sdc)"
+        /usr/syno/bin/synosetkeyvalue "$synoinfo" "$sdc" "no"
+        setting="$(/usr/syno/bin/get_key_value "$synoinfo" $sdc)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support disk compatibility."
         fi
@@ -1573,8 +1592,8 @@ if [[ $force == "yes" ]]; then
 else
     if [[ $setting == "no" ]]; then
         # Enable support_disk_compatibility
-        synosetkeyvalue "$synoinfo" "$sdc" "yes"
-        setting="$(get_key_value "$synoinfo" $sdc)"
+        /usr/syno/bin/synosetkeyvalue "$synoinfo" "$sdc" "yes"
+        setting="$(/usr/syno/bin/get_key_value "$synoinfo" $sdc)"
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support disk compatibility."
         fi
@@ -1587,12 +1606,12 @@ fi
 # Optionally disable "support_memory_compatibility" (not for DVA models)
 if [[ ${model:0:3} != "dva" ]]; then
     smc=support_memory_compatibility
-    setting="$(get_key_value $synoinfo $smc)"
+    setting="$(/usr/syno/bin/get_key_value $synoinfo $smc)"
     if [[ $ram == "yes" ]]; then
         if [[ $setting == "yes" ]]; then
             # Disable support_memory_compatibility
-            synosetkeyvalue "$synoinfo" "$smc" "no"
-            setting="$(get_key_value "$synoinfo" $smc)"
+            /usr/syno/bin/synosetkeyvalue "$synoinfo" "$smc" "no"
+            setting="$(/usr/syno/bin/get_key_value "$synoinfo" $smc)"
             if [[ $setting == "no" ]]; then
                 echo -e "\nDisabled support memory compatibility."
             fi
@@ -1602,8 +1621,8 @@ if [[ ${model:0:3} != "dva" ]]; then
     else
         if [[ $setting == "no" ]]; then
             # Enable support_memory_compatibility
-            synosetkeyvalue "$synoinfo" "$smc" "yes"
-            setting="$(get_key_value "$synoinfo" $smc)"
+            /usr/syno/bin/synosetkeyvalue "$synoinfo" "$smc" "yes"
+            setting="$(/usr/syno/bin/get_key_value "$synoinfo" $smc)"
             if [[ $setting == "yes" ]]; then
                 echo -e "\nRe-enabled support memory compatibility."
             fi
@@ -1616,14 +1635,14 @@ fi
 # Disable SynoMemCheck.service for DVA models
 if [[ ${model:0:3} == "dva" ]]; then
     memcheck="/usr/lib/systemd/system/SynoMemCheck.service"
-    if [[ $(synogetkeyvalue "$memcheck" ExecStart) == "/usr/syno/bin/syno_mem_check" ]]; then
-        synosetkeyvalue "$memcheck" ExecStart /bin/true
+    if [[ $(/usr/syno/bin/synogetkeyvalue "$memcheck" ExecStart) == "/usr/syno/bin/syno_mem_check" ]]; then
+        /usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart /bin/true
     fi
 fi
 
 # Optionally set mem_max_mb to the amount of installed memory
 if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
-    if [[ $ram == "yes" ]]; then
+    if [[ $ram == "yes" ]] && [[ -f /usr/sbin/dmidecode ]]; then
         # Get total amount of installed memory
         #IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory | grep "[Ss]ize")  # GitHub issue #86, 87
         IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory |\
@@ -1650,13 +1669,13 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
             done
         fi
         # Set mem_max_mb to the amount of installed memory
-        setting="$(get_key_value $synoinfo mem_max_mb)"
-        settingbak="$(get_key_value ${synoinfo}.bak mem_max_mb)"                      # GitHub issue #107
+        setting="$(/usr/syno/bin/get_key_value $synoinfo mem_max_mb)"
+        settingbak="$(/usr/syno/bin/get_key_value ${synoinfo}.bak mem_max_mb)"                      # GitHub issue #107
         if [[ $ramtotal =~ ^[0-9]+$ ]]; then   # Check $ramtotal is numeric
             if [[ $ramtotal -gt "$setting" ]]; then
-                synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
+                /usr/syno/bin/synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
                 # Check we changed mem_max_mb
-                setting="$(get_key_value $synoinfo mem_max_mb)"
+                setting="$(/usr/syno/bin/get_key_value $synoinfo mem_max_mb)"
                 if [[ $ramtotal == "$setting" ]]; then
                     #echo -e "\nSet max memory to $ramtotal MB."
                     ramgb=$((ramtotal / 1024))
@@ -1668,9 +1687,9 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
             elif [[ $setting -gt "$ramtotal" ]] && [[ $setting -gt "$settingbak" ]];  # GitHub issue #107 
             then
                 # Fix setting is greater than both ramtotal and default in syninfo.conf.bak
-                synosetkeyvalue "$synoinfo" mem_max_mb "$settingbak"
+                /usr/syno/bin/synosetkeyvalue "$synoinfo" mem_max_mb "$settingbak"
                 # Check we restored mem_max_mb
-                setting="$(get_key_value $synoinfo mem_max_mb)"
+                setting="$(/usr/syno/bin/get_key_value $synoinfo mem_max_mb)"
                 if [[ $settingbak == "$setting" ]]; then
                     #echo -e "\nSet max memory to $ramtotal MB."
                     ramgb=$((ramtotal / 1024))
@@ -1699,22 +1718,22 @@ fi
 if ls /dev | grep nvme >/dev/null ; then
     if [[ $m2 != "no" ]]; then
         # Check if nvme support is enabled
-        setting="$(get_key_value $synoinfo supportnvme)"
+        setting="$(/usr/syno/bin/get_key_value $synoinfo supportnvme)"
         enabled=""
         if [[ ! $setting ]]; then
             # Add supportnvme="yes"
-            synosetkeyvalue "$synoinfo" supportnvme "yes"
+            /usr/syno/bin/synosetkeyvalue "$synoinfo" supportnvme "yes"
             enabled="yes"
         elif [[ $setting == "no" ]]; then
             # Change supportnvme="no" to "yes"
-            synosetkeyvalue "$synoinfo" supportnvme "yes"
+            /usr/syno/bin/synosetkeyvalue "$synoinfo" supportnvme "yes"
             enabled="yes"
         elif [[ $setting == "yes" ]]; then
             echo -e "\nNVMe support already enabled."
         fi
 
         # Check if we enabled nvme support
-        setting="$(get_key_value $synoinfo supportnvme)"
+        setting="$(/usr/syno/bin/get_key_value $synoinfo supportnvme)"
         if [[ $enabled == "yes" ]]; then
             if [[ $setting == "yes" ]]; then
                 echo -e "\nEnabled NVMe support."
@@ -1732,23 +1751,23 @@ if ls /dev | grep nv[em] >/dev/null ; then
         if [[ $m2exists == "yes" ]]; then
             # Check if m2 volume support is enabled
             smp=support_m2_pool
-            setting="$(get_key_value $synoinfo ${smp})"
+            setting="$(/usr/syno/bin/get_key_value $synoinfo ${smp})"
             enabled=""
             if [[ ! $setting ]]; then
                 # Add support_m2_pool="yes"
                 #echo 'support_m2_pool="yes"' >> "$synoinfo"
-                synosetkeyvalue "$synoinfo" "$smp" "yes"
+                /usr/syno/bin/synosetkeyvalue "$synoinfo" "$smp" "yes"
                 enabled="yes"
             elif [[ $setting == "no" ]]; then
                 # Change support_m2_pool="no" to "yes"
-                synosetkeyvalue "$synoinfo" "$smp" "yes"
+                /usr/syno/bin/synosetkeyvalue "$synoinfo" "$smp" "yes"
                 enabled="yes"
             elif [[ $setting == "yes" ]]; then
                 echo -e "\nM.2 volume support already enabled."
             fi
 
             # Check if we enabled m2 volume support
-            setting="$(get_key_value $synoinfo ${smp})"
+            setting="$(/usr/syno/bin/get_key_value $synoinfo ${smp})"
             if [[ $enabled == "yes" ]]; then
                 if [[ $setting == "yes" ]]; then
                     echo -e "\nEnabled M.2 volume support."
@@ -1763,22 +1782,22 @@ fi
 
 # Edit synoinfo.conf to prevent drive db updates
 dtu=drive_db_test_url
-url="$(get_key_value $synoinfo ${dtu})"
+url="$(/usr/syno/bin/get_key_value $synoinfo ${dtu})"
 disabled=""
 if [[ $nodbupdate == "yes" ]]; then
     if [[ ! $url ]]; then
         # Add drive_db_test_url="127.0.0.1"
         #echo 'drive_db_test_url="127.0.0.1"' >> "$synoinfo"
-        synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
+        /usr/syno/bin/synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
         disabled="yes"
     elif [[ $url != "127.0.0.1" ]]; then
         # Edit drive_db_test_url=
-        synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
+        /usr/syno/bin/synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
         disabled="yes"
     fi
 
     # Check if we disabled drive db auto updates
-    url="$(get_key_value $synoinfo drive_db_test_url)"
+    url="$(/usr/syno/bin/get_key_value $synoinfo drive_db_test_url)"
     if [[ $disabled == "yes" ]]; then
         if [[ $url == "127.0.0.1" ]]; then
             echo -e "\nDisabled drive db auto updates."
@@ -1797,7 +1816,7 @@ else
         sed -i "/drive_db_test_url=*/d" /etc/synoinfo.conf
 
         # Check if we re-enabled drive db auto updates
-        url="$(get_key_value $synoinfo drive_db_test_url)"
+        url="$(/usr/syno/bin/get_key_value $synoinfo drive_db_test_url)"
         if [[ $url != "127.0.0.1" ]]; then
             echo -e "\nRe-enabled drive db auto updates."
         else
@@ -1810,12 +1829,12 @@ fi
 
 
 # Optionally disable "support_wdda"
-setting="$(get_key_value $synoinfo support_wdda)"
+setting="$(/usr/syno/bin/get_key_value $synoinfo support_wdda)"
 if [[ $wdda == "no" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_wdda
-        synosetkeyvalue "$synoinfo" support_wdda "no"
-        setting="$(get_key_value "$synoinfo" support_wdda)"
+        /usr/syno/bin/synosetkeyvalue "$synoinfo" support_wdda "no"
+        setting="$(/usr/syno/bin/get_key_value "$synoinfo" support_wdda)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support WDDA."
         fi
