@@ -14,7 +14,7 @@
 #  or
 # sudo -i /volume1/scripts/syno_hdd_db.sh -force -showedits
 #--------------------------------------------------------------------------------------------------
-
+ 
 # CHANGES
 # Hard coded /usr/syno/bin/<command> for Synology commands (to prevent $PATH issues).
 #
@@ -35,7 +35,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.4.85"
+scriptver="v3.4.86"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -205,7 +205,7 @@ if [[ $( whoami ) != "root" ]]; then
 fi
 
 # Get DSM major version
-dsm=$(/usr/syno/bin/get_key_value /etc.defaults/VERSION majorversion)
+dsm=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION majorversion)
 if [[ $dsm -gt "6" ]]; then
     version="_v$dsm"
 fi
@@ -220,10 +220,10 @@ modelname="$model"
 echo "$script $scriptver"
 
 # Get DSM full version
-productversion=$(/usr/syno/bin/get_key_value /etc.defaults/VERSION productversion)
-buildphase=$(/usr/syno/bin/get_key_value /etc.defaults/VERSION buildphase)
-buildnumber=$(/usr/syno/bin/get_key_value /etc.defaults/VERSION buildnumber)
-smallfixnumber=$(/usr/syno/bin/get_key_value /etc.defaults/VERSION smallfixnumber)
+productversion=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION productversion)
+buildphase=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION buildphase)
+buildnumber=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION buildnumber)
+smallfixnumber=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION smallfixnumber)
 
 # Show DSM full version and model
 if [[ $buildphase == GM ]]; then buildphase=""; fi
@@ -545,8 +545,8 @@ if [[ $restore == "yes" ]]; then
             keyvalues=("support_disk_compatibility" "support_memory_compatibility")
             keyvalues+=("mem_max_mb" "supportnvme" "support_m2_pool" "support_wdda")
             for v in "${!keyvalues[@]}"; do
-                defaultval="$(/usr/syno/bin/get_key_value ${synoinfo}.bak "${keyvalues[v]}")"
-                currentval="$(/usr/syno/bin/get_key_value ${synoinfo} "${keyvalues[v]}")"
+                defaultval="$(/usr/syno/bin/synogetkeyvalue ${synoinfo}.bak "${keyvalues[v]}")"
+                currentval="$(/usr/syno/bin/synogetkeyvalue ${synoinfo} "${keyvalues[v]}")"
                 if [[ $currentval != "$defaultval" ]]; then
                     if /usr/syno/bin/synosetkeyvalue "$synoinfo" "${keyvalues[v]}" "$defaultval";
                     then
@@ -1577,12 +1577,12 @@ backupdb "$synoinfo" ||{
 
 # Optionally disable "support_disk_compatibility"
 sdc=support_disk_compatibility
-setting="$(/usr/syno/bin/get_key_value $synoinfo $sdc)"
+setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo $sdc)"
 if [[ $force == "yes" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_disk_compatibility
         /usr/syno/bin/synosetkeyvalue "$synoinfo" "$sdc" "no"
-        setting="$(/usr/syno/bin/get_key_value "$synoinfo" $sdc)"
+        setting="$(/usr/syno/bin/synogetkeyvalue "$synoinfo" $sdc)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support disk compatibility."
         fi
@@ -1593,7 +1593,7 @@ else
     if [[ $setting == "no" ]]; then
         # Enable support_disk_compatibility
         /usr/syno/bin/synosetkeyvalue "$synoinfo" "$sdc" "yes"
-        setting="$(/usr/syno/bin/get_key_value "$synoinfo" $sdc)"
+        setting="$(/usr/syno/bin/synogetkeyvalue "$synoinfo" $sdc)"
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support disk compatibility."
         fi
@@ -1606,12 +1606,12 @@ fi
 # Optionally disable "support_memory_compatibility" (not for DVA models)
 if [[ ${model:0:3} != "dva" ]]; then
     smc=support_memory_compatibility
-    setting="$(/usr/syno/bin/get_key_value $synoinfo $smc)"
+    setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo $smc)"
     if [[ $ram == "yes" ]]; then
         if [[ $setting == "yes" ]]; then
             # Disable support_memory_compatibility
             /usr/syno/bin/synosetkeyvalue "$synoinfo" "$smc" "no"
-            setting="$(/usr/syno/bin/get_key_value "$synoinfo" $smc)"
+            setting="$(/usr/syno/bin/synogetkeyvalue "$synoinfo" $smc)"
             if [[ $setting == "no" ]]; then
                 echo -e "\nDisabled support memory compatibility."
             fi
@@ -1622,7 +1622,7 @@ if [[ ${model:0:3} != "dva" ]]; then
         if [[ $setting == "no" ]]; then
             # Enable support_memory_compatibility
             /usr/syno/bin/synosetkeyvalue "$synoinfo" "$smc" "yes"
-            setting="$(/usr/syno/bin/get_key_value "$synoinfo" $smc)"
+            setting="$(/usr/syno/bin/synogetkeyvalue "$synoinfo" $smc)"
             if [[ $setting == "yes" ]]; then
                 echo -e "\nRe-enabled support memory compatibility."
             fi
@@ -1669,13 +1669,13 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
             done
         fi
         # Set mem_max_mb to the amount of installed memory
-        setting="$(/usr/syno/bin/get_key_value $synoinfo mem_max_mb)"
-        settingbak="$(/usr/syno/bin/get_key_value ${synoinfo}.bak mem_max_mb)"                      # GitHub issue #107
+        setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo mem_max_mb)"
+        settingbak="$(/usr/syno/bin/synogetkeyvalue ${synoinfo}.bak mem_max_mb)"                      # GitHub issue #107
         if [[ $ramtotal =~ ^[0-9]+$ ]]; then   # Check $ramtotal is numeric
             if [[ $ramtotal -gt "$setting" ]]; then
                 /usr/syno/bin/synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
                 # Check we changed mem_max_mb
-                setting="$(/usr/syno/bin/get_key_value $synoinfo mem_max_mb)"
+                setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo mem_max_mb)"
                 if [[ $ramtotal == "$setting" ]]; then
                     #echo -e "\nSet max memory to $ramtotal MB."
                     ramgb=$((ramtotal / 1024))
@@ -1689,7 +1689,7 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
                 # Fix setting is greater than both ramtotal and default in syninfo.conf.bak
                 /usr/syno/bin/synosetkeyvalue "$synoinfo" mem_max_mb "$settingbak"
                 # Check we restored mem_max_mb
-                setting="$(/usr/syno/bin/get_key_value $synoinfo mem_max_mb)"
+                setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo mem_max_mb)"
                 if [[ $settingbak == "$setting" ]]; then
                     #echo -e "\nSet max memory to $ramtotal MB."
                     ramgb=$((ramtotal / 1024))
@@ -1718,7 +1718,7 @@ fi
 if ls /dev | grep nvme >/dev/null ; then
     if [[ $m2 != "no" ]]; then
         # Check if nvme support is enabled
-        setting="$(/usr/syno/bin/get_key_value $synoinfo supportnvme)"
+        setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo supportnvme)"
         enabled=""
         if [[ ! $setting ]]; then
             # Add supportnvme="yes"
@@ -1733,7 +1733,7 @@ if ls /dev | grep nvme >/dev/null ; then
         fi
 
         # Check if we enabled nvme support
-        setting="$(/usr/syno/bin/get_key_value $synoinfo supportnvme)"
+        setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo supportnvme)"
         if [[ $enabled == "yes" ]]; then
             if [[ $setting == "yes" ]]; then
                 echo -e "\nEnabled NVMe support."
@@ -1751,7 +1751,7 @@ if ls /dev | grep nv[em] >/dev/null ; then
         if [[ $m2exists == "yes" ]]; then
             # Check if m2 volume support is enabled
             smp=support_m2_pool
-            setting="$(/usr/syno/bin/get_key_value $synoinfo ${smp})"
+            setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo ${smp})"
             enabled=""
             if [[ ! $setting ]]; then
                 # Add support_m2_pool="yes"
@@ -1767,7 +1767,7 @@ if ls /dev | grep nv[em] >/dev/null ; then
             fi
 
             # Check if we enabled m2 volume support
-            setting="$(/usr/syno/bin/get_key_value $synoinfo ${smp})"
+            setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo ${smp})"
             if [[ $enabled == "yes" ]]; then
                 if [[ $setting == "yes" ]]; then
                     echo -e "\nEnabled M.2 volume support."
@@ -1782,7 +1782,7 @@ fi
 
 # Edit synoinfo.conf to prevent drive db updates
 dtu=drive_db_test_url
-url="$(/usr/syno/bin/get_key_value $synoinfo ${dtu})"
+url="$(/usr/syno/bin/synogetkeyvalue $synoinfo ${dtu})"
 disabled=""
 if [[ $nodbupdate == "yes" ]]; then
     if [[ ! $url ]]; then
@@ -1797,7 +1797,7 @@ if [[ $nodbupdate == "yes" ]]; then
     fi
 
     # Check if we disabled drive db auto updates
-    url="$(/usr/syno/bin/get_key_value $synoinfo drive_db_test_url)"
+    url="$(/usr/syno/bin/synogetkeyvalue $synoinfo drive_db_test_url)"
     if [[ $disabled == "yes" ]]; then
         if [[ $url == "127.0.0.1" ]]; then
             echo -e "\nDisabled drive db auto updates."
@@ -1816,7 +1816,7 @@ else
         sed -i "/drive_db_test_url=*/d" /etc/synoinfo.conf
 
         # Check if we re-enabled drive db auto updates
-        url="$(/usr/syno/bin/get_key_value $synoinfo drive_db_test_url)"
+        url="$(/usr/syno/bin/synogetkeyvalue $synoinfo drive_db_test_url)"
         if [[ $url != "127.0.0.1" ]]; then
             echo -e "\nRe-enabled drive db auto updates."
         else
@@ -1829,12 +1829,12 @@ fi
 
 
 # Optionally disable "support_wdda"
-setting="$(/usr/syno/bin/get_key_value $synoinfo support_wdda)"
+setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo support_wdda)"
 if [[ $wdda == "no" ]]; then
     if [[ $setting == "yes" ]]; then
         # Disable support_wdda
         /usr/syno/bin/synosetkeyvalue "$synoinfo" support_wdda "no"
-        setting="$(/usr/syno/bin/get_key_value "$synoinfo" support_wdda)"
+        setting="$(/usr/syno/bin/synogetkeyvalue "$synoinfo" support_wdda)"
         if [[ $setting == "no" ]]; then
             echo -e "\nDisabled support WDDA."
         fi
