@@ -1,8 +1,5 @@
 v3.4.86
-- Bug fix for get_key_value not being in /usr/syno/bin (changed to use synogetkeyvalue).
-
-v3.4.85
-- Hard coded /usr/syno/bin/<command> for Synology commands (to prevent $PATH issues).
+- Hard coded /usr/syno/bin/<command> for Synology commands (to prevent $PATH issues). #249 
 
 v3.4.84
 - Bug fix when script updates itself and user ran the script from ./scriptname.sh
