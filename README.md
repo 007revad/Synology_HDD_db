@@ -148,6 +148,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
+|  |  |  | Alex Joyce |
 | Marcus Ackermann | Lorenz Schmid | enil-kil | Xaver Zöllner |
 | Jan Bublitz | Darren O Connor | Charles Young | J Davis | 
 | Jürg Baiker | Joshua Gillispie | bizIT Hirschberg | Jordan Crawford |
