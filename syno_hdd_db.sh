@@ -264,7 +264,9 @@ fi
 
 
 # Show options used
-echo "Using options: ${args[*]}"
+if [[ ${#args[@]} -gt "0" ]]; then
+    echo "Using options: ${args[*]}"
+fi
 
 #echo ""  # To keep output readable
 
@@ -1154,6 +1156,7 @@ updatedb(){
     getdbtype "$2"
 
     if [[ $dbtype -gt "6" ]]; then
+        # db type 7 used from DSM 7.1 and later
         if grep "$hdmodel"'":{"'"$fwrev" "$2" >/dev/null; then
             echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
         else
@@ -1203,6 +1206,7 @@ updatedb(){
             fi
         fi
     elif [[ $dbtype -eq "6" ]]; then
+        # db type 6 used up to DSM 7.0.1
         if grep "$hdmodel" "$2" >/dev/null; then
             echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
         else
