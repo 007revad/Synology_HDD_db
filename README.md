@@ -157,7 +157,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 | Reece Lyne | Enric Escudé Santana | Yunhao Zhang | Matthias Gerhardt |
 | Darryl Harper | Mikescher | Matthias Pfaff | cpharada |
 | Neil Tapp | zen1605 | Kleissner Investments | Angel Scandinavia |
-| bcollins | Peter jackson | Mir Hekmat | Andrew Tapp |
+| B Collins | Peter jackson | Mir Hekmat | Andrew Tapp |
 | Peter Weißflog | Joseph Skup | Dirk Kurfuerst | Gareth Locke |
 | Rory de Ruijter | Nathan O'Farrell | Harry Bos | Mark-Philipp Wolfger |
 | Filip Kraus | John Pham | Alejandro Bribian Rix | Daniel Hofer |
