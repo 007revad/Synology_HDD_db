@@ -148,10 +148,10 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  |  |  | Alexander Gundermann | 
+|  | Bünyamin Olgun | Hartmut Heinbach | Alexander Gundermann | 
 | Björn Schöninger | Nico Scherer | Patrick Hoekstra | Alex Joyce |
 | Marcus Ackermann | Lorenz Schmid | enil-kil | Xaver Zöllner |
-| Jan Bublitz | Darren O Connor | Charles Young | J Davis | 
+| Jan Bublitz | Darren O'Connor | Charles Young | J Davis | 
 | Jürg Baiker | Joshua Gillispie | bizIT Hirschberg | Jordan Crawford |
 | Tyler Teal | Voluntary Commerce LLC | Ez Hosting | Alec Wilhere |
 | Reece Lyne | Enric Escudé Santana | Yunhao Zhang | Matthias Gerhardt |
