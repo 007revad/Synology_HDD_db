@@ -42,7 +42,7 @@
   - Enable deduplication with non-Synology SSDs and unsupported NAS models.
 
 - **<a href="https://github.com/007revad/Synology_SHR_switch">Synology_SHR_switch</a>**
-  - Easily switch between SHR and RAID Group, or enable RAID F1.
+  - Easily switch between SHR and RAID Groups, or enable RAID F1.
 
 - **<a href="https://github.com/007revad/Synology_Config_Backup">Synology_Config_Backup</a>**
   - Backup and export your Synology DSM configuration.
