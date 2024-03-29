@@ -24,7 +24,7 @@ It also has a restore option to undo all the changes made by the script.
 * Backs up the database files if there is no backup already.
 * Checks if each drive is already in the Synology's compatible-drive database.
 * Adds any missing drives to the Synology's compatible-drive database.
-* Prevents DSM auto updating the drive database.
+* Optionally prevents DSM auto updating the drive database.
 * Optionally disable DSM's "support_disk_compatibility".
 * Optionally disable DSM's "support_memory_compatibility" to prevent <a href=images/ram_warning.png/>non-Synology memory notifications</a>.
 * Optionally edits max supported memory to match the amount of memory installed, if installed memory is greater than the current max memory setting.
@@ -148,7 +148,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  | Bünyamin Olgun | Hartmut Heinbach | Alexander Gundermann | 
+| Lee Booy | Bünyamin Olgun | Hartmut Heinbach | Alexander Gundermann | 
 | Björn Schöninger | Nico Scherer | Patrick Hoekstra | Alex Joyce |
 | Marcus Ackermann | Lorenz Schmid | enil-kil | Xaver Zöllner |
 | Jan Bublitz | Darren O'Connor | Charles Young | J Davis | 
