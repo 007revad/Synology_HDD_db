@@ -17,7 +17,7 @@
 ### Synology scripts
 
 - **<a href="https://github.com/007revad/Synology_HDD_db">Synology_HDD_db</a>**
-  - Add your HDD, SSD and NVMe drives to your Synology's compatible drive database.
+  - Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 drives to your Synology's compatible drive databases, including your Synology M.2 PCIe card and Expansion Unit databases.
 
 - **<a href="https://github.com/007revad/Synology_enable_M2_volume">Synology_enable_M2_volume</a>**
   - Enable creating volumes with non-Synology M.2 drives.
