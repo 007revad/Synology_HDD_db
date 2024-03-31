@@ -1,3 +1,6 @@
+v3.4.87
+- Fix Invalid json format syslog output #270
+
 v3.4.86
 - Hard coded /usr/syno/bin/<command> for Synology commands (to prevent $PATH issues). #249 
 
