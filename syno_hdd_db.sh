@@ -35,7 +35,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.4.86"
+scriptver="v3.4.87"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -269,6 +269,16 @@ if [[ ${#args[@]} -gt "0" ]]; then
 fi
 
 #echo ""  # To keep output readable
+
+
+# shellcheck disable=SC2317  # Don't warn about unreachable commands in this function
+pause(){ 
+    # When debugging insert pause command where needed
+    read -s -r -n 1 -p "Press any key to continue..."
+    read -r -t 0.1 -s -e --  # Silently consume all input
+    stty echo echok  # Ensure read didn't disable echoing user input
+    echo -e "\n"
+}
 
 
 #------------------------------------------------------------------------------
@@ -1040,6 +1050,7 @@ fi
 
 getdbtype(){ 
     # Detect drive db type
+    # Synology misspelt compatibility as compatbility
     if grep -F '{"disk_compatbility_info":' "$1" >/dev/null; then
         # DSM 7 drive db files start with {"disk_compatbility_info":
         dbtype=7
@@ -1132,7 +1143,8 @@ editdb7(){
 
     elif [[ $1 == "empty" ]]; then  # db file only contains {}
         #if sed -i "s/{}/{\"$hdmodel\":{$fwstrng${default}}/" "$2"; then  # empty
-        if sed -i "s/{}/{\"${hdmodel//\//\\/}\":{$fwstrng${default}}/" "$2"; then  # empty
+        #if sed -i "s/{}/{\"${hdmodel//\//\\/}\":{$fwstrng${default}}/" "$2"; then  # empty
+        if sed -i "s/{}/{\"${hdmodel//\//\\/}\":{$fwstrng${default}/" "$2"; then  # empty
             echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
             editcount "$2"
         else
@@ -1170,6 +1182,7 @@ updatedb(){
             default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true,
             default="$default"\"smart_test_ignore\":false,\"smart_attr_ignore\":false}]}}}
 
+            # Synology misspelt compatibility as compatbility
             if grep '"disk_compatbility_info":{}' "$2" >/dev/null; then
                 # Replace "disk_compatbility_info":{} with
                 # "disk_compatbility_info":{"WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}}
@@ -1645,7 +1658,7 @@ if [[ ${model:0:3} == "dva" ]]; then
 fi
 
 # Optionally set mem_max_mb to the amount of installed memory
-if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
+if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no dmidecode
     if [[ $ram == "yes" ]] && [[ -f /usr/sbin/dmidecode ]]; then
         # Get total amount of installed memory
         #IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory | grep "[Ss]ize")  # GitHub issue #86, 87
