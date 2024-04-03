@@ -1,3 +1,6 @@
+v3.5.88
+- Changed how memory compatibility is disabled for older models. Issue #272
+
 v3.4.87
 - Fix Invalid json format syslog output #270
 
