@@ -16,6 +16,8 @@
 #--------------------------------------------------------------------------------------------------
  
 # CHANGES
+# Changed disabling memory compatibility for older models. Issue #272
+#
 # Hard coded /usr/syno/bin/<command> for Synology commands (to prevent $PATH issues).
 #
 # Now enables creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards.
@@ -35,7 +37,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.4.86"
+scriptver="v3.5.88"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -269,6 +271,16 @@ if [[ ${#args[@]} -gt "0" ]]; then
 fi
 
 #echo ""  # To keep output readable
+
+
+# shellcheck disable=SC2317  # Don't warn about unreachable commands in this function
+pause(){ 
+    # When debugging insert pause command where needed
+    read -s -r -n 1 -p "Press any key to continue..."
+    read -r -t 0.1 -s -e --  # Silently consume all input
+    stty echo echok  # Ensure read didn't disable echoing user input
+    echo -e "\n"
+}
 
 
 #------------------------------------------------------------------------------
@@ -1040,6 +1052,7 @@ fi
 
 getdbtype(){ 
     # Detect drive db type
+    # Synology misspelt compatibility as compatbility
     if grep -F '{"disk_compatbility_info":' "$1" >/dev/null; then
         # DSM 7 drive db files start with {"disk_compatbility_info":
         dbtype=7
@@ -1132,7 +1145,8 @@ editdb7(){
 
     elif [[ $1 == "empty" ]]; then  # db file only contains {}
         #if sed -i "s/{}/{\"$hdmodel\":{$fwstrng${default}}/" "$2"; then  # empty
-        if sed -i "s/{}/{\"${hdmodel//\//\\/}\":{$fwstrng${default}}/" "$2"; then  # empty
+        #if sed -i "s/{}/{\"${hdmodel//\//\\/}\":{$fwstrng${default}}/" "$2"; then  # empty
+        if sed -i "s/{}/{\"${hdmodel//\//\\/}\":{$fwstrng${default}/" "$2"; then  # empty
             echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
             editcount "$2"
         else
@@ -1170,6 +1184,7 @@ updatedb(){
             default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true,
             default="$default"\"smart_test_ignore\":false,\"smart_attr_ignore\":false}]}}}
 
+            # Synology misspelt compatibility as compatbility
             if grep '"disk_compatbility_info":{}' "$2" >/dev/null; then
                 # Replace "disk_compatbility_info":{} with
                 # "disk_compatbility_info":{"WD40PURX-64GVNY0":{"80.00A80":{ ... }}},"default":{ ... }}}}
@@ -1607,10 +1622,40 @@ else
 fi
 
 
-# Optionally disable "support_memory_compatibility" (not for DVA models)
-if [[ ${model:0:3} != "dva" ]]; then
-    smc=support_memory_compatibility
-    setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo $smc)"
+# Optionally disable memory compatibility warnings
+smc=support_memory_compatibility
+setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo $smc)"
+settingbak="$(/usr/syno/bin/synogetkeyvalue $synoinfo.bak $smc)"
+
+if [[ -z $settingbak ]] || [[ -z $setting ]]; then
+    # For older models that don't use "support_memory_compatibility"
+    memcheck="/usr/lib/systemd/system/SynoMemCheck.service"
+    memcheck_value="$(/usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart)"
+    if [[ $ram == "yes" ]]; then
+        if [[ $memcheck_value == "/usr/syno/bin/syno_mem_check" ]]; then
+            # Disable SynoMemCheck.service
+            /usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart /bin/true
+            memcheck_value="$(/usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart)"
+            if [[ $memcheck_value == "/bin/true" ]]; then
+                echo -e "\nDisabled SynoMemCheck memory compatibility."
+            fi
+        elif [[ $memcheck_value == "/bin/true" ]]; then
+            echo -e "\nSynoMemCheck memory compatibility already disabled."
+        fi
+    else
+        if [[ $memcheck_value == "/bin/true" ]]; then
+            # Enable SynoMemCheck.service
+            /usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart /usr/syno/bin/syno_mem_check
+            memcheck_value="$(/usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart)"
+            if [[ $memcheck_value == "/usr/syno/bin/syno_mem_check" ]]; then
+                echo -e "\nRe-enabled SynoMemCheck memory compatibility."
+            fi
+        elif [[ $memcheck_value == "/usr/syno/bin/syno_mem_check" ]]; then
+            echo -e "\nSynoMemCheck memory compatibility already enabled."
+        fi
+    fi
+else
+    # Disable "support_memory_compatibility" (not for older models)
     if [[ $ram == "yes" ]]; then
         if [[ $setting == "yes" ]]; then
             # Disable support_memory_compatibility
@@ -1636,16 +1681,8 @@ if [[ ${model:0:3} != "dva" ]]; then
     fi
 fi
 
-# Disable SynoMemCheck.service for DVA models
-if [[ ${model:0:3} == "dva" ]]; then
-    memcheck="/usr/lib/systemd/system/SynoMemCheck.service"
-    if [[ $(/usr/syno/bin/synogetkeyvalue "$memcheck" ExecStart) == "/usr/syno/bin/syno_mem_check" ]]; then
-        /usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart /bin/true
-    fi
-fi
-
 # Optionally set mem_max_mb to the amount of installed memory
-if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no /proc/meminfo
+if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no dmidecode
     if [[ $ram == "yes" ]] && [[ -f /usr/sbin/dmidecode ]]; then
         # Get total amount of installed memory
         #IFS=$'\n' read -r -d '' -a array < <(dmidecode -t memory | grep "[Ss]ize")  # GitHub issue #86, 87
