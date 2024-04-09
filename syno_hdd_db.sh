@@ -16,6 +16,9 @@
 #--------------------------------------------------------------------------------------------------
  
 # CHANGES
+# Bug fix for -s, --showedits option for multiple of the same drive model
+# but with different firmware versions. Issue #276
+#
 # Changed disabling memory compatibility for older models. Issue #272
 #
 # Hard coded /usr/syno/bin/<command> for Synology commands (to prevent $PATH issues).
@@ -37,7 +40,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.88"
+scriptver="v3.5.89"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1920,32 +1923,30 @@ fi
 #------------------------------------------------------------------------------
 # Finished
 
+show_changes(){  
+    # Assign passed drive models array to my_array
+    local my_array=("$@")
+    local drive_models=()
+    for i in "${!my_array[@]}"; do
+        drive_models+=$(printf "%s" "${my_array[i]}" | cut -d"," -f 1)
+    done
+    # Sort array to remove duplicates
+    IFS=$'\n'
+    drives_sorted=($(sort -u <<<"${drive_models[*]}"))
+    unset IFS
+    for drive_model in "${drives_sorted[@]}"; do
+        echo -e "\n$drive_model:"
+        jq -r --arg drive_model "$drive_model" '.disk_compatbility_info[$drive_model]' "${db1list[0]}"
+    done
+}
+
 # Show the changes
 if [[ ${showedits,,} == "yes" ]]; then
-    if [[ ${#db1list[@]} -gt "0" ]]; then
-        getdbtype "${db1list[0]}"
-        if [[ $dbtype -gt "6" ]]; then
-            # Show 11 lines after hdmodel line
-            lines=11
-        elif [[ $dbtype -eq "6" ]]; then
-            # Show 2 lines after hdmodel line
-            lines=2
-        fi
+    # HDDs/SSDs
+    show_changes "${hdds[@]}"
 
-        # HDDs/SSDs
-        for i in "${!hdds[@]}"; do
-            hdmodel=$(printf "%s" "${hdds[i]}" | cut -d"," -f 1)
-            echo
-            jq . "${db1list[0]}" | grep -A "$lines" "$hdmodel"
-        done
-
-        # NVMe drives
-        for i in "${!nvmes[@]}"; do
-            hdmodel=$(printf "%s" "${nvmes[i]}" | cut -d"," -f 1)
-            echo
-            jq . "${db1list[0]}" | grep -A "$lines" "$hdmodel"
-        done
-    fi
+    # NVMe drives
+    show_changes "${nvmes[@]}"
 fi
 
 
