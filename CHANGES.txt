@@ -1,3 +1,6 @@
+v3.5.89
+- Bug fix for -s, --showedits option for multiple of the same drive model but with different firmware versions. Issue #276
+
 v3.5.88
 - Changed how memory compatibility is disabled for older models. Issue #272
 
