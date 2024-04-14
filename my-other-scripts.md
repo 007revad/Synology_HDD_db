@@ -44,6 +44,9 @@
 - **<a href="https://github.com/007revad/Synology_SHR_switch">Synology_SHR_switch</a>**
   - Easily switch between SHR and RAID Groups, or enable RAID F1.
 
+- **<a href="https://github.com/007revad/Synology_Recover_Data">Synology_Recover_Data</a>**
+  - A script to make it easy to recover your data from your Synology's drives using a computer.
+
 - **<a href="https://github.com/007revad/Synology_Config_Backup">Synology_Config_Backup</a>**
   - Backup and export your Synology DSM configuration.
 
