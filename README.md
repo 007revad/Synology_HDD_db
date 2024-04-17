@@ -148,7 +148,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  |  |  | Simon Azzouni |
+|  |  | Christian | Simon Azzouni |
 | Lee Booy | Bünyamin Olgun | Hartmut Heinbach | Alexander Gundermann |
 | Björn Schöninger | Nico Scherer | Patrick Hoekstra | Alex Joyce |
 | Marcus Ackermann | Lorenz Schmid | enil-kil | Xaver Zöllner |
