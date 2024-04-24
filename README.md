@@ -32,6 +32,7 @@ It also has a restore option to undo all the changes made by the script.
 * Optionally disables Western Digital Device Analytics (aka WDDA) to prevent DSM showing a [warning for WD drives that are 3 years old](https://arstechnica.com/gadgets/2023/06/clearly-predatory-western-digital-sparks-panic-anger-for-age-shaming-hdds).
     * DSM 7.2.1 already has WDDA disabled.
 * Enables M2D20, M2D18, M2D17 and E10M20-T1 if present on Synology NAS that don't officially support them.
+    * Newer NAS models may also need [Synology_enable_M2_card](https://github.com/007revad/Synology_enable_M2_card)
 * Checks that M.2 volume support is enabled (on models that have M.2 slots or PCIe slots).
 * Enables creating M.2 storage pools and volumes from within Storage Manager **(newer models only?)**.
     * Including M.2 drives in PCIe adaptor cards like M2D20, M2D18, M2D17 and E10M20-T1 for DSM 7.2.1 and above **(need to run script after each boot)**.
