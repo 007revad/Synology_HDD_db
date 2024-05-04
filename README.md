@@ -50,6 +50,14 @@ It also has a restore option to undo all the changes made by the script.
     - Do ***NOT*** save the script to a M.2 volume. After a DSM or Storage Manager update the M.2 volume won't be available until after the script has run.
 3. Unzip the zip file.
 
+### Required files
+
+The following files from the downloaded zip file must be in the same folder:
+
+1. syno_hdd_db.sh
+2. syno_hdd_vendor_ids.txt
+3. dtc or the bin folder containing dtc (only required if you have a E10M20-T1, M2D20 or M2D18 in a NAS that does not support them).
+
 ### When to run the script
 
 You would need to re-run the script after a DSM update. If you have DSM set to auto update the best option is to run the script every time the Synology boots, and the best way to do that is to <a href=how_to_schedule.md/>setup a scheduled task</a> to run the the script at boot-up.
