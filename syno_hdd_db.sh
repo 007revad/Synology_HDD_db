@@ -40,7 +40,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.89"
+scriptver="v3.5.90"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -348,7 +348,7 @@ scriptvol=$(echo "$scriptpath" | cut -d"/" -f2)
 vg=$(lvdisplay | grep /volume_"${scriptvol#volume}" | cut -d"/" -f3)
 md=$(pvdisplay | grep -B 1 -E '[ ]'"$vg" | grep /dev/ | cut -d"/" -f3)
 if cat /proc/mdstat | grep "$md" | grep nvme >/dev/null; then
-    echo -e "${Yellow}WARNING${Off} Don't store this script on an NVMe volume!"
+    echo -e "\n${Yellow}WARNING${Off} Don't store this script on an NVMe volume!"
 fi
 
 
