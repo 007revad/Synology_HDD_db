@@ -1,4 +1,4 @@
-v3.5.90
+v3.5.90-RC
 - Changed to enable creating storage pools/volumes on NVMe drives in a PCIe M.2 adaptor in DSM 7.2
   - Previously only supported DSM 7.2.1
 - Changed to enable creating storage pools/volumes on NVMe drives in a PCIe M.2 adaptor even if PCIe M.2 adaptor not found.
