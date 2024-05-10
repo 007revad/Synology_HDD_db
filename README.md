@@ -79,7 +79,7 @@ There are optional flags you can use when running the script:
   -w, --wdda            Disable WD Device Analytics to prevent DSM showing
                         a false warning for WD drives that are 3 years old
                           DSM 7.2.1 already has WDDA disabled
-  -p, --pci             Enable creating volumes on M2 in unknown PCIe adaptor
+  -p, --pcie            Enable creating volumes on M2 in unknown PCIe adaptor
   -e, --email           Disable colored text in output scheduler emails
       --restore         Undo all changes made by the script
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
