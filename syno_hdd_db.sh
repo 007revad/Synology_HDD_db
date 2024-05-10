@@ -1921,7 +1921,7 @@ fi
 # Enable creating pool on drives in M.2 adaptor card
 if [[ -f "$strgmgr" ]] && [[ $buildnumber -gt 42962 ]]; then
     # DSM 7.2 and later
-    #if [[ ${#m2cards[@]} -gt "0" ]]; then
+    if [[ ${#m2cards[@]} -gt "0" ]]; then
 
         if grep 'notSupportM2Pool_addOnCard' "$strgmgr" >/dev/null; then
             # Backup storage_panel.js"
@@ -1954,7 +1954,7 @@ if [[ -f "$strgmgr" ]] && [[ $buildnumber -gt 42962 ]]; then
         else
             echo -e "\nCreating pool in UI on drives in M.2 adaptor card already enabled."
         fi
-    #fi
+    fi
 fi
 
 
