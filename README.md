@@ -36,7 +36,7 @@ It also has a restore option to undo all the changes made by the script.
     * Newer NAS models may also need [Synology_enable_M2_card](https://github.com/007revad/Synology_enable_M2_card)
 * Checks that M.2 volume support is enabled (on models that have M.2 slots or PCIe slots).
 * Enables creating M.2 storage pools and volumes from within Storage Manager **(newer models only?)**.
-    * Including M.2 drives in PCIe adaptor cards like M2D20, M2D18, M2D17 and E10M20-T1 for DSM 7.2.1 and above **(need to run script after each boot)**.
+    * Including M.2 drives in PCIe adaptor cards like M2D20, M2D18, M2D17 and E10M20-T1 for DSM 7.2 and above **(need to run script after each boot)**.
 * Makes DSM recheck disk compatibility so rebooting is not needed if you don't have M.2 drives (DSM 7 only).
     * **If you have M.2 drives you may need to reboot.**
     * Reminds you that you may need to reboot the Synology after running the script.
