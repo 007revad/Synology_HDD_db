@@ -32,7 +32,7 @@
 # Hard coded /usr/syno/bin/<command> for Synology commands (to prevent $PATH issues).
 #
 # Now enables creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards.
-#  - E10M20-T1, M2D20, M2D18 and M2D17
+#  - E10M20-T1, M2D20, M2D18, M2D17 and FX2422N
 #
 # Added new vendor ids for Apacer, aigo, Lexar and Transcend NVMe drives.
 #
@@ -90,6 +90,7 @@ Options:
   -w, --wdda            Disable WD Device Analytics to prevent DSM showing
                         a false warning for WD drives that are 3 years old
                           DSM 7.2.1 already has WDDA disabled
+  -p, --pcie            Enable creating volumes on M2 in unknown PCIe adaptor
   -e, --email           Disable colored text in output scheduler emails
       --restore         Undo all changes made by the script
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
@@ -119,7 +120,7 @@ args=("$@")
 
 # Check for flags with getopt
 if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
-    restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,wdda,email,autoupdate:,help,version,debug \
+    restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,pcie,wdda,email,autoupdate:,help,version,debug \
     -- "$@")"; then
     eval set -- "$options"
     while true; do
@@ -148,6 +149,9 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
                 ;;
             -w|--wdda)          # Disable "support_wdda"
                 wdda=no
+                ;;
+            -p|--pcie)          # Enable creating volumes on M2 in unknown PCIe adaptor
+                forcepci=yes
                 ;;
             -e|--email)         # Disable colour text in task scheduler emails
                 color=no
@@ -1921,7 +1925,7 @@ fi
 # Enable creating pool on drives in M.2 adaptor card
 if [[ -f "$strgmgr" ]] && [[ $buildnumber -gt 42962 ]]; then
     # DSM 7.2 and later
-    if [[ ${#m2cards[@]} -gt "0" ]]; then
+    if [[ ${#m2cards[@]} -gt "0" ]] || [[ $forcepci == "yes" ]]; then
 
         if grep 'notSupportM2Pool_addOnCard' "$strgmgr" >/dev/null; then
             # Backup storage_panel.js"
