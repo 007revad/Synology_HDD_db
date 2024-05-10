@@ -16,6 +16,14 @@
 #--------------------------------------------------------------------------------------------------
  
 # CHANGES
+# Bug fix for when there's multiple expansion unit models only the last expansion unit was processed. Issue #288
+# Bug fix for when there's multiple M2 adaptor card models only the last M2 card was processed. 
+# Bug fix for incorrectly matching model name variations as well as the exact model name. 
+#  - e.g. RX1217 matched RX1217, RX1217rp and RX1217sas.
+#
+# Changed to enable creating storage pools/volumes on NVMe drives in a PCIe M.2 adaptor even if
+# PCIe M.2 adaptor not found. This may allow creating NVMe volumes on 3rd party PCIe M.2 adaptors.
+#
 # Bug fix for -s, --showedits option for multiple of the same drive model
 # but with different firmware versions. Issue #276
 #
@@ -24,7 +32,7 @@
 # Hard coded /usr/syno/bin/<command> for Synology commands (to prevent $PATH issues).
 #
 # Now enables creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards.
-#  - E10M20-T1, M2D20, M2D18 and M2D17
+#  - E10M20-T1, M2D20, M2D18, M2D17 and FX2422N
 #
 # Added new vendor ids for Apacer, aigo, Lexar and Transcend NVMe drives.
 #
@@ -82,6 +90,7 @@ Options:
   -w, --wdda            Disable WD Device Analytics to prevent DSM showing
                         a false warning for WD drives that are 3 years old
                           DSM 7.2.1 already has WDDA disabled
+  -p, --pcie            Enable creating volumes on M2 in unknown PCIe adaptor
   -e, --email           Disable colored text in output scheduler emails
       --restore         Undo all changes made by the script
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
@@ -111,7 +120,7 @@ args=("$@")
 
 # Check for flags with getopt
 if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
-    restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,wdda,email,autoupdate:,help,version,debug \
+    restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,pcie,wdda,email,autoupdate:,help,version,debug \
     -- "$@")"; then
     eval set -- "$options"
     while true; do
@@ -140,6 +149,9 @@ if options="$(getopt -o abcdefghijklmnopqrstuvwxyz0123456789 -l \
                 ;;
             -w|--wdda)          # Disable "support_wdda"
                 wdda=no
+                ;;
+            -p|--pcie)          # Enable creating volumes on M2 in unknown PCIe adaptor
+                forcepci=yes
                 ;;
             -e|--email)         # Disable colour text in task scheduler emails
                 color=no
@@ -538,7 +550,15 @@ adapter_cards="/usr/syno/etc.defaults/adapter_cards.conf"
 adapter_cards2="/usr/syno/etc/adapter_cards.conf"
 dbpath=/var/lib/disk-compatibility/
 synoinfo="/etc.defaults/synoinfo.conf"
-strgmgr="/var/packages/StorageManager/target/ui/storage_panel.js"
+
+if [[ $buildnumber -gt 64570 ]]; then
+    # DSM 7.2.1 and later
+    #strgmgr="/var/packages/StorageManager/target/ui/storage_panel.js"
+    strgmgr="/usr/local/packages/@appstore/StorageManager/ui/storage_panel.js"
+elif [[ $buildnumber -ge 64561 ]]; then
+    # DSM 7.2
+    strgmgr="/usr/syno/synoman/webman/modules/StorageManager/storage_panel.js"
+fi
 vidfile="/usr/syno/etc.defaults/pci_vendor_ids.conf"
 vidfile2="/usr/syno/etc/pci_vendor_ids.conf"
 
@@ -619,7 +639,13 @@ if [[ $restore == "yes" ]]; then
         fi
 
         # Restore storage_panel.js from backup
-        strgmgrver="$(/usr/syno/bin/synopkg version StorageManager)"
+        if [[ $buildnumber -gt 64570 ]]; then
+            # DSM 7.2.1 and later
+            strgmgrver="$(/usr/syno/bin/synopkg version StorageManager)"
+        elif [[ $buildnumber -ge 64561 ]]; then
+            # DSM 7.2
+            strgmgrver="${buildnumber}${smallfixnumber}"
+        fi
         if [[ -f "${strgmgr}.$strgmgrver" ]]; then
             if cp -p "${strgmgr}.$strgmgrver" "$strgmgr"; then
                 echo "Restored $(basename -- "$strgmgr")"
@@ -1032,17 +1058,25 @@ fi
 # Host db files
 db1list=($(find "$dbpath" -maxdepth 1 -name "*_host*.db"))
 db2list=($(find "$dbpath" -maxdepth 1 -name "*_host*.db.new"))
+#db1list=($(find "$dbpath" -maxdepth 1 -regextype posix-extended\
+#    -iregex ".*_host(_v7)?.db"))
+#db2list=($(find "$dbpath" -maxdepth 1 -regextype posix-extended\
+#    -iregex ".*_host(_v7)?.db.new"))
 
 # Expansion Unit db files
 for i in "${!eunits[@]}"; do
-    eunitdb1list=($(find "$dbpath" -maxdepth 1 -name "${eunits[i],,}*.db"))
-    eunitdb2list=($(find "$dbpath" -maxdepth 1 -name "${eunits[i],,}*.db.new"))
+    #eunitdb1list+=($(find "$dbpath" -maxdepth 1 -name "${eunits[i],,}*.db"))
+    eunitdb1list+=($(find "$dbpath" -maxdepth 1 -regextype posix-extended\
+        -iregex ".*${eunits[i],,}(_v7)?.db"))
+    #eunitdb2list+=($(find "$dbpath" -maxdepth 1 -name "${eunits[i],,}*.db.new"))
+    eunitdb2list+=($(find "$dbpath" -maxdepth 1 -regextype posix-extended\
+        -iregex ".*${eunits[i],,}(_v7)?.db.new"))
 done
 
 # M.2 Card db files
 for i in "${!m2cards[@]}"; do
-    m2carddb1list=($(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db"))
-    m2carddb2list=($(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db.new"))
+    m2carddb1list+=($(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db"))
+    m2carddb2list+=($(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db.new"))
 done
 
 
@@ -1889,13 +1923,21 @@ fi
 
 
 # Enable creating pool on drives in M.2 adaptor card
-if [[ -f "$strgmgr" ]]; then
-    # StorageManager package is installed
-    if [[ ${#m2cards[@]} -gt "0" ]]; then
+if [[ -f "$strgmgr" ]] && [[ $buildnumber -gt 42962 ]]; then
+    # DSM 7.2 and later
+    if [[ ${#m2cards[@]} -gt "0" ]] || [[ $forcepci == "yes" ]]; then
 
         if grep 'notSupportM2Pool_addOnCard' "$strgmgr" >/dev/null; then
             # Backup storage_panel.js"
-            strgmgrver="$(synopkg version StorageManager)"
+
+            if [[ $buildnumber -gt 64570 ]]; then
+                # DSM 7.2.1 and later
+                strgmgrver="$(/usr/syno/bin/synopkg version StorageManager)"
+            elif [[ $buildnumber -ge 64561 ]]; then
+                # DSM 7.2
+                strgmgrver="${buildnumber}${smallfixnumber}"
+            fi
+
             echo ""
             if [[ ! -f "${strgmgr}.$strgmgrver" ]]; then
                 if cp -p "$strgmgr" "${strgmgr}.$strgmgrver"; then

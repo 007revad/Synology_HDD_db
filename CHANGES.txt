@@ -1,3 +1,13 @@
+v3.5.90
+- Changed to enable creating storage pools/volumes on NVMe drives in a PCIe M.2 adaptor in DSM 7.2
+  - Previously only supported DSM 7.2.1
+- Changed to enable creating storage pools/volumes on NVMe drives in a PCIe M.2 adaptor even if PCIe M.2 adaptor not found.
+  - This may allow creating NVMe volumes on 3rd party PCIe M.2 adaptors.
+- Bug fix for when there's multiple expansion unit models only the last expansion unit was processed. Issue #288
+- Bug fix for when there's multiple M2 adaptor card models only the last M2 card was processed. 
+- Bug fix for incorrectly matching model name variations as well as the exact model name. 
+  - e.g. RX1217 matched RX1217, RX1217rp and RX1217sas.
+
 v3.5.89
 - Bug fix for -s, --showedits option with multiple of the same drive model but with different firmware versions. Issue #276
 
