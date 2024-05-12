@@ -9,6 +9,9 @@
 - **<a href="https://github.com/007revad/Asustor_Plex_Backup">Asustor_Plex_Backup</a>**
   - Backup your Asustor's Plex Media Server settings and database.
 
+- **<a href="https://github.com/007revad/Linux_Plex_Backup">Linux_Plex_Backup</a>**
+  - Backup your Linux Plex Media Server's settings and database.
+
 - **<a href="https://github.com/007revad/Plex_Server_Sync">Plex_Server_Sync</a>**
   - Sync your main Plex server database & metadata to a backup Plex server.
   - Works for Synology, Asustor, Linux and supports Plex package or Plex in docker.
@@ -58,6 +61,9 @@
 
 - **<a href="https://github.com/007revad/Synology_DSM_reinstall">Synology_DSM_reinstall</a>**
   - Easily re-install the same DSM version without losing any data or settings.
+
+- **<a href="https://github.com/007revad/Synology_CPU_temperature">Synology_CPU_temperature</a>**
+  - Get Synology NAS CPU temperature via SSH.
 
 - **<a href="https://github.com/007revad/Synology_enable_sequential_IO">Synology_enable_sequential_IO</a>**
   - Enables sequential I/O for your SSD caches, like DSM 6 had.
