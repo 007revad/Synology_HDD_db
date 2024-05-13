@@ -24,4 +24,4 @@ Here's some screenshots showing what needs to be set:
 
 <p align="leftr"><img src="images/schedule2.png"></p>
 
-<p align="leftr"><img src="images/schedule3.png"></p>
+<p align="leftr"><img src="images/schedule3-2.png"></p>
