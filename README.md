@@ -159,7 +159,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  |  | Po-Chia Chen | Jean-François Fruhauf |
+|  | Craig Sadler | Po-Chia Chen | Jean-François Fruhauf |
 | Sven 'ctraltdelete' | Thomas Horn | Christian | Simon Azzouni |
 | Lee Booy | Bünyamin Olgun | Hartmut Heinbach | Alexander Gundermann |
 | Björn Schöninger | Nico Scherer | Patrick Hoekstra | Alex Joyce |
