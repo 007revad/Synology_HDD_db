@@ -80,9 +80,11 @@ done
 
 echo -e '\n Checking if nvme drives are detected with synonvme'
 for nvme in /dev/nvme*n1; do
-    printf "${nvme:5:-2}: "; synonvme --is-nvme-ssd "$nvme"
-    printf "${nvme:5:-2}: "; synonvme --vendor-get "$nvme"
-    printf "${nvme:5:-2}: "; synonvme --model-get "$nvme"
+    if [[ -e $nvme ]]; then
+        printf "${nvme:5:-2}: "; synonvme --is-nvme-ssd "$nvme"
+        printf "${nvme:5:-2}: "; synonvme --vendor-get "$nvme"
+        printf "${nvme:5:-2}: "; synonvme --model-get "$nvme"
+    fi
 done
 
 
