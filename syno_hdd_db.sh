@@ -48,7 +48,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.90"
+scriptver="v3.5.91"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -948,10 +948,9 @@ if [[ ${#hdlist[@]} -gt "0" ]]; then
     done < <(printf "%s\0" "${hdlist[@]}" | sort -uz)        
 fi
 
-# Check hdds array isn't empty
+# Show hdd if hdds array isn't empty
 if [[ ${#hdds[@]} -eq "0" ]]; then
-    ding
-    echo -e "\n${Error}ERROR${Off} No drives found!" && exit 2
+    echo -e "No SATA or SAS drives found\n"
 else
     echo -e "\nHDD/SSD models found: ${#hdds[@]}"
     num="0"
@@ -970,7 +969,7 @@ if [[ ${#nvmelist[@]} -gt "0" ]]; then
     done < <(printf "%s\0" "${nvmelist[@]}" | sort -uz)        
 fi
 
-# Check nvmes array isn't empty
+# Show nvmes if nvmes array isn't empty
 if [[ $m2 != "no" ]]; then
     if [[ ${#nvmes[@]} -eq "0" ]]; then
         echo -e "No M.2 drives found\n"
@@ -984,6 +983,13 @@ if [[ $m2 != "no" ]]; then
         done
         echo
     fi
+fi
+
+
+# Exit if no drives found
+if [[ ${#hdds[@]} -eq "0" ]] && [[ ${#nvmes[@]} -eq "0" ]]; then
+    ding
+    echo -e "\n${Error}ERROR${Off} No drives found!" && exit 2
 fi
 
 
