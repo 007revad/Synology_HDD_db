@@ -65,6 +65,9 @@
 - **<a href="https://github.com/007revad/Synology_CPU_temperature">Synology_CPU_temperature</a>**
   - Get Synology NAS CPU temperature via SSH.
 
+- **<a href="https://github.com/007revad/Synology_SMART_info">Synology_SMART_info</a>**
+  - Show Synology smart test progress or smart health and attributes.
+
 - **<a href="https://github.com/007revad/Synology_enable_sequential_IO">Synology_enable_sequential_IO</a>**
   - Enables sequential I/O for your SSD caches, like DSM 6 had.
 
