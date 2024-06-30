@@ -1,3 +1,7 @@
+v3.5.92
+- Changed to support M.2 SATA SSDs in M2D18 or M2D17.
+- Change -s, --show option to show changes for each different drive model.
+
 v3.5.91
 - Changed to not exit if no SATA or SAS drives found. Issue #303
   - Now only exits if no SATA, SAS or NVMe drives found.
