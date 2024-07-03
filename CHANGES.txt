@@ -1,5 +1,5 @@
 v3.5.93
-- Bug fix for false "Failed to delete tmp files" log entries after script updates itself. Issue #312
+- Bug fix for false "Failed to delete tmp files" log entries when script updates itself. Issue #312
   - Bug first appeared in v3.1.64
 
 v3.5.92
