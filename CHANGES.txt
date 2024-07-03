@@ -1,3 +1,7 @@
+v3.5.93
+- Bug fix for false "Failed to delete tmp files" log entries. Issue #312
+  - Bug first appeared in v3.1.64
+
 v3.5.92
 - Changed to support M.2 SATA SSDs in M2D18 or M2D17.
 - Change -s, --show option to show changes for each different drive model.
