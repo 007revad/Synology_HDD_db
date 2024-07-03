@@ -49,7 +49,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.92"
+scriptver="v3.5.93"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -388,7 +388,7 @@ cleanup_tmp(){
     fi
 
     # Add warning to DSM log
-    if [[ -z $cleanup_err ]]; then
+    if [[ $cleanup_err ]]; then
         syslog_set warn "$script update failed to delete tmp files"
     fi
 }
@@ -1780,7 +1780,7 @@ if [[ $dsm -gt "6" ]]; then  # DSM 6 as has no dmidecode
         fi
         # Set mem_max_mb to the amount of installed memory
         setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo mem_max_mb)"
-        settingbak="$(/usr/syno/bin/synogetkeyvalue ${synoinfo}.bak mem_max_mb)"                      # GitHub issue #107
+        settingbak="$(/usr/syno/bin/synogetkeyvalue ${synoinfo}.bak mem_max_mb)"      # GitHub issue #107
         if [[ $ramtotal =~ ^[0-9]+$ ]]; then   # Check $ramtotal is numeric
             if [[ $ramtotal -gt "$setting" ]]; then
                 /usr/syno/bin/synosetkeyvalue "$synoinfo" mem_max_mb "$ramtotal"
