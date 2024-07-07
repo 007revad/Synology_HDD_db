@@ -111,7 +111,7 @@ sudo -s /path-to-script/syno_hdd_db.sh -nr
 
 **Note:** Replace /path-to-script/ with the actual path to the script on your Synology.
 
-<p align="leftr"><img src="images/syno_hdd_db1.png"></p>
+<p align="left"><img src="images/syno_hdd_db1.png"></p>
 
 If you run the script with the --showedits flag it will show you the changes it made to the Synology's compatible-drive database. Obviously this is only useful if you run the script in a shell.
 
@@ -121,7 +121,7 @@ sudo -s /path-to-script/syno_hdd_db.sh -nr --showedits
 
 **Note:** Replace /path-to-script/ with the actual path to the script on your Synology.
 
-<p align="leftr"><img src="images/syno_hdd_db.png"></p>
+<p align="left"><img src="images/syno_hdd_db.png"></p>
 
 ### Troubleshooting
 
@@ -137,11 +137,11 @@ You only need to edit syno_hdd_vendor_ids.txt if the script warns you about a mi
 
 If DSM doesn't know the brand of your NVMe drives they will show up in Storage Manager as Unknown brand, and Unrecognised firmware version.
 
-<p align="leftr"><img src="images/unknown.png"></p>
+<p align="left"><img src="images/unknown.png"></p>
 
 In this case the script will show you the vendor ID and advise you to add it to the syno_hdd_vendor_ids.txt file.
 
-<p align="leftr"><img src="images/vendor_ids.png"></p>
+<p align="left"><img src="images/vendor_ids.png"></p>
 
 <br>
 
