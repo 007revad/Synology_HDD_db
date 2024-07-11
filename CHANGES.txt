@@ -1,3 +1,11 @@
+v3.5.94
+- Updated to support newer drive db versions.
+  - Synology added size_gb in host v7 version 8051.
+  - Synology added barebone_installable_v2 in host v7 version 8054.
+
+Note: You may need to run syno_hdd_db without the -n or --noupdate option, then update the drive database from
+"Storage Manager > HDD/SSD > Settings > Advanced > Update Now" then run syno_hdd_db with your preferred options.
+
 v3.5.93
 - Bug fix for false "Failed to delete tmp files" log entries when script updates itself. Issue #312
   - Bug first appeared in v3.1.64
