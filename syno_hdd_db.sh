@@ -812,6 +812,15 @@ fixdrivemodel(){
     fi
 }
 
+get_size_gb(){ 
+    # $1 is /sys/block/sata1 or /sys/block/nvme0n1 etc
+    local float
+    local int
+    float=$(synodisk --info /dev/"$(basename -- "$1")" | grep 'Total capacity' | awk '{print $4 * 1.0737}')
+    int="${float%.*}"
+    echo "$int"
+}
+
 getdriveinfo(){ 
     # $1 is /sys/block/sata1 etc
 
@@ -841,12 +850,15 @@ getdriveinfo(){
             fwrev=$(smartctl -a -d sat -T permissive "$dev" | grep -i firmware | awk '{print $NF}')
         fi
 
+        # Get drive GB size
+        size_gb=$(get_size_gb "$1")
+
         if [[ $hdmodel ]] && [[ $fwrev ]]; then
             if /usr/syno/bin/synodisk --enum -t cache | grep -q /dev/"$(basename -- "$1")"; then
                 # Is SATA M.2 SSD
-                nvmelist+=("${hdmodel},${fwrev}")
+                nvmelist+=("${hdmodel},${fwrev},${size_gb}")
             else
-                hdlist+=("${hdmodel},${fwrev}")
+                hdlist+=("${hdmodel},${fwrev},${size_gb}")
             fi
             drivelist+=("${hdmodel}")
         fi
@@ -864,8 +876,11 @@ getm2info(){
     fi
     nvmefw=$(printf "%s" "$nvmefw" | xargs)  # trim leading and trailing white space
 
+    # Get drive GB size
+    size_gb=$(get_size_gb "$1")
+
     if [[ $nvmemodel ]] && [[ $nvmefw ]]; then
-        nvmelist+=("${nvmemodel},${nvmefw}")
+        nvmelist+=("${nvmemodel},${nvmefw},${size_gb}")
         drivelist+=("${nvmemodel}")
     fi
 }
@@ -1229,6 +1244,7 @@ editdb7(){
 updatedb(){ 
     hdmodel=$(printf "%s" "$1" | cut -d"," -f 1)
     fwrev=$(printf "%s" "$1" | cut -d"," -f 2)
+    size_gb=$(printf "%s" "$1" | cut -d"," -f 3)
 
     #echo arg1 "$1" >&2           # debug
     #echo arg2 "$2" >&2           # debug
@@ -1243,15 +1259,23 @@ updatedb(){
         if grep "$hdmodel"'":{"'"$fwrev" "$2" >/dev/null; then
             echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
         else
-            fwstrng=\"$fwrev\"
-            fwstrng="$fwstrng":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
-            fwstrng="$fwstrng":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true,
-            fwstrng="$fwstrng"\"smart_test_ignore\":false,\"smart_attr_ignore\":false}]},
+            common_string="$common_string"\"size_gb\":$size_gb,
+            common_string="$common_string"\"compatibility_interval\":[{
+            common_string="$common_string"\"compatibility\":\"support\",
+            common_string="$common_string"\"not_yet_rolling_status\":\"support\",
+            common_string="$common_string"\"fw_dsm_update_status_notify\":false,
+            common_string="$common_string"\"barebone_installable\":true,
+            common_string="$default"\"barebone_installable_v2\":\"auto\",
+            common_string="$common_string"\"smart_test_ignore\":false,
+            common_string="$common_string"\"smart_attr_ignore\":false
+            
+            fwstrng=\"$fwrev\":{
+            fwstrng="$fwstrng$common_string"
+            fwstrng="$fwstrng"}]},
 
-            default=\"default\"
-            default="$default":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
-            default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true,
-            default="$default"\"smart_test_ignore\":false,\"smart_attr_ignore\":false}]}}}
+            default=\"default\":{
+            default="$default$common_string"
+            default="$default"}]}}}
 
             # Synology misspelt compatibility as compatbility
             if grep '"disk_compatbility_info":{}' "$2" >/dev/null; then
