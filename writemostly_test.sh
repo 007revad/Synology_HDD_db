@@ -40,7 +40,7 @@ for idrive in "${internal_drives[@]}"; do
         # Add internal HDDs to array
         internal_hdds+=("$internal_drive")
     else
-        # Count number of 2.5 inch SSDs
+        # Count number of internal 2.5 inch SSDs
         internal_ssd_qty=$((internal_ssd_qty +1))
     fi
 done
