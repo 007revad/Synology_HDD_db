@@ -1,7 +1,7 @@
 v3.5.94
 - Updated to support newer drive db versions.
-  - Synology added size_gb in host v7 version 8051.
-  - Synology added barebone_installable_v2 in host v7 version 8054.
+  - Synology added size_gb in a recent host v7 version (in SynoOfflinePack 764).
+  - Synology added barebone_installable_v2 in the latest host v7 version (in SynoOfflinePack 787).
 - Bug fix when restoring where memcheck service was only re-enabled on DVA models.
 - Changed to add leading 0 to short vids reported by drive.
   - Sets 2 vids in case DSM uses the short one (e.g. 0x05dc=brand and 0x5dc=brand).
