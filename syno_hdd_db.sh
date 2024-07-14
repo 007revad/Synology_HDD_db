@@ -16,31 +16,7 @@
 #--------------------------------------------------------------------------------------------------
 # https://smarthdd.com/database/
 
-# CHANGES
-# Bug fix for when there's multiple expansion unit models only the last expansion unit was processed. Issue #288
-# Bug fix for when there's multiple M2 adaptor card models only the last M2 card was processed. 
-# Bug fix for incorrectly matching model name variations as well as the exact model name. 
-#  - e.g. RX1217 matched RX1217, RX1217rp and RX1217sas.
-#
-# Changed to enable creating storage pools/volumes on NVMe drives in a PCIe M.2 adaptor even if
-# PCIe M.2 adaptor not found. This may allow creating NVMe volumes on 3rd party PCIe M.2 adaptors.
-#
-# Bug fix for -s, --showedits option for multiple of the same drive model
-# but with different firmware versions. Issue #276
-#
-# Changed disabling memory compatibility for older models. Issue #272
-#
-# Hard coded /usr/syno/bin/<command> for Synology commands (to prevent $PATH issues).
-#
-# Now enables creating storage pools in Storage Manager for M.2 drives in PCIe adaptor cards.
-#  - E10M20-T1, M2D20, M2D18, M2D17 and FX2422N
-#
-# Added new vendor ids for Apacer, aigo, Lexar and Transcend NVMe drives.
-#
-# Now includes syno_hdd_vendor_ids.txt so users can add their NVMe drive's vendor id.
-#   - syno_hdd_vendor_ids.txt needs to be in the same folder as syno_hdd_db.sh
-#
-# Now warns if script is located on an M.2 volume.
+# RECENT CHANGES
 
 # TODO
 # Enable SMART Attributes button on Storage Manager
@@ -49,7 +25,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.93"
+scriptver="v3.5.94"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -686,12 +662,10 @@ if [[ $restore == "yes" ]]; then
         # Update .db files from Synology
         /usr/syno/bin/syno_disk_db_update --update
 
-        # Enable SynoMemCheck.service for DVA models
-        if [[ ${model:0:3} == "dva" ]]; then
-            memcheck="/usr/lib/systemd/system/SynoMemCheck.service"
-            if [[ $(/usr/syno/bin/synogetkeyvalue "$memcheck" ExecStart) == "/bin/true" ]]; then
-                /usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart /usr/syno/bin/syno_mem_check
-            fi
+        # Enable SynoMemCheck.service if disabled
+        memcheck="/usr/lib/systemd/system/SynoMemCheck.service"
+        if [[ $(/usr/syno/bin/synogetkeyvalue "$memcheck" ExecStart) == "/bin/true" ]]; then
+            /usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart /usr/syno/bin/syno_mem_check
         fi
 
         if [[ -z $restoreerr ]]; then
@@ -772,6 +746,18 @@ set_vendor(){
             if ! grep "$vid" "$vidfile2" >/dev/null; then
                 /usr/syno/bin/synosetkeyvalue "$vidfile2" "${vid,,}" "$vendor"
             fi
+
+            # Add leading 0 to short vid (change 0x5dc to 0x05dc)
+            if [[ ${#vid} -eq "5" ]]; then
+                vid="0x0${vid: -3}"
+            fi
+            if ! grep "$vid" "$vidfile" >/dev/null; then
+                /usr/syno/bin/synosetkeyvalue "$vidfile" "${vid,,}" "$vendor"
+            fi
+            if ! grep "$vid" "$vidfile2" >/dev/null; then
+                /usr/syno/bin/synosetkeyvalue "$vidfile2" "${vid,,}" "$vendor"
+            fi
+
         fi
     fi
 }
@@ -812,6 +798,15 @@ fixdrivemodel(){
     fi
 }
 
+get_size_gb(){ 
+    # $1 is /sys/block/sata1 or /sys/block/nvme0n1 etc
+    local float
+    local int
+    float=$(synodisk --info /dev/"$(basename -- "$1")" | grep 'Total capacity' | awk '{print $4 * 1.0737}')
+    int="${float%.*}"
+    echo "$int"
+}
+
 getdriveinfo(){ 
     # $1 is /sys/block/sata1 etc
 
@@ -841,12 +836,15 @@ getdriveinfo(){
             fwrev=$(smartctl -a -d sat -T permissive "$dev" | grep -i firmware | awk '{print $NF}')
         fi
 
+        # Get drive GB size
+        size_gb=$(get_size_gb "$1")
+
         if [[ $hdmodel ]] && [[ $fwrev ]]; then
             if /usr/syno/bin/synodisk --enum -t cache | grep -q /dev/"$(basename -- "$1")"; then
                 # Is SATA M.2 SSD
-                nvmelist+=("${hdmodel},${fwrev}")
+                nvmelist+=("${hdmodel},${fwrev},${size_gb}")
             else
-                hdlist+=("${hdmodel},${fwrev}")
+                hdlist+=("${hdmodel},${fwrev},${size_gb}")
             fi
             drivelist+=("${hdmodel}")
         fi
@@ -864,8 +862,11 @@ getm2info(){
     fi
     nvmefw=$(printf "%s" "$nvmefw" | xargs)  # trim leading and trailing white space
 
+    # Get drive GB size
+    size_gb=$(get_size_gb "$1")
+
     if [[ $nvmemodel ]] && [[ $nvmefw ]]; then
-        nvmelist+=("${nvmemodel},${nvmefw}")
+        nvmelist+=("${nvmemodel},${nvmefw},${size_gb}")
         drivelist+=("${nvmemodel}")
     fi
 }
@@ -982,7 +983,7 @@ else
     echo -e "\nHDD/SSD models found: ${#hdds[@]}"
     num="0"
     while [[ $num -lt "${#hdds[@]}" ]]; do
-        echo "${hdds[num]}"
+        echo "${hdds[num]} GB"
         num=$((num +1))
     done
     echo
@@ -1005,7 +1006,7 @@ if [[ $m2 != "no" ]]; then
         echo "M.2 drive models found: ${#nvmes[@]}"
         num="0"
         while [[ $num -lt "${#nvmes[@]}" ]]; do
-            echo "${nvmes[num]}"
+            echo "${nvmes[num]} GB"
             num=$((num +1))
         done
         echo
@@ -1229,6 +1230,7 @@ editdb7(){
 updatedb(){ 
     hdmodel=$(printf "%s" "$1" | cut -d"," -f 1)
     fwrev=$(printf "%s" "$1" | cut -d"," -f 2)
+    size_gb=$(printf "%s" "$1" | cut -d"," -f 3)
 
     #echo arg1 "$1" >&2           # debug
     #echo arg2 "$2" >&2           # debug
@@ -1243,15 +1245,23 @@ updatedb(){
         if grep "$hdmodel"'":{"'"$fwrev" "$2" >/dev/null; then
             echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
         else
-            fwstrng=\"$fwrev\"
-            fwstrng="$fwstrng":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
-            fwstrng="$fwstrng":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true,
-            fwstrng="$fwstrng"\"smart_test_ignore\":false,\"smart_attr_ignore\":false}]},
+            common_string=\"size_gb\":$size_gb,
+            common_string="$common_string"\"compatibility_interval\":[{
+            common_string="$common_string"\"compatibility\":\"support\",
+            common_string="$common_string"\"not_yet_rolling_status\":\"support\",
+            common_string="$common_string"\"fw_dsm_update_status_notify\":false,
+            common_string="$common_string"\"barebone_installable\":true,
+            common_string="$common_string"\"barebone_installable_v2\":\"auto\",
+            common_string="$common_string"\"smart_test_ignore\":false,
+            common_string="$common_string"\"smart_attr_ignore\":false
 
-            default=\"default\"
-            default="$default":{\"compatibility_interval\":[{\"compatibility\":\"support\",\"not_yet_rolling_status\"
-            default="$default":\"support\",\"fw_dsm_update_status_notify\":false,\"barebone_installable\":true,
-            default="$default"\"smart_test_ignore\":false,\"smart_attr_ignore\":false}]}}}
+            fwstrng=\"$fwrev\":{
+            fwstrng="$fwstrng$common_string"
+            fwstrng="$fwstrng"}]},
+
+            default=\"default\":{
+            default="$default$common_string"
+            default="$default"}]}}}
 
             # Synology misspelt compatibility as compatbility
             if grep '"disk_compatbility_info":{}' "$2" >/dev/null; then
@@ -1999,16 +2009,23 @@ fi
 #------------------------------------------------------------------------------
 # Finished
 
+show_changes(){  
+    # $1 is drive_model,firmware_version,size_gb
+    drive_model="$(printf "%s" "$1" | cut -d"," -f 1)"
+    echo -e "\n$drive_model:"
+    jq -r --arg drive_model "$drive_model" '.disk_compatbility_info[$drive_model]' "${db1list[0]}"
+}
+
 # Show the changes
 if [[ ${showedits,,} == "yes" ]]; then
-    # Sort array to remove duplicates
-    IFS=$'\n'
-    drives_sorted=($(sort -u <<<"${drivelist[*]}"))
-    unset IFS
-    # Show the changes for drive model
-    for drive_model in "${drives_sorted[@]}"; do
-        echo -e "\n$drive_model:"
-        jq -r --arg drive_model "$drive_model" '.disk_compatbility_info[$drive_model]' "${db1list[0]}"
+    # HDDs/SSDs
+    for d in "${hdds[@]}"; do
+        show_changes "$d"
+    done
+
+    # NVMe drives
+    for d in "${nvmes[@]}"; do
+        show_changes "$d"
     done
 fi
 
