@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-#-----------------------------------------------------
-# Show Synology Drive number, model and serial number
+#-------------------------------------------------------------
+# Show dev id, Synology Drive number, model and serial number
 #
 # Github: https://github.com/007revad/Synology_HDD_db
-#-----------------------------------------------------
+#-------------------------------------------------------------
 
 # Check script is running as root
 if [[ $( whoami ) != "root" ]]; then
@@ -67,7 +67,7 @@ show_drive_model(){
     fi
 
     # Show drive model and serial
-    echo -e "\n${Cyan}${drive_num}${Off}$model  ${Yellow}$serial${Off}"
+    echo -e "\n$drive  ${Cyan}${drive_num}${Off}$model  ${Yellow}$serial${Off}"
 }
 
 # Add drives to drives array
