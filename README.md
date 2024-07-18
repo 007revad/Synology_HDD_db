@@ -81,7 +81,16 @@ There are optional flags you can use when running the script:
                           DSM 7.2.1 already has WDDA disabled
   -p, --pcie            Enable creating volumes on M2 in unknown PCIe adaptor
   -e, --email           Disable colored text in output scheduler emails
-      --restore         Undo all changes made by the script
+  -S, --ssd=DRIVE       Enable write_mostly on slow internal drives so DSM 
+                        runs from the fast internal drive(s).
+                          -S automatically sets internal SSDs as DSM default
+                          --ssd=DRIVE requires the fast drive(s) as argument,
+                          or restore as the argument to set drives to default
+                          --ssd=sata1 or --ssd=sata1,sata2 or --ssd=sda etc
+                          --ssd=sata1 or --ssd=sata1,sata2 or --ssd=sda etc
+                          --ssd=restore
+      --restore         Undo all changes made by the script (except -S --ssd)
+       --autoupdate=AGE  Auto update script (useful when script is scheduled)
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
                           AGE is how many days old a release must be before
                           auto-updating. AGE must be a number: 0 or greater
