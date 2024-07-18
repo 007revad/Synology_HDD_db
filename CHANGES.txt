@@ -1,3 +1,6 @@
+v3.5.96
+- Enable write_mostly on slow internal drives so DSM runs from the fast internal drive(s).
+
 v3.5.94
 - Updated to support newer drive db versions.
   - Synology added size_gb in a recent host v7 version (in SynoOfflinePack 764).
