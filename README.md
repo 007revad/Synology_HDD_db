@@ -30,9 +30,9 @@ It also has a restore option to undo all the changes made by the script.
 * Optionally disable DSM's "support_memory_compatibility" to prevent <a href=images/ram_warning.png/>non-Synology memory notifications</a>.
 * Optionally edits max supported memory to match the amount of memory installed, if installed memory is greater than the current max memory setting.
     * DSM only uses the max memory setting when calculating the reserved RAM area size for SSD caches.
-* Optionally set writemostly on your internal HDDs drives so DSM will normally read from your faster SSD(s).
+* Optionally set writemostly for your internal HDDs so DSM will normally read from your faster internal SSD(s).
     * It can automatically set DSM to read from your internal SSDs.
-    * Or you can tell the script which drive(s) DSM should read from.
+    * Or you can tell the script which internal drive(s) DSM should read from.
 * Optionally disables Western Digital Device Analytics (aka WDDA) to prevent DSM showing a [warning for WD drives that are 3 years old](https://arstechnica.com/gadgets/2023/06/clearly-predatory-western-digital-sparks-panic-anger-for-age-shaming-hdds).
     * DSM 7.2.1 already has WDDA disabled.
 * Enables M2D20, M2D18, M2D17 and E10M20-T1 if present on Synology NAS that don't officially support them.
