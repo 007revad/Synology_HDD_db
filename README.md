@@ -93,7 +93,6 @@ There are optional flags you can use when running the script:
                           --ssd=sata1 or --ssd=sata1,sata2 or --ssd=sda etc
                           --ssd=restore
       --restore         Undo all changes made by the script (except -S --ssd)
-       --autoupdate=AGE  Auto update script (useful when script is scheduled)
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
                           AGE is how many days old a release must be before
                           auto-updating. AGE must be a number: 0 or greater
