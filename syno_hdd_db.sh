@@ -73,8 +73,8 @@ Options:
                           DSM 7.2.1 already has WDDA disabled
   -p, --pcie            Enable creating volumes on M2 in unknown PCIe adaptor
   -e, --email           Disable colored text in output scheduler emails
-  -S, --ssd=DRIVE       Enable write_mostly on slow internal drives so DSM 
-                        runs from the fast internal drive(s).
+  -S, --ssd=DRIVE       Enable write_mostly on internal HDDs so DSM primary 
+  			reads from internal SSDs or your specified drives.
                           -S automatically sets internal SSDs as DSM default
                           --ssd=DRIVE requires the fast drive(s) as argument,
                           or restore as the argument to set drives to default
