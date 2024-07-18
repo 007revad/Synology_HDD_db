@@ -86,10 +86,9 @@ There are optional flags you can use when running the script:
   -e, --email           Disable colored text in output scheduler emails
   -S, --ssd=DRIVE       Enable write_mostly on slow internal drives so DSM 
                         runs from the fast internal drive(s).
-                          -S automatically sets internal SSDs as DSM default
+                          -S automatically sets internal SSDs as DSM preferred
                           --ssd=DRIVE requires the fast drive(s) as argument,
-                          or restore as the argument to set drives to default
-                          --ssd=sata1 or --ssd=sata1,sata2 or --ssd=sda etc
+                          or restore as the argument to reset drives to default
                           --ssd=sata1 or --ssd=sata1,sata2 or --ssd=sda etc
                           --ssd=restore
       --restore         Undo all changes made by the script (except -S --ssd)
