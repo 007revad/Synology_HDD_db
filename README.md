@@ -162,6 +162,7 @@ In this case the script will show you the vendor ID and advise you to add it to 
 - Thanks to dwabraxus and aferende for help detecting connected expansion units.
 - Thanks to bartoque on the Synology subreddit for the tip on making the script download the latest release from GitHub.
 - Thanks to nicolerenee for pointing out the easiest way to enable creating M.2 storage pools and volumes in Storage Manager.
+- Thanks to Xeroxxx for the writemostly suggestion and their writeup here: https://www.techspark.de/speed-up-synology-dsm-with-hdd-ssd/
 
 ### Donators
 
