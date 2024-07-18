@@ -3,6 +3,9 @@ v3.5.96
     - It can automatically set DSM to read from your internal SSDs.
     - Or you can tell the script which internal drive(s) DSM should read from.
 
+Thanks to Xeroxxx for the writemostly suggestion and their writeup here: 
+https://www.techspark.de/speed-up-synology-dsm-with-hdd-ssd/
+
 v3.5.94
 - Updated to support newer drive db versions.
   - Synology added size_gb in a recent host v7 version (in SynoOfflinePack 764).
