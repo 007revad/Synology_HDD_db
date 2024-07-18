@@ -1727,14 +1727,14 @@ set_writemostly(){
 
 if [[ $ssd == "yes" ]]; then
     # Get array of internal drives
-    readarray -t internal_drives < <(synodisk --enum -t internal | grep 'Disk path')
+    readarray -t internal_drives < <(synodisk --enum -t internal | grep 'Disk path' | cut -d"/" -f3)
 
     if [[ $ssd_restore == "yes" ]]; then
         # Restore all internal drives to just in_sync
         echo -e "\nRestoring internal drive's state:"
         for idrive in "${internal_drives[@]}"; do
             #if ! grep -q "write_mostly"; then 
-                set_writemostly -writemostly "$(basename -- "$idrive")"
+                set_writemostly -writemostly "$idrive"
             #fi
         done
 
@@ -1743,7 +1743,7 @@ if [[ $ssd == "yes" ]]; then
         echo -e "\nSetting slow internal HDDs state to write_mostly:"
         for idrive in "${internal_drives[@]}"; do
             if [[ ! ${ssds_writemostly[*]} =~ $idrive ]]; then
-                set_writemostly writemostly "$(basename -- "$idrive")"
+                set_writemostly writemostly "$idrive"
             fi
         done
 
@@ -1769,7 +1769,7 @@ if [[ $ssd == "yes" ]]; then
             # There are internal SSDs and HDDs
             echo -e "\nSetting internal HDDs state to write_mostly:"
             for idrive in "${internal_hdds[@]}"; do
-                set_writemostly writemostly "$(basename -- "$idrive")"
+                set_writemostly writemostly "$idrive"
             done
         fi
     fi
