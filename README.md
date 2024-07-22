@@ -170,6 +170,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
+|  |  |  | Oleksandr Antonishak |
 | Marcel Siemienowski | Dave Smart | dweagle79 | lingyinsam | 
 | Vojtech Filkorn | Craig Sadler | Po-Chia Chen | Jean-François Fruhauf |
 | Sven 'ctraltdelete' | Thomas Horn | Christian | Simon Azzouni |
