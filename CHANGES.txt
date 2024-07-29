@@ -1,6 +1,6 @@
 v3.5.97
 - Changed silently skip empty .db.new files with showing an error. Issue #175
-- Changed to warn if if db file is 0 bytes.
+- Changed to warn if db file is 0 bytes.
 
 v3.5.96
 - Added option to set write_mostly for your internal HDDs so DSM will normally read from your faster internal SSD(s).
