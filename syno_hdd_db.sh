@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.96"
+scriptver="v3.5.97"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -74,11 +74,10 @@ Options:
   -p, --pcie            Enable creating volumes on M2 in unknown PCIe adaptor
   -e, --email           Disable colored text in output scheduler emails
   -S, --ssd=DRIVE       Enable write_mostly on internal HDDs so DSM primary 
-  			reads from internal SSDs or your specified drives.
-                          -S automatically sets internal SSDs as DSM default
+                        reads from internal SSDs or your specified drives
+                          -S automatically sets internal SSDs as DSM preferred
                           --ssd=DRIVE requires the fast drive(s) as argument,
-                          or restore as the argument to set drives to default
-                          --ssd=sata1 or --ssd=sata1,sata2 or --ssd=sda etc
+                          or restore as the argument to reset drives to default
                           --ssd=sata1 or --ssd=sata1,sata2 or --ssd=sda etc
                           --ssd=restore
       --restore         Undo all changes made by the script (except -S --ssd)
@@ -1156,8 +1155,14 @@ getdbtype(){
     elif grep -q -F '{"success":1,"list":[' "$1"; then
         # DSM 6 drive db files start with {"success":1,"list":[
         dbtype=6
+    elif [[ ! $1 =~ .*'.db.new' ]]; then
+        if [[ $(stat -c%s "$1") -eq "0" ]]; then
+            echo -e "${Error}ERROR${Off} $(basename -- "${1}") is 0 bytes!" >&2
+        else
+            echo -e "${Error}ERROR${Off} Unknown database type $(basename -- "${1}")!" >&2
+        fi
+        dbtype=1
     else
-        echo -e "${Error}ERROR${Off} Unknown database type $(basename -- "${1}")!" >&2
         dbtype=1
     fi
     #echo "db type: $dbtype" >&2  # debug
@@ -1980,7 +1985,7 @@ fi
 
 # Enable m2 volume support
 # shellcheck disable=SC2010  # Don't warn about "Don't use ls | grep"
-if ls /dev | grep -q "nv[em]"; then
+if ls /dev | grep -q "nv[cm]"; then
     if [[ $m2 != "no" ]]; then
         if [[ $m2exists == "yes" ]]; then
             # Check if m2 volume support is enabled
