@@ -1,3 +1,6 @@
+v3.5.98
+- Changed to install dtc automaticall if needed and running from task scheduler.
+
 v3.5.97
 - Changed silently skip empty .db.new files with showing an error. Issue #175
 - Changed to warn if db file is 0 bytes.
