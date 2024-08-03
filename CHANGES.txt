@@ -1,5 +1,9 @@
 v3.5.98
-- Changed to install dtc automaticall if needed and running from task scheduler.
+- Changed to automatically download and install dtc if all of the following 4 conditions are met:
+    1. dtc is not already installed.
+    2. /bin/dtc or dtc are not in the same folder as the script.
+    3. The script needs dtc.
+    4. The script is running from task scheduler.
 
 v3.5.97
 - Changed silently skip empty .db.new files with showing an error. Issue #175
