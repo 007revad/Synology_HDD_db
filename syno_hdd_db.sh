@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.97"
+scriptver="v3.5.98"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1564,6 +1564,33 @@ EOM2D17
 fi
 }
 
+is_schedule_running(){ 
+    # $1 is script's filename. e.g. syno_hdd_db.sh etc
+    local file="/usr/syno/etc/esynoscheduler/esynoscheduler.db"
+    local rows offset task status pid result
+
+    # Get number of rows in database
+    rows=$(sqlite3 "${file}" <<ECNT
+SELECT COUNT(*) from task;
+.quit
+ECNT
+)
+    # Check if script is running from task scheduler
+    offset="0"
+    while [[ $rows != "$offset" ]]; do
+        task=$(sqlite3 "$file" "SELECT operation FROM task WHERE rowid = (SELECT rowid FROM task LIMIT 1 OFFSET ${offset});")
+        if echo "$task" | grep -q "$1"; then
+            status=$(sqlite3 "$file" "SELECT status FROM task WHERE rowid = (SELECT rowid FROM task LIMIT 1 OFFSET ${offset});")
+            pid=$(echo "$status" | cut -d"[" -f2 | cut -d"]" -f1)
+            if [[ $pid -gt "0" ]]; then
+                result=$((result +pid))
+            fi
+        fi
+        offset=$((offset +1))
+    done
+    [ -n "$result" ] || return 1
+}
+
 install_binfile(){ 
     # install_binfile <file> <file-url> <destination> <chmod> <bundled-path> <hash>
     # example:
@@ -1579,6 +1606,8 @@ install_binfile(){
     else
         # Download binfile
         if [[ $autoupdate == "yes" ]]; then
+            reply=y
+        elif is_schedule_running "$(basename -- "$0")"; then
             reply=y
         else
             echo -e "\nNeed to download ${1}"
