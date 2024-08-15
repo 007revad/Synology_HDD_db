@@ -1730,31 +1730,36 @@ done
 set_writemostly(){ 
     # $1 is writemostly or in_sync
     # $2 is sata1 or sas1 or sda etc
+    local model
+    # Show drive model
+    model="$(cat /sys/block/"${2}"/device/model | xargs)"
+    echo -e "${Yellow}$model${Off}"
+
     if [[ ${1::2} == "sd" ]]; then
         # sda etc
         # md0 DSM system partition
         echo "$1" > /sys/block/md0/md/dev-"${2}"1/state
         # Show setting
-        echo -n "$2 DSM partition:  "
+        echo -n "  $2 DSM partition:  "
         cat /sys/block/md0/md/dev-"${2}"1/state
 
         # md1 DSM swap partition
         echo "$1" > /sys/block/md1/md/dev-"${2}"2/state
         # Show setting
-        echo -n "$2 Swap partition: "
+        echo -n "  $2 Swap partition: "
         cat /sys/block/md1/md/dev-"${2}"2/state
     else
         # sata1 or sas1 etc
         # md0 DSM system partition
         echo "$1" > /sys/block/md0/md/dev-"${2}"p1/state
         # Show setting
-        echo -n "$2 DSM partition:  "
+        echo -n "  $2 DSM partition:  "
         cat /sys/block/md0/md/dev-"${2}"p1/state
 
         # md1 DSM swap partition
         echo "$1" > /sys/block/md1/md/dev-"${2}"p2/state
         # Show setting
-        echo -n "$2 Swap partition: "
+        echo -n "  $2 Swap partition: "
         cat /sys/block/md1/md/dev-"${2}"p2/state
     fi
 }
@@ -1765,7 +1770,7 @@ if [[ $ssd == "yes" ]]; then
 
     if [[ $ssd_restore == "yes" ]]; then
         # Restore all internal drives to just in_sync
-        echo -e "\nRestoring internal drive's state:"
+        echo -e "\nRestoring internal drive's state"
         for idrive in "${internal_drives[@]}"; do
             #if ! grep -q "write_mostly"; then 
                 set_writemostly -writemostly "$idrive"
@@ -1774,7 +1779,7 @@ if [[ $ssd == "yes" ]]; then
 
     elif [[ ${#ssds_writemostly[@]} -gt "0" ]]; then
         # User specified their fast drive(s)
-        echo -e "\nSetting slow internal HDDs state to write_mostly:"
+        echo -e "\nSetting slow internal HDDs state to write_mostly"
         for idrive in "${internal_drives[@]}"; do
             if [[ ! ${ssds_writemostly[*]} =~ $idrive ]]; then
                 set_writemostly writemostly "$idrive"
@@ -1800,7 +1805,7 @@ if [[ $ssd == "yes" ]]; then
         # Set HDDs to writemostly if there's also internal SSDs
         if [[ $internal_ssd_qty -gt "0" ]] && [[ ${#internal_hdds[@]} -gt "0" ]]; then
             # There are internal SSDs and HDDs
-            echo -e "\nSetting internal HDDs state to write_mostly:"
+            echo -e "\nSetting internal HDDs state to write_mostly"
             for idrive in "${internal_hdds[@]}"; do
                 set_writemostly writemostly "$idrive"
             done
