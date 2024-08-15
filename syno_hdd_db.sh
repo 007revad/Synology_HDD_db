@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.97"
+scriptver="v3.5.98"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1564,6 +1564,33 @@ EOM2D17
 fi
 }
 
+is_schedule_running(){ 
+    # $1 is script's filename. e.g. syno_hdd_db.sh etc
+    local file="/usr/syno/etc/esynoscheduler/esynoscheduler.db"
+    local rows offset task status pid result
+
+    # Get number of rows in database
+    rows=$(sqlite3 "${file}" <<ECNT
+SELECT COUNT(*) from task;
+.quit
+ECNT
+)
+    # Check if script is running from task scheduler
+    offset="0"
+    while [[ $rows != "$offset" ]]; do
+        task=$(sqlite3 "$file" "SELECT operation FROM task WHERE rowid = (SELECT rowid FROM task LIMIT 1 OFFSET ${offset});")
+        if echo "$task" | grep -q "$1"; then
+            status=$(sqlite3 "$file" "SELECT status FROM task WHERE rowid = (SELECT rowid FROM task LIMIT 1 OFFSET ${offset});")
+            pid=$(echo "$status" | cut -d"[" -f2 | cut -d"]" -f1)
+            if [[ $pid -gt "0" ]]; then
+                result=$((result +pid))
+            fi
+        fi
+        offset=$((offset +1))
+    done
+    [ -n "$result" ] || return 1
+}
+
 install_binfile(){ 
     # install_binfile <file> <file-url> <destination> <chmod> <bundled-path> <hash>
     # example:
@@ -1579,6 +1606,8 @@ install_binfile(){
     else
         # Download binfile
         if [[ $autoupdate == "yes" ]]; then
+            reply=y
+        elif is_schedule_running "$(basename -- "$0")"; then
             reply=y
         else
             echo -e "\nNeed to download ${1}"
@@ -1701,31 +1730,36 @@ done
 set_writemostly(){ 
     # $1 is writemostly or in_sync
     # $2 is sata1 or sas1 or sda etc
+    local model
+    # Show drive model
+    model="$(cat /sys/block/"${2}"/device/model | xargs)"
+    echo -e "${Yellow}$model${Off}"
+
     if [[ ${1::2} == "sd" ]]; then
         # sda etc
         # md0 DSM system partition
         echo "$1" > /sys/block/md0/md/dev-"${2}"1/state
         # Show setting
-        echo -n "$2 DSM partition:  "
+        echo -n "  $2 DSM partition:  "
         cat /sys/block/md0/md/dev-"${2}"1/state
 
         # md1 DSM swap partition
         echo "$1" > /sys/block/md1/md/dev-"${2}"2/state
         # Show setting
-        echo -n "$2 Swap partition: "
+        echo -n "  $2 Swap partition: "
         cat /sys/block/md1/md/dev-"${2}"2/state
     else
         # sata1 or sas1 etc
         # md0 DSM system partition
         echo "$1" > /sys/block/md0/md/dev-"${2}"p1/state
         # Show setting
-        echo -n "$2 DSM partition:  "
+        echo -n "  $2 DSM partition:  "
         cat /sys/block/md0/md/dev-"${2}"p1/state
 
         # md1 DSM swap partition
         echo "$1" > /sys/block/md1/md/dev-"${2}"p2/state
         # Show setting
-        echo -n "$2 Swap partition: "
+        echo -n "  $2 Swap partition: "
         cat /sys/block/md1/md/dev-"${2}"p2/state
     fi
 }
@@ -1736,7 +1770,7 @@ if [[ $ssd == "yes" ]]; then
 
     if [[ $ssd_restore == "yes" ]]; then
         # Restore all internal drives to just in_sync
-        echo -e "\nRestoring internal drive's state:"
+        echo -e "\nRestoring internal drive's state"
         for idrive in "${internal_drives[@]}"; do
             #if ! grep -q "write_mostly"; then 
                 set_writemostly -writemostly "$idrive"
@@ -1745,7 +1779,7 @@ if [[ $ssd == "yes" ]]; then
 
     elif [[ ${#ssds_writemostly[@]} -gt "0" ]]; then
         # User specified their fast drive(s)
-        echo -e "\nSetting slow internal HDDs state to write_mostly:"
+        echo -e "\nSetting slow internal HDDs state to write_mostly"
         for idrive in "${internal_drives[@]}"; do
             if [[ ! ${ssds_writemostly[*]} =~ $idrive ]]; then
                 set_writemostly writemostly "$idrive"
@@ -1756,13 +1790,12 @@ if [[ $ssd == "yes" ]]; then
         # Get list of internal HDDs and qty of SSDs
         internal_ssd_qty="0"
         for idrive in "${internal_drives[@]}"; do
-            internal_drive="$(echo "$idrive" | awk '{printf $4}')"
-            if synodisk --isssd "$internal_drive" >/dev/null; then
+            if synodisk --isssd /dev/"${idrive:?}" >/dev/null; then
                 # exit code 0 = is not SSD
                 # exit code 1 = is SSD
 
                 # Add internal HDDs to array
-                internal_hdds+=("$internal_drive")
+                internal_hdds+=("$idrive")
             else
                 # Count number of internal 2.5 inch SSDs
                 internal_ssd_qty=$((internal_ssd_qty +1))
@@ -1772,7 +1805,7 @@ if [[ $ssd == "yes" ]]; then
         # Set HDDs to writemostly if there's also internal SSDs
         if [[ $internal_ssd_qty -gt "0" ]] && [[ ${#internal_hdds[@]} -gt "0" ]]; then
             # There are internal SSDs and HDDs
-            echo -e "\nSetting internal HDDs state to write_mostly:"
+            echo -e "\nSetting internal HDDs state to write_mostly"
             for idrive in "${internal_hdds[@]}"; do
                 set_writemostly writemostly "$idrive"
             done
