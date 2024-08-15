@@ -1785,13 +1785,12 @@ if [[ $ssd == "yes" ]]; then
         # Get list of internal HDDs and qty of SSDs
         internal_ssd_qty="0"
         for idrive in "${internal_drives[@]}"; do
-            internal_drive="$(echo "$idrive" | awk '{printf $4}')"
-            if synodisk --isssd "$internal_drive" >/dev/null; then
+            if synodisk --isssd /dev/"${idrive:?}" >/dev/null; then
                 # exit code 0 = is not SSD
                 # exit code 1 = is SSD
 
                 # Add internal HDDs to array
-                internal_hdds+=("$internal_drive")
+                internal_hdds+=("$idrive")
             else
                 # Count number of internal 2.5 inch SSDs
                 internal_ssd_qty=$((internal_ssd_qty +1))
