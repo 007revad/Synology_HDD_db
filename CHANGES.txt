@@ -1,3 +1,6 @@
+v3.5.99-RC
+- Changed to support "--restore --ssd=restore" to restore write_mostly when restoring all other changes. Issue #340
+
 v3.5.98
 - Changed to automatically download and install dtc if all of the following 4 conditions are met:
     1. dtc is not already installed.
