@@ -4,6 +4,7 @@ v3.5.98
     2. /bin/dtc or dtc are not in the same folder as the script.
     3. The script needs dtc.
     4. The script is running from task scheduler.
+- Bug fix for "Enable write_mostly on slow internal drives so DSM runs from the fast internal drive(s)." Issue #340
 
 v3.5.97
 - Changed silently skip empty .db.new files with showing an error. Issue #175
