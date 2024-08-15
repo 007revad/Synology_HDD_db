@@ -5,7 +5,7 @@ v3.5.98
     3. The script needs dtc.
     4. The script is running from task scheduler.
 - Bug fix for "Enable write_mostly on slow internal drives so DSM runs from the fast internal drive(s)." Issue #340
-- Improved output to make it clear which drive(s) have most-writly set.
+- Improved output to make it clear which drive(s) have most_writely set.
 
 v3.5.97
 - Changed silently skip empty .db.new files with showing an error. Issue #175
