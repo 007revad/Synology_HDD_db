@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.99"
+scriptver="v3.5.100"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -81,6 +81,8 @@ Options:
                           --ssd=sata1 or --ssd=sata1,sata2 or --ssd=sda etc
                           --ssd=restore
       --restore         Undo all changes made by the script (except -S --ssd)
+                        To restore all changes including write_mostly use
+                          --restore --ssd=restore
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
                           AGE is how many days old a release must be before
                           auto-updating. AGE must be a number: 0 or greater
@@ -105,7 +107,6 @@ EOF
 # Save options used
 args=("$@")
 
-
 # Check for flags with getopt
 if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
     ssd:,restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,pcie,wdda,email,autoupdate:,help,version,debug \
@@ -113,6 +114,22 @@ if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
     eval set -- "$options"
     while true; do
         case "$1" in
+            -d|--debug)         # Show and log debug info
+                debug=yes
+                ;;
+            -e|--email)         # Disable colour text in task scheduler emails
+                color=no
+                ;;
+            --restore)          # Restore changes from backups
+                restore=yes
+                if $(echo "${args[@]}" | grep -q -- '--ssd=restore'); then
+                    ssd_restore=yes
+                fi
+                break
+                ;;
+            -s|--showedits)     # Show edits done to host db file
+                showedits=yes
+                ;;
             -S)                 # Enable writemostly for md0 and md1
                 ssd=yes
                 ;;
@@ -126,13 +143,6 @@ if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
                     unset IFS
                 fi
                 shift
-                ;;
-            --restore)          # Restore changes from backups
-                restore=yes
-                break
-                ;;
-            -s|--showedits)     # Show edits done to host db file
-                showedits=yes
                 ;;
             -n|--nodbupdate|--noupdate)  # Disable disk compatibility db updates
                 nodbupdate=yes
@@ -155,9 +165,6 @@ if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
             -p|--pcie)          # Enable creating volumes on M2 in unknown PCIe adaptor
                 forcepci=yes
                 ;;
-            -e|--email)         # Disable colour text in task scheduler emails
-                color=no
-                ;;
             --autoupdate)       # Auto update script
                 autoupdate=yes
                 if [[ $2 =~ ^[0-9]+$ ]]; then
@@ -172,9 +179,6 @@ if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
                 ;;
             -v|--version)       # Show script version
                 scriptversion
-                ;;
-            -d|--debug)         # Show and log debug info
-                debug=yes
                 ;;
             --)
                 shift
@@ -743,30 +747,20 @@ if [[ $restore == "yes" ]]; then
             # Restore all internal drives to just in_sync
             echo -e "\nRestoring internal drive's state"
             for idrive in "${internal_drives[@]}"; do
-                #if ! grep -q "write_mostly" ; then 
-                    set_writemostly -writemostly "$idrive"
-                #fi
-
                 md0="/sys/block/md0/md/dev-"
                 md1="/sys/block/md1/md/dev-"
                 if [[ ${idrive::2} == "sd" ]]; then
                     # sda etc
-                    # md0 DSM system partition
-                    if ! grep -q "write_mostly" "${md0}$idrive"1/state; then 
-                        set_writemostly -writemostly "$idrive"
-                    fi
-                    # md1 DSM swap partition
-                    if ! grep -q "write_mostly" "${md1}$idrive"2/state; then 
+                    # Check DSM system and swap partitions
+                    if grep -q "write_mostly" "${md0}$idrive"1/state ||\
+                        grep -q "write_mostly" "${md1}$idrive"2/state; then 
                         set_writemostly -writemostly "$idrive"
                     fi
                 else
                     # sata1 or sas1 etc
-                    # md0 DSM system partition
-                    if ! grep -q "write_mostly" "${md0}$idrive"p1/state; then 
-                        set_writemostly -writemostly "$idrive"
-                    fi
-                    # md1 DSM swap partition
-                    if ! grep -q "write_mostly" "${md1}$idrive"p2/state; then 
+                    # Check DSM system and swap partitions
+                    if grep -q "write_mostly" "${md0}$idrive"p1/state ||\
+                        grep -q "write_mostly" "${md1}$idrive"p2/state; then 
                         set_writemostly -writemostly "$idrive"
                     fi
                 fi
