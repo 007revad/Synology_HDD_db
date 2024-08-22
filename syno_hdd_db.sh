@@ -125,7 +125,7 @@ if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
                 if $(echo "${args[@]}" | grep -q -- '--ssd=restore'); then
                     ssd_restore=yes
                 fi
-                break
+                #break
                 ;;
             -s|--showedits)     # Show edits done to host db file
                 showedits=yes
