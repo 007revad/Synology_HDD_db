@@ -56,7 +56,7 @@
 
 - **<a href="https://github.com/007revad/Synology_DSM_Telnet_Password">Synology_DSM_Telnet_Password</a>**
   - Synology DSM Recovery Telnet Password of the Day generator.
-
+ 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
 ### Other Synology scripts
@@ -75,6 +75,12 @@
 
 - **<a href="https://github.com/007revad/Synology_Cleanup_Coredumps">Synology_Cleanup_Coredumps</a>**
   - Cleanup memory core dumps from crashed processes.
+
+- **<a href="https://github.com/007revad/Synology_toggle_reset_button">Synology_toggle_reset_button</a>**
+  - Script to disable or enable the reset button and show current setting.
+
+- **<a href="https://github.com/007revad/Synology_Download_Station_Chrome_Extension">Synology_Download_Station_Chrome_Extension</a>**
+  - Download Station Chrome Extension.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
@@ -105,6 +111,9 @@
 - **<a href="https://github.com/007revad/Synology_enable_sequential_IO">Synology_enable_sequential_IO</a>**
   - Enables sequential I/O for your SSD caches, like DSM 6 had.
 
+- **<a href="https://github.com/007revad/Synology_Information_Wiki">Synology_Information_Wiki</a>**
+  - Information about Synology hardware.
+
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
 ### Synology dev
@@ -114,5 +123,8 @@
 
 - **<a href="https://github.com/007revad/ScriptNotify">ScriptNotify</a>**
   - DSM 7 package to allow your scripts to send DSM notifications.
+
+- **<a href="https://github.com/007revad/DTC_GUI_for_Windows">DTC_GUI_for_Windows</a>**
+  - GUI for DTC.exe for Window.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
