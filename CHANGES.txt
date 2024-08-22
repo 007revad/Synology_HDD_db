@@ -1,3 +1,7 @@
+v3.5.100
+- Changed to support "--restore --ssd=restore" to restore write_mostly when restoring all other changes. Issue #340
+  - When using --restore you can also use --ssd=restore, -e or --email
+
 v3.5.98
 - Changed to automatically download and install dtc if all of the following 4 conditions are met:
     1. dtc is not already installed.

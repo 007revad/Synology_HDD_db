@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.98"
+scriptver="v3.5.100"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -81,6 +81,8 @@ Options:
                           --ssd=sata1 or --ssd=sata1,sata2 or --ssd=sda etc
                           --ssd=restore
       --restore         Undo all changes made by the script (except -S --ssd)
+                        To restore all changes including write_mostly use
+                          --restore --ssd=restore
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
                           AGE is how many days old a release must be before
                           auto-updating. AGE must be a number: 0 or greater
@@ -105,7 +107,6 @@ EOF
 # Save options used
 args=("$@")
 
-
 # Check for flags with getopt
 if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
     ssd:,restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,pcie,wdda,email,autoupdate:,help,version,debug \
@@ -113,9 +114,18 @@ if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
     eval set -- "$options"
     while true; do
         case "$1" in
+            -d|--debug)         # Show and log debug info
+                debug=yes
+                ;;
+            -e|--email)         # Disable colour text in task scheduler emails
+                color=no
+                ;;
             --restore)          # Restore changes from backups
                 restore=yes
-                break
+                if $(echo "${args[@]}" | grep -q -- '--ssd=restore'); then
+                    ssd_restore=yes
+                fi
+                #break
                 ;;
             -s|--showedits)     # Show edits done to host db file
                 showedits=yes
@@ -155,9 +165,6 @@ if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
             -p|--pcie)          # Enable creating volumes on M2 in unknown PCIe adaptor
                 forcepci=yes
                 ;;
-            -e|--email)         # Disable colour text in task scheduler emails
-                color=no
-                ;;
             --autoupdate)       # Auto update script
                 autoupdate=yes
                 if [[ $2 =~ ^[0-9]+$ ]]; then
@@ -172,9 +179,6 @@ if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
                 ;;
             -v|--version)       # Show script version
                 scriptversion
-                ;;
-            -d|--debug)         # Show and log debug info
-                debug=yes
                 ;;
             --)
                 shift
@@ -566,6 +570,44 @@ vidfile="/usr/syno/etc.defaults/pci_vendor_ids.conf"
 vidfile2="/usr/syno/etc/pci_vendor_ids.conf"
 
 
+set_writemostly(){ 
+    # $1 is writemostly or -writemostly
+    # $2 is sata1 or sas1 or sda etc
+    local model
+    # Show drive model
+    model="$(cat /sys/block/"${2}"/device/model | xargs)"
+    echo -e "${Yellow}$model${Off}"
+
+    if [[ ${1::2} == "sd" ]]; then
+        # sda etc
+        # md0 DSM system partition
+        echo "$1" > /sys/block/md0/md/dev-"${2}"1/state
+        # Show setting
+        echo -n "  $2 DSM partition:  "
+        cat /sys/block/md0/md/dev-"${2}"1/state
+
+        # md1 DSM swap partition
+        echo "$1" > /sys/block/md1/md/dev-"${2}"2/state
+        # Show setting
+        echo -n "  $2 Swap partition: "
+        cat /sys/block/md1/md/dev-"${2}"2/state
+    else
+        # sata1 or sas1 etc
+        # md0 DSM system partition
+        echo "$1" > /sys/block/md0/md/dev-"${2}"p1/state
+        # Show setting
+        echo -n "  $2 DSM partition:  "
+        cat /sys/block/md0/md/dev-"${2}"p1/state
+
+        # md1 DSM swap partition
+        echo "$1" > /sys/block/md1/md/dev-"${2}"p2/state
+        # Show setting
+        echo -n "  $2 Swap partition: "
+        cat /sys/block/md1/md/dev-"${2}"p2/state
+    fi
+}
+
+
 #------------------------------------------------------------------------------
 # Restore changes from backups
 
@@ -696,6 +738,35 @@ if [[ $restore == "yes" ]]; then
         if [[ -z $restoreerr ]]; then
             echo -e "\nRestore successful."
         fi
+
+        # Restore writemostly if set
+        if [[ $ssd_restore == "yes" ]]; then
+            # Get array of internal drives
+            readarray -t internal_drives < <(synodisk --enum -t internal | grep 'Disk path' | cut -d"/" -f3)
+
+            # Restore all internal drives to just in_sync
+            echo -e "\nRestoring internal drive's state"
+            for idrive in "${internal_drives[@]}"; do
+                md0="/sys/block/md0/md/dev-"
+                md1="/sys/block/md1/md/dev-"
+                if [[ ${idrive::2} == "sd" ]]; then
+                    # sda etc
+                    # Check DSM system and swap partitions
+                    if grep -q "write_mostly" "${md0}$idrive"1/state ||\
+                        grep -q "write_mostly" "${md1}$idrive"2/state; then 
+                        set_writemostly -writemostly "$idrive"
+                    fi
+                else
+                    # sata1 or sas1 etc
+                    # Check DSM system and swap partitions
+                    if grep -q "write_mostly" "${md0}$idrive"p1/state ||\
+                        grep -q "write_mostly" "${md1}$idrive"p2/state; then 
+                        set_writemostly -writemostly "$idrive"
+                    fi
+                fi
+            done
+        fi
+
     else
         echo "Nothing to restore."
     fi
@@ -1726,43 +1797,6 @@ done
 
 #------------------------------------------------------------------------------
 # Set or restore writemostly
-
-set_writemostly(){ 
-    # $1 is writemostly or in_sync
-    # $2 is sata1 or sas1 or sda etc
-    local model
-    # Show drive model
-    model="$(cat /sys/block/"${2}"/device/model | xargs)"
-    echo -e "${Yellow}$model${Off}"
-
-    if [[ ${1::2} == "sd" ]]; then
-        # sda etc
-        # md0 DSM system partition
-        echo "$1" > /sys/block/md0/md/dev-"${2}"1/state
-        # Show setting
-        echo -n "  $2 DSM partition:  "
-        cat /sys/block/md0/md/dev-"${2}"1/state
-
-        # md1 DSM swap partition
-        echo "$1" > /sys/block/md1/md/dev-"${2}"2/state
-        # Show setting
-        echo -n "  $2 Swap partition: "
-        cat /sys/block/md1/md/dev-"${2}"2/state
-    else
-        # sata1 or sas1 etc
-        # md0 DSM system partition
-        echo "$1" > /sys/block/md0/md/dev-"${2}"p1/state
-        # Show setting
-        echo -n "  $2 DSM partition:  "
-        cat /sys/block/md0/md/dev-"${2}"p1/state
-
-        # md1 DSM swap partition
-        echo "$1" > /sys/block/md1/md/dev-"${2}"p2/state
-        # Show setting
-        echo -n "  $2 Swap partition: "
-        cat /sys/block/md1/md/dev-"${2}"p2/state
-    fi
-}
 
 if [[ $ssd == "yes" ]]; then
     # Get array of internal drives
