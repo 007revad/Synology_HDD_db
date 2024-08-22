@@ -1,4 +1,4 @@
-v3.5.100
+v3.5.101
 - Changed to support "--restore --ssd=restore" to restore write_mostly when restoring all other changes. Issue #340
   - When using --restore you can also use --ssd=restore, -e or --email
 
