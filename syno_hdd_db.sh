@@ -2090,8 +2090,7 @@ fi
 dtu=drive_db_test_url
 url="$(/usr/syno/bin/synogetkeyvalue $synoinfo ${dtu})"
 disabled=""
-#if [[ $nodbupdate == "yes" ]]; then
-if [[ $updatedb != "yes" ]]; then
+if [[ $nodbupdate == "yes" ]]; then
     if [[ ! $url ]]; then
         # Add drive_db_test_url="127.0.0.1"
         #echo 'drive_db_test_url="127.0.0.1"' >> "$synoinfo"
