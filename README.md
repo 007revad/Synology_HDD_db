@@ -170,7 +170,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  | Qwerty.xyz | Max | Mark Rohde |
+| Qwerty.xyz | Max | Mark Rohde | Someone |
 | vaadmin | Sebastiaan Mulder | Nico Stark | Oleksandr Antonishak |
 | Marcel Siemienowski | Dave Smart | dweagle79 | lingyinsam | 
 | Vojtech Filkorn | Craig Sadler | Po-Chia Chen | Jean-François Fruhauf |
