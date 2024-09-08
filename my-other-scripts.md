@@ -64,6 +64,9 @@
 - **<a href="https://github.com/007revad/Synology_app_mover">Synology_app_mover</a>**
   - Easily move Synology packages from one volume to another volume.
 
+- **<a href="https://github.com/007revad/Video_Station_for_DSM_722">Video_Station_for_DSM_722</a>**
+  - Script to install Video Station in DSM 7.2.2
+
 - **<a href="https://github.com/007revad/Synology_Config_Backup">Synology_Config_Backup</a>**
   - Backup and export your Synology DSM configuration.
 
