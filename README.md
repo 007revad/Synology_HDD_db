@@ -170,7 +170,8 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  |  |  | Jordi Chavarria Fibla |
+|  |  | Arnaud Costermans | dealchecker |
+| Michael Carras | Alan | speedyyyyyy | Jordi Chavarria Fibla |
 | Qwerty.xyz | Max | Mark Rohde | Someone |
 | vaadmin | Sebastiaan Mulder | Nico Stark | Oleksandr Antonishak |
 | Marcel Siemienowski | Dave Smart | dweagle79 | lingyinsam | 
