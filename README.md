@@ -184,7 +184,7 @@ Thank you to the following PayPal donators, GitHub sponsors and hardware donator
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  |  | Arnaud Costermans | dealchecker |
+|  | kunvanimals | Arnaud Costermans | dealchecker |
 | Michael Carras | Alan | speedyyyyyy | Jordi Chavarria Fibla |
 | Qwerty.xyz | Max | Mark Rohde | Someone |
 | vaadmin | Sebastiaan Mulder | Nico Stark | Oleksandr Antonishak |
