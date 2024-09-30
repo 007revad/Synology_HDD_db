@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.101"
+scriptver="v3.5.102"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1150,15 +1150,23 @@ fi
 
 
 # Expansion units
-# Create new /var/log/diskprediction log to ensure newly connected ebox is in latest log
-# Otherwise the new /var/log/diskprediction log is only created a midnight.
-/usr/syno/bin/syno_disk_data_collector record
+# eSATA and InfiniBand ports both appear in syno_slot_mapping as:
+# Esata port count: 1
+# Eunit port 1 - RX1214
+# Only device tree models have syno_slot_mapping
+if which syno_slot_mapping >/dev/null; then
+    eunitlist=($(syno_slot_mapping | grep 'Eunit port' | awk '{print $5}'))
+else
+    # Create new /var/log/diskprediction log to ensure newly connected ebox is in latest log
+    # Otherwise the new /var/log/diskprediction log is only created a midnight.
+    /usr/syno/bin/syno_disk_data_collector record
 
-# Get list of connected expansion units (aka eunit/ebox)
-path="/var/log/diskprediction"
-# shellcheck disable=SC2012
-file=$(ls $path | tail -n1)
-eunitlist=($(grep -Eowi "([FRD]XD?[0-9]{3,4})(rp|ii|sas){0,2}" "$path/$file" | uniq))
+    # Get list of connected expansion units (aka eunit/ebox)
+    path="/var/log/diskprediction"
+    # shellcheck disable=SC2012
+    file=$(ls $path | tail -n1)
+    eunitlist=($(grep -Eowi "([FRD]XD?[0-9]{3,4})(rp|ii|sas){0,2}" "$path/$file" | uniq))
+fi
 
 # Sort eunitlist array into new eunits array to remove duplicates
 if [[ ${#eunitlist[@]} -gt "0" ]]; then
@@ -2095,10 +2103,12 @@ if [[ $nodbupdate == "yes" ]]; then
         # Add drive_db_test_url="127.0.0.1"
         #echo 'drive_db_test_url="127.0.0.1"' >> "$synoinfo"
         /usr/syno/bin/synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
+        [ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
         disabled="yes"
     elif [[ $url != "127.0.0.1" ]]; then
         # Edit drive_db_test_url=
         /usr/syno/bin/synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
+        [ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
         disabled="yes"
     fi
 
