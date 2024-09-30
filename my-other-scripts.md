@@ -6,6 +6,7 @@
 - [Synology recovery](#synology-recovery)
 - [Other Synology scripts](#other-synology-scripts)
 - [Synology hardware restrictions](#synology-hardware-restrictions)
+- [How To Guides](#how-to-guides)
 - [Synology dev](#synology-dev)
 ##
 
@@ -28,6 +29,9 @@
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
 ### Synology docker
+
+- **<a href="https://github.com/007revad/Synology_Docker_Export">Synology_Docker_export</a>**
+  - Export all Synology Container Manager or Docker containers' settings as json files to your docker shared folder.
 
 - **<a href="https://github.com/007revad/Synology_ContainerManager_IPv6">Synology_ContainerManager_IPv6</a>**
   - Enable IPv6 for Container Manager's bridge network.
@@ -116,6 +120,13 @@
 
 - **<a href="https://github.com/007revad/Synology_Information_Wiki">Synology_Information_Wiki</a>**
   - Information about Synology hardware.
+
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
+
+### How To Guides
+
+- **<a href="https://github.com/007revad/Synology_SSH_key_setup">Synology_SSH_key_setup</a>**
+  - How to setup SSH key authentication for your Synology.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
