@@ -144,7 +144,7 @@ sudo -s /path-to-script/syno_hdd_db.sh -nr --showedits
 If you get a "No such file or directory" error check the following:
 
 1. Make sure you downloaded the zip or rar file to a folder on your Synology (not on your computer).
-2. Make sure you unpacked the zip or rar file that you downloaded and are trying to run the syno_app_mover.sh file.
+2. Make sure you unpacked the zip or rar file that you downloaded and are trying to run the syno_hdd_db.sh file.
 3. If the path to the script contains any spaces you need to enclose the path/scriptname in double quotes:
    ```YAML
    sudo -s "/volume1/my scripts/syno_hdd_db.sh -n"
