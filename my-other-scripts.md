@@ -6,6 +6,7 @@
 - [Synology recovery](#synology-recovery)
 - [Other Synology scripts](#other-synology-scripts)
 - [Synology hardware restrictions](#synology-hardware-restrictions)
+- [How To Guides](#how-to-guides)
 - [Synology dev](#synology-dev)
 ##
 
@@ -28,6 +29,9 @@
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
 ### Synology docker
+
+- **<a href="https://github.com/007revad/Synology_Docker_Export">Synology_Docker_export</a>**
+  - Export all Synology Container Manager or Docker containers' settings as json files to your docker shared folder.
 
 - **<a href="https://github.com/007revad/Synology_ContainerManager_IPv6">Synology_ContainerManager_IPv6</a>**
   - Enable IPv6 for Container Manager's bridge network.
@@ -56,13 +60,16 @@
 
 - **<a href="https://github.com/007revad/Synology_DSM_Telnet_Password">Synology_DSM_Telnet_Password</a>**
   - Synology DSM Recovery Telnet Password of the Day generator.
-
+ 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
 ### Other Synology scripts
 
 - **<a href="https://github.com/007revad/Synology_app_mover">Synology_app_mover</a>**
   - Easily move Synology packages from one volume to another volume.
+
+- **<a href="https://github.com/007revad/Video_Station_for_DSM_722">Video_Station_for_DSM_722</a>**
+  - Script to install Video Station in DSM 7.2.2
 
 - **<a href="https://github.com/007revad/Synology_Config_Backup">Synology_Config_Backup</a>**
   - Backup and export your Synology DSM configuration.
@@ -75,6 +82,12 @@
 
 - **<a href="https://github.com/007revad/Synology_Cleanup_Coredumps">Synology_Cleanup_Coredumps</a>**
   - Cleanup memory core dumps from crashed processes.
+
+- **<a href="https://github.com/007revad/Synology_toggle_reset_button">Synology_toggle_reset_button</a>**
+  - Script to disable or enable the reset button and show current setting.
+
+- **<a href="https://github.com/007revad/Synology_Download_Station_Chrome_Extension">Synology_Download_Station_Chrome_Extension</a>**
+  - Download Station Chrome Extension.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
@@ -105,6 +118,16 @@
 - **<a href="https://github.com/007revad/Synology_enable_sequential_IO">Synology_enable_sequential_IO</a>**
   - Enables sequential I/O for your SSD caches, like DSM 6 had.
 
+- **<a href="https://github.com/007revad/Synology_Information_Wiki">Synology_Information_Wiki</a>**
+  - Information about Synology hardware.
+
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
+
+### How To Guides
+
+- **<a href="https://github.com/007revad/Synology_SSH_key_setup">Synology_SSH_key_setup</a>**
+  - How to setup SSH key authentication for your Synology.
+
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
 ### Synology dev
@@ -114,5 +137,8 @@
 
 - **<a href="https://github.com/007revad/ScriptNotify">ScriptNotify</a>**
   - DSM 7 package to allow your scripts to send DSM notifications.
+
+- **<a href="https://github.com/007revad/DTC_GUI_for_Windows">DTC_GUI_for_Windows</a>**
+  - GUI for DTC.exe for Window.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
