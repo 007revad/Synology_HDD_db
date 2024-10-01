@@ -15,6 +15,7 @@
 *.DOCX     diff=astextplain
 *.dot      diff=astextplain
 *.DOT      diff=astextplain
+*.epub     diff=astextplain
 *.pdf      diff=astextplain
 *.PDF      diff=astextplain
 *.rtf      diff=astextplain
@@ -25,15 +26,11 @@
 *.adoc     text
 *.textile  text
 *.mustache text
-*.csv      text eol=crlf
 *.tab      text
 *.tsv      text
 *.txt      text
 *.sql      text
-*.epub     diff=astextplain
-*.dsc      text eol=crlf
-*.dsp      text eol=crlf
-*.ini      text eol=crlf
+*.csv      text eol=crlf
 
 # Graphics
 *.png      binary
@@ -43,23 +40,33 @@
 *.tif      binary
 *.tiff     binary
 *.ico      binary
+*.eps      binary
 # SVG treated as text by default.
 *.svg      text
 # If you want to treat it as binary,
 # use the following line instead.
 # *.svg    binary
-*.eps      binary
 
 # Scripts
 *.bash     text eol=lf
 *.fish     text eol=lf
 *.ksh      text eol=lf
+*.py       text eol=lf
+*.php      text eol=lf
 *.sh       text eol=lf
 *.zsh      text eol=lf
 # These are explicitly windows files and should use crlf
 *.bat      text eol=crlf
 *.cmd      text eol=crlf
 *.ps1      text eol=crlf
+
+# Visual Dialog Script
+*.dsc      text eol=crlf
+*.dsp      text eol=crlf
+
+# Config files
+*.ini      text eol=crlf
+*.conf     text eol=lf
 
 # Serialisation
 *.json     text
