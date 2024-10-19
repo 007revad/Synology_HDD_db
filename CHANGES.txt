@@ -1,3 +1,6 @@
+v3.5.103
+- Bug fix getting size of large drives. Issue #368
+
 v3.5.102
 - Changed to use a faster method of detecting if an expansion unit is connected, for models with the syno_slot_mapping command.
 - Changed so XPE users using the hdddb addon don't need to reboot.

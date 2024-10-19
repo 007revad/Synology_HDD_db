@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.102"
+scriptver="v3.5.103"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -896,11 +896,9 @@ fixdrivemodel(){
 
 get_size_gb(){ 
     # $1 is /sys/block/sata1 or /sys/block/nvme0n1 etc
-    local float
-    local int
-    float=$(synodisk --info /dev/"$(basename -- "$1")" | grep 'Total capacity' | awk '{print $4 * 1.0737}')
-    int="${float%.*}"
-    echo "$int"
+    local disk_size_gb
+    disk_size_gb=$(synodisk --info /dev/"$(basename -- "$1")" | grep 'Total capacity' | awk '{print int($4 * 1.073741824)}')
+    echo "$disk_size_gb"
 }
 
 getdriveinfo(){ 
