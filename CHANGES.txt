@@ -1,5 +1,6 @@
 v3.5.103
 - Bug fix getting size of large drives. Issue #368
+  - Run the script once with the --restore option to undue the previous changes then run the script as normal.
 
 v3.5.102
 - Changed to use a faster method of detecting if an expansion unit is connected, for models with the syno_slot_mapping command.
