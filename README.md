@@ -180,11 +180,14 @@ In this case the script will show you the vendor ID and advise you to add it to 
 
 ### Donators
 
-Thank you to the following PayPal donators, GitHub sponsors and hardware donators
+Thank you to the PayPal and Buy Me a Coffee donators, GitHub sponsors and hardware donators
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  | kunvanimals | Arnaud Costermans | dealchecker |
+|  |  |  | Alexander Machatschek | 
+| Yeong​Nuno | Joe | Torben Schreiter | Anthony McMurray | 
+| Abhishek | Steven Haskell | Malte Müller | Aaron Thomas | 
+| DENNIS BRAZIL | kunvanimals | Arnaud Costermans | dealchecker |
 | Michael Carras | Alan | speedyyyyyy | Jordi Chavarria Fibla |
 | Qwerty.xyz | Max | Mark Rohde | Someone |
 | vaadmin | Sebastiaan Mulder | Nico Stark | Oleksandr Antonishak |
