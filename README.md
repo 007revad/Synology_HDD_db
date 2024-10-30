@@ -52,11 +52,13 @@ It also has a restore option to undo all the changes made by the script.
 2. Save the download zip file to a folder on the Synology.
     - Do ***NOT*** save the script to a M.2 volume. After a DSM or Storage Manager update the M.2 volume won't be available until after the script has run.
 3. Unzip the zip file.
+
+Or via SSH as your regular user:
 ```
-cd /usr/local
-sudo wget https://github.com/007revad/Synology_HDD_db/archive/refs/heads/main.zip -O syno_hdd_db.zip
-sudo 7z x syno_hdd_db.zip -o/usr/local/Synology_HDD_db
-cd Synology_HDD_db && ls -ali
+cd $HOME
+wget https://github.com/007revad/Synology_HDD_db/archive/refs/heads/main.zip -O syno_hdd_db.zip
+7z x syno_hdd_db.zip
+cd Synology_HDD_db-main && ls -ali
 ```
 
 ### Required files
