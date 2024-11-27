@@ -897,7 +897,7 @@ fixdrivemodel(){
 get_size_gb(){ 
     # $1 is /sys/block/sata1 or /sys/block/nvme0n1 etc
     local disk_size_gb
-    disk_size_gb=$(synodisk --info /dev/"$(basename -- "$1")" | grep 'Total capacity' | awk '{print int($4 * 1.073741824)}')
+    disk_size_gb=$(synodisk --info /dev/"$(basename -- "$1")" 2>/dev/null | grep 'Total capacity' | awk '{print int($4 * 1.073741824)}')
     echo "$disk_size_gb"
 }
 
@@ -932,15 +932,16 @@ getdriveinfo(){
 
         # Get drive GB size
         size_gb=$(get_size_gb "$1")
-
-        if [[ $hdmodel ]] && [[ $fwrev ]]; then
-            if /usr/syno/bin/synodisk --enum -t cache | grep -q /dev/"$(basename -- "$1")"; then
-                # Is SATA M.2 SSD
-                nvmelist+=("${hdmodel},${fwrev},${size_gb}")
-            else
-                hdlist+=("${hdmodel},${fwrev},${size_gb}")
-            fi
-            drivelist+=("${hdmodel}")
+        if [ -n "$size_gb" ]; then
+            if [[ $hdmodel ]] && [[ $fwrev ]]; then
+                if /usr/syno/bin/synodisk --enum -t cache | grep -q /dev/"$(basename -- "$1")"; then
+                    # Is SATA M.2 SSD
+                    nvmelist+=("${hdmodel},${fwrev},${size_gb}")
+                else
+                    hdlist+=("${hdmodel},${fwrev},${size_gb}")
+                fi
+                drivelist+=("${hdmodel}")
+	    fi
         fi
     fi
 }
