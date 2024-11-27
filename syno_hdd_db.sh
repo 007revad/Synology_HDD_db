@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.103"
+scriptver="v3.5.104"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -941,7 +941,7 @@ getdriveinfo(){
                     hdlist+=("${hdmodel},${fwrev},${size_gb}")
                 fi
                 drivelist+=("${hdmodel}")
-	    fi
+            fi
         fi
     fi
 }
