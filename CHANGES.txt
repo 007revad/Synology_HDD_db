@@ -1,3 +1,6 @@
+v3.5.104
+- Some disks will be blocked in special scenarios. PR #387
+
 v3.5.103
 - Bug fix getting size of large drives. Issue #368
   - Run the script once with the --restore option to undue the previous changes then run the script as normal.
