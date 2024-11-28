@@ -192,7 +192,9 @@ Thank you to the PayPal and Buy Me a Coffee donators, GitHub sponsors and hardwa
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  |  |  | Alexander Machatschek | 
+| BrattishPlaque | Chris Bunnell | dansimau | Bsih | 
+| Tim Trace | Michel VIEUX-PERNON | R De Jong | Rick | 
+| Klaus-Dieter Fahlbusch | Amarand Agasi | someone61986 | Alexander Machatschek | 
 | Yeong​Nuno | Joe | Torben Schreiter | Anthony McMurray | 
 | Abhishek | Steven Haskell | Malte Müller | Aaron Thomas | 
 | DENNIS BRAZIL | kunvanimals | Arnaud Costermans | dealchecker |
