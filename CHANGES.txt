@@ -1,3 +1,6 @@
+v3.5.104
+- Bug fix for drives that return "HCST <model>" as the model, like HGST drives do. Issue #389
+
 v3.5.103
 - Bug fix getting size of large drives. Issue #368
   - Run the script once with the --restore option to undue the previous changes then run the script as normal.
