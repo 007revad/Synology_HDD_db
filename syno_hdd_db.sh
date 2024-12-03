@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.104"
+scriptver="v3.5.105"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -884,6 +884,9 @@ fixdrivemodel(){
         hdmodel=${hdmodel#"HGST "}      # Remove "HGST " from start of model name
         hdmodel=${hdmodel#"TOSHIBA "}   # Remove "TOSHIBA " from start of model name
 
+        # Chinese brand?
+        hdmodel=${hdmodel#"HCST "}      # Remove "HCST " from start of model name. Issue #389
+
         # Old drive brands
         hdmodel=${hdmodel#"Hitachi "}   # Remove "Hitachi " from start of model name
         hdmodel=${hdmodel#"SAMSUNG "}   # Remove "SAMSUNG " from start of model name
@@ -932,7 +935,7 @@ getdriveinfo(){
 
         # Get drive GB size
         size_gb=$(get_size_gb "$1")
-        if [ -n "$size_gb" ]; then
+        if [[ -n "$size_gb" ]]; then  # PR #187
             if [[ $hdmodel ]] && [[ $fwrev ]]; then
                 if /usr/syno/bin/synodisk --enum -t cache | grep -q /dev/"$(basename -- "$1")"; then
                     # Is SATA M.2 SSD
