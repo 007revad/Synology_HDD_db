@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.103"
+scriptver="v3.5.104"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -883,6 +883,9 @@ fixdrivemodel(){
         hdmodel=${hdmodel#"WDC "}       # Remove "WDC " from start of model name
         hdmodel=${hdmodel#"HGST "}      # Remove "HGST " from start of model name
         hdmodel=${hdmodel#"TOSHIBA "}   # Remove "TOSHIBA " from start of model name
+
+        # Chinese brand?
+        hdmodel=${hdmodel#"HCST "}      # Remove "HCST " from start of model name
 
         # Old drive brands
         hdmodel=${hdmodel#"Hitachi "}   # Remove "Hitachi " from start of model name
