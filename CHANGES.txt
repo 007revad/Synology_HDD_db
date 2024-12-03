@@ -1,5 +1,8 @@
-v3.5.104
+v3.5.105
 - Bug fix for drives that return "HCST <model>" as the model, like HGST drives do. Issue #389
+
+v3.5.104
+- Some disks will be blocked in special scenarios. PR #387
 
 v3.5.103
 - Bug fix getting size of large drives. Issue #368
