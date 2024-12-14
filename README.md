@@ -192,7 +192,7 @@ Thank you to the PayPal and Buy Me a Coffee donators, GitHub sponsors and hardwa
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  |  |  | ctrlaltdelete | 
+|  |  | frogger1805 | ctrlaltdelete | 
 | CannotTouch | Kevin Staude | Alistair Hathaway | 8347 | 
 | BrattishPlaque | Chris Bunnell | dansimau | Bsih | 
 | Tim Trace | Michel VIEUX-PERNON | R De Jong | Rick | 
