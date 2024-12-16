@@ -1,3 +1,6 @@
+v3.5.106
+- Bug fix for when script is not located on a volume. Issue #397
+
 v3.5.105
 - Bug fix for drives that return "HCST <model>" as the model, like HGST drives do. Issue #389
 
