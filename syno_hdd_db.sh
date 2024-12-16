@@ -378,11 +378,24 @@ echo "Running from: ${scriptpath}/$scriptfile"
 
 
 # Warn if script located on M.2 drive
-scriptvol=$(echo "$scriptpath" | cut -d"/" -f2)
-vg=$(lvdisplay | grep /volume_"${scriptvol#volume}" | cut -d"/" -f3)
-md=$(pvdisplay | grep -B 1 -E '[ ]'"$vg" | grep /dev/ | cut -d"/" -f3)
-# shellcheck disable=SC2002  # Don't warn about "Useless cat"
-if cat /proc/mdstat | grep "$md" | grep -q nvme; then
+get_script_vol() {
+    local script_root vol_num vg_name
+    script_root="${scriptpath#/*}"
+    script_root="${script_root%%/*}"
+    if [[ $script_root =~ ^volume ]]
+    then
+        vol_num="${script_root:6}"
+        vg_name=$(lvs --noheadings --select=lv_name="volume_$vol_num" --options=vg_name)
+        vg_name="${vg_name// }"
+        vol_name=$(pvs --noheadings --select=vg_name="$vg_name" --options=pv_name)
+        vol_name="${vol_name// }"
+    else
+        vol_name=$(df --output=source "/$script_root" |sed 1d)
+    fi
+}
+get_script_vol # sets $vol_name to /dev/whatever
+if grep -qE "^${vol_name#/dev/} .+ nvme" /proc/mdstat
+then
     echo -e "\n${Yellow}WARNING${Off} Don't store this script on an NVMe volume!"
 fi
 
