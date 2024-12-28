@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.106"
+scriptver="v3.5.107"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -73,7 +73,7 @@ Options:
                           DSM 7.2.1 already has WDDA disabled
   -p, --pcie            Enable creating volumes on M2 in unknown PCIe adaptor
   -e, --email           Disable colored text in output scheduler emails
-  -S, --ssd=DRIVE       Enable write_mostly on internal HDDs so DSM primary 
+  -S, --ssd=DRIVE       Enable write_mostly on internal HDDs so DSM primarily 
                         reads from internal SSDs or your specified drives
                           -S automatically sets internal SSDs as DSM preferred
                           --ssd=DRIVE requires the fast drive(s) as argument,
@@ -197,6 +197,7 @@ else
 fi
 
 
+# shellcheck disable=SC2317  # Don't warn about unreachable commands in this function
 PS4func() {
     local lineno="$1"
     local i f=''
@@ -956,10 +957,11 @@ getdriveinfo(){
         # Account for SSD drives with spaces in their model name/number
         fwrev=$(/usr/syno/bin/syno_hdd_util --ssd_detect | grep "$device " | awk '{print $(NF-3)}')  # GitHub issue #86, 87
 
-        # Get M.2 SATA SSD firmware version
+        # Get firmware version with smartctl if $fwrev null
+        # for M.2 SATA SSD and Github issue #407
         if [[ -z $fwrev ]]; then
             dev=/dev/"$(basename -- "$1")"
-            fwrev=$(smartctl -a -d sat -T permissive "$dev" | grep -i firmware | awk '{print $NF}')
+            fwrev=$(smartctl -a -d ata -T permissive "$dev" | grep -i firmware | awk '{print $NF}')
         fi
 
         # Get drive GB size
