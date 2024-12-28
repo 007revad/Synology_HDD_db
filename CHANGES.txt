@@ -1,3 +1,6 @@
+v3.5.107
+- Bug fix for firmware version as "Found]" in db files. Issue #407
+
 v3.5.106
 - Bug fix for when script is not located on a volume. Issue #397
 
