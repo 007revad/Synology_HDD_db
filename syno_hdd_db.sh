@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.107"
+scriptver="v3.5.108"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -958,7 +958,7 @@ getdriveinfo(){
         fwrev=$(/usr/syno/bin/syno_hdd_util --ssd_detect | grep "$device " | awk '{print $(NF-3)}')  # GitHub issue #86, 87
 
         # Get firmware version with smartctl if $fwrev null
-        # for M.2 SATA SSD and Github issue #407
+        # for M.2 SATA SSD and SAS drives. Github issue #407
         if [[ -z $fwrev ]]; then
             dev=/dev/"$(basename -- "$1")"
             fwrev=$(smartctl -a -d ata -T permissive "$dev" | grep -i firmware | awk '{print $NF}')
@@ -2136,12 +2136,20 @@ if [[ $nodbupdate == "yes" ]]; then
         # Add drive_db_test_url="127.0.0.1"
         #echo 'drive_db_test_url="127.0.0.1"' >> "$synoinfo"
         /usr/syno/bin/synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
-        [ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+        # Junior boot
+        #[ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+        if [ -f /tmpRoot/usr/syno/bin/synosetkeyvalue ] && [ -f /tmpRoot/etc.defaults/synoinfo.conf ]; then
+            /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+        fi
         disabled="yes"
     elif [[ $url != "127.0.0.1" ]]; then
         # Edit drive_db_test_url=
         /usr/syno/bin/synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
-        [ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+        # Junior boot
+        #[ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+        if [ -f /tmpRoot/usr/syno/bin/synosetkeyvalue ] && [ -f /tmpRoot/etc.defaults/synoinfo.conf ]; then
+            /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+        fi
         disabled="yes"
     fi
 
