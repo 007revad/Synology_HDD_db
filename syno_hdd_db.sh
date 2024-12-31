@@ -2265,30 +2265,40 @@ if [[ $platform_name == "x86_64" ]]; then
             echo -e "\nSupport IronWolf Health Management already enabled."
         fi
 
-        # Check if dhm_tool needs updating
-        dhm_version="$(dhm_tool --version | grep "Utility Version" | awk '{print $NF}')"
-        if ! printf "%s\n%s\n" "2.5.1" "$dhm_version" |
-            sort --check=quiet --version-sort >/dev/null ; then
-
-            # Backup existing dhm_tool
-            backupdb "/usr/syno/sbin/dhm_tool"
-
-            # Update dhm_tool
+        if [[ ! -f /usr/syno/sbin/dhm_tool ]]; then
+            # Install dhm_tool on models without it ('22 series and newer)
+            # Untested
             md5hash="cf67c1d5006913297f85ca7f9d1795ba"
             branch="main"
             file_url="https://raw.githubusercontent.com/${repo}/${branch}/bin/dhm_tool"
             # install_binfile <file> <file-url> <destination> <chmod> <bundled-path> <hash>
             install_binfile dhm_tool "$file_url" /usr/syno/sbin/dhm_tool "a+x" bin/dhm_tool "$md5hash"
-
-            # Check dhm_tool updated
-            dhm_version="$(dhm_tool --version | grep "Utility Version" | awk '{print $NF}')"
-            if [[ $dhm_version == "2.5.1" ]]; then
-                echo "Updated IronWolf Health Management."
-            else
-                echo "${Error}ERROR${Off} Failed to update IronWolf Health Management!"
-            fi
         else
-            echo "IronWolf Health Management already updated."
+            # Check if dhm_tool needs updating
+            dhm_version="$(dhm_tool --version | grep "Utility Version" | awk '{print $NF}')"
+            if ! printf "%s\n%s\n" "2.5.1" "$dhm_version" |
+                sort --check=quiet --version-sort >/dev/null ; then
+
+                # Backup existing dhm_tool
+                backupdb "/usr/syno/sbin/dhm_tool"
+
+                # Update dhm_tool
+                md5hash="cf67c1d5006913297f85ca7f9d1795ba"
+                branch="main"
+                file_url="https://raw.githubusercontent.com/${repo}/${branch}/bin/dhm_tool"
+                # install_binfile <file> <file-url> <destination> <chmod> <bundled-path> <hash>
+                install_binfile dhm_tool "$file_url" /usr/syno/sbin/dhm_tool "a+x" bin/dhm_tool "$md5hash"
+
+                # Check dhm_tool updated
+                dhm_version="$(dhm_tool --version | grep "Utility Version" | awk '{print $NF}')"
+                if [[ $dhm_version == "2.5.1" ]]; then
+                    echo "Updated IronWolf Health Management."
+                else
+                    echo "${Error}ERROR${Off} Failed to update IronWolf Health Management!"
+                fi
+            else
+                echo "IronWolf Health Management already updated."
+            fi
         fi
     fi
 fi
