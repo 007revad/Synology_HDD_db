@@ -70,7 +70,7 @@ Options:
                         Do not use this option unless absolutely needed
   -w, --wdda            Disable WD Device Analytics to prevent DSM showing
                         a false warning for WD drives that are 3 years old
-                          DSM 7.2.1 already has WDDA disabled
+                          DSM 7.2.1 and later already has WDDA disabled
   -p, --pcie            Enable creating volumes on M2 in unknown PCIe adaptor
   -e, --email           Disable colored text in output scheduler emails
   -S, --ssd=DRIVE       Enable write_mostly on internal HDDs so DSM primarily 
@@ -89,6 +89,7 @@ Options:
   -I, --ihm             Update IronWolf Health Management to 2.5.1 to support
                         recent model IronWolf and IronWolf Pro drives.
                         For NAS with x86_64 CPUs only.
+                        Installs IHM on '22 series and newer models (untested)
   -h, --help            Show this help message
   -v, --version         Show the script version
 
