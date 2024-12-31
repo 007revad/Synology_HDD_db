@@ -2276,7 +2276,7 @@ if [[ $arch == "x86_64" ]]; then
             branch="main"
             file_url="https://raw.githubusercontent.com/${repo}/${branch}/bin/dhm_tool"
             # install_binfile <file> <file-url> <destination> <chmod> <bundled-path> <hash>
-            install_binfile dhm_tool "$file_url" /usr/syno/sbin/dhm_tool "a+x" bin/dhm_tool "$md5hash"
+            install_binfile dhm_tool "$file_url" /usr/syno/sbin/dhm_tool "755" bin/dhm_tool "$md5hash"
         else
             # Check if dhm_tool needs updating
             dhm_version="$(dhm_tool --version | grep "Utility Version" | awk '{print $NF}')"
