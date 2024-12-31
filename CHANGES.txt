@@ -1,6 +1,7 @@
 v3.6.109
 - Added -I, --ihm option to update IronWolf Health Management to 2.5.1 to support recent model IronWolf and IronWolf Pro drives.
   - For NAS with x86_64 CPUs only.
+  - Installs IronWolf Health Management on '22 series and nwer models that don't have IronWolf Health Management (untested).
 
 v3.5.108
 - Prevent error message if /tmpRoot exists but does not contain /usr/syno/bin/synosetkeyvalue and /etc.defaults/synoinfo.conf. Issue #411
