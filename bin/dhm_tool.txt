@@ -1,0 +1,12 @@
+stx_ihm from QNAP firmware, renamed dhm_tool for Synology DSM
+
+ SeaDragon_DHMr - Seagate drive utilities
+ Copyright (c) 2017-2021 Seagate Technology LLC and/or its Affiliates, All Rights Reserved
+ SeaDragon_DHMr Version: 2.5.1-2_2_3  X86_64
+ Build Date: Oct  3 2022
+
+MD5      cf67c1d5006913297f85ca7f9d1795ba
+SHA-1    163b384afabc491c97f3aa4ee7916601a9a680dd
+SHA-256  86dd0e3c5ded507d23dfeb2ca04a2e086c97a86e2ab96dc6fdeab686a8202795
+SHA-384  3d806909d445605787ceb155bc1555e01d02efe324378c9c71e6b53d91bba6bf8dbadef38dd882b43caf8dbd93eaff6c
+SHA-512  a2d87d91fd4cc298708946c9a611027dce290ba17a48c65e712b5d7e72ba04c6b5303c90efeb178a8fc690241b405691a15cc88200ab3b28319198df6bd6ad16
