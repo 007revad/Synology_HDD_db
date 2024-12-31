@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.108"
+scriptver="v3.6.109"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -86,6 +86,9 @@ Options:
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
                           AGE is how many days old a release must be before
                           auto-updating. AGE must be a number: 0 or greater
+  -I, --ihm             Update IronWolf Health Monitor to 2.5.1 to support
+                        recent model IronWolf and IronWolf Pro drives.
+                        For NAS with x86_64 CPUs only.
   -h, --help            Show this help message
   -v, --version         Show the script version
 
@@ -108,8 +111,8 @@ EOF
 args=("$@")
 
 # Check for flags with getopt
-if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
-    ssd:,restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,pcie,wdda,email,autoupdate:,help,version,debug \
+if options="$(getopt -o SIabcdefghijklmnopqrstuvwxyz0123456789 -l \
+    ssd:,ihm,restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,pcie,wdda,email,autoupdate:,help,version,debug \
     -- "$@")"; then
     eval set -- "$options"
     while true; do
@@ -164,6 +167,9 @@ if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
                 ;;
             -p|--pcie)          # Enable creating volumes on M2 in unknown PCIe adaptor
                 forcepci=yes
+                ;;
+            -I|--ihm)           # Update IronWolf Health Monitor
+                ihm=yes
                 ;;
             --autoupdate)       # Auto update script
                 autoupdate=yes
@@ -254,6 +260,9 @@ fi
 model=$(cat /proc/sys/kernel/syno_hw_version)
 modelname="$model"
 
+# Get CPU platform_name
+platform_name=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/synoinfo.conf platform_name)
+
 
 # Show script version
 #echo -e "$script $scriptver\ngithub.com/$repo\n"
@@ -268,7 +277,7 @@ smallfixnumber=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION smallfixnum
 # Show DSM full version and model
 if [[ $buildphase == GM ]]; then buildphase=""; fi
 if [[ $smallfixnumber -gt "0" ]]; then smallfix="-$smallfixnumber"; fi
-echo "$model DSM $productversion-$buildnumber$smallfix $buildphase"
+echo "$model $platform_name DSM $productversion-$buildnumber$smallfix $buildphase"
 
 
 # Convert model to lower case
@@ -2236,6 +2245,50 @@ if [[ -f "$strgmgr" ]] && [[ $buildnumber -gt 42962 ]]; then
             fi
         else
             echo -e "\nCreating pool in UI on drives in M.2 adaptor card already enabled."
+        fi
+    fi
+fi
+
+
+# Optionally update IronWolf Health Monitor
+if [[ $platform_name == "x86_64" ]]; then
+    if [[ $ihm == "yes" ]]; then
+        setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo support_ihm)"
+        if [[ $setting != "yes" ]]; then
+            # Enable support_ihm
+            /usr/syno/bin/synosetkeyvalue "$synoinfo" support_ihm "yes"
+            setting="$(/usr/syno/bin/synogetkeyvalue "$synoinfo" support_ihm)"
+            if [[ $setting == "yes" ]]; then
+                echo -e "\nEnabled support IronWolf Health Monitor."
+            fi
+        else
+            echo -e "\nSupport IronWolf Health Monitor already enabled."
+        fi
+
+        # Check if dhm_tool needs updating
+        dhm_version="$(dhm_tool --version | grep "Utility Version" | awk '{print $NF}')"
+        if ! printf "%s\n%s\n" "2.5.1" "$dhm_version" |
+            sort --check=quiet --version-sort >/dev/null ; then
+
+            # Backup existing dhm_tool
+            backupdb "/usr/syno/sbin/dhm_tool"
+
+            # Update dhm_tool
+            md5hash="cf67c1d5006913297f85ca7f9d1795ba"
+            branch="main"
+            file_url="https://raw.githubusercontent.com/${repo}/${branch}/bin/dhm_tool"
+            # install_binfile <file> <file-url> <destination> <chmod> <bundled-path> <hash>
+            install_binfile dhm_tool "$file_url" /usr/syno/sbin/dhm_tool "a+x" bin/dhm_tool "$md5hash"
+
+            # Check dhm_tool updated
+            dhm_version="$(dhm_tool --version | grep "Utility Version" | awk '{print $NF}')"
+            if [[ $dhm_version == "2.5.1" ]]; then
+                echo "Updated IronWolf Health Monitor."
+            else
+                echo "${Error}ERROR${Off} Failed to update IronWolf Health Monitor!"
+            fi
+        else
+            echo "IronWolf Health Monitor already updated."
         fi
     fi
 fi
