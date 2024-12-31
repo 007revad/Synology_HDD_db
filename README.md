@@ -40,6 +40,7 @@ It also has a restore option to undo all the changes made by the script.
 * Checks that M.2 volume support is enabled (on models that have M.2 slots or PCIe slots).
 * Enables creating M.2 storage pools and volumes from within Storage Manager in DSM 7.2 and later **(newer models only?)**.
     * Including M.2 drives in PCIe adaptor cards like M2D20, M2D18, M2D17 and E10M20-T1 for DSM 7.2 and above **(schedule the script to run boot)**.
+* Optionally update IronWolf Health Monitor to v2.5.1 to support recent model IronWolf and IronWolf Pro drives. **(NAS with x86_64 CPUs only)**
 * Makes DSM recheck disk compatibility so rebooting is not needed if you don't have M.2 drives (DSM 7 only).
     * **If you have M.2 drives you may need to reboot.**
     * Reminds you that you may need to reboot the Synology after running the script.
@@ -103,6 +104,8 @@ There are optional flags you can use when running the script:
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
                           AGE is how many days old a release must be before
                           auto-updating. AGE must be a number: 0 or greater
+  -I, --ihm             Update IronWolf Health Monitor to 2.5.1 to support
+                        recent model IronWolf and IronWolf Pro drives.
   -h, --help            Show this help message
   -v, --version         Show the script version
 ```
