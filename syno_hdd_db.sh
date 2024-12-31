@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.5.106"
+scriptver="v3.6.109"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -70,10 +70,10 @@ Options:
                         Do not use this option unless absolutely needed
   -w, --wdda            Disable WD Device Analytics to prevent DSM showing
                         a false warning for WD drives that are 3 years old
-                          DSM 7.2.1 already has WDDA disabled
+                          DSM 7.2.1 and later already has WDDA disabled
   -p, --pcie            Enable creating volumes on M2 in unknown PCIe adaptor
   -e, --email           Disable colored text in output scheduler emails
-  -S, --ssd=DRIVE       Enable write_mostly on internal HDDs so DSM primary 
+  -S, --ssd=DRIVE       Enable write_mostly on internal HDDs so DSM primarily 
                         reads from internal SSDs or your specified drives
                           -S automatically sets internal SSDs as DSM preferred
                           --ssd=DRIVE requires the fast drive(s) as argument,
@@ -86,6 +86,10 @@ Options:
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
                           AGE is how many days old a release must be before
                           auto-updating. AGE must be a number: 0 or greater
+  -I, --ihm             Update IronWolf Health Management to 2.5.1 to support
+                        recent model IronWolf and IronWolf Pro drives.
+                        For NAS with x86_64 CPUs only
+                        Installs IHM on '22 series and newer models (untested)
   -h, --help            Show this help message
   -v, --version         Show the script version
 
@@ -108,8 +112,8 @@ EOF
 args=("$@")
 
 # Check for flags with getopt
-if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
-    ssd:,restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,pcie,wdda,email,autoupdate:,help,version,debug \
+if options="$(getopt -o SIabcdefghijklmnopqrstuvwxyz0123456789 -l \
+    ssd:,ihm,restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,pcie,wdda,email,autoupdate:,help,version,debug \
     -- "$@")"; then
     eval set -- "$options"
     while true; do
@@ -165,6 +169,9 @@ if options="$(getopt -o Sabcdefghijklmnopqrstuvwxyz0123456789 -l \
             -p|--pcie)          # Enable creating volumes on M2 in unknown PCIe adaptor
                 forcepci=yes
                 ;;
+            -I|--ihm)           # Update IronWolf Health Management
+                ihm=yes
+                ;;
             --autoupdate)       # Auto update script
                 autoupdate=yes
                 if [[ $2 =~ ^[0-9]+$ ]]; then
@@ -197,6 +204,7 @@ else
 fi
 
 
+# shellcheck disable=SC2317  # Don't warn about unreachable commands in this function
 PS4func() {
     local lineno="$1"
     local i f=''
@@ -253,6 +261,12 @@ fi
 model=$(cat /proc/sys/kernel/syno_hw_version)
 modelname="$model"
 
+# Get CPU platform_name
+platform_name=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/synoinfo.conf platform_name)
+
+# Get CPU arch
+arch="$(uname -m)"
+
 
 # Show script version
 #echo -e "$script $scriptver\ngithub.com/$repo\n"
@@ -267,7 +281,7 @@ smallfixnumber=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION smallfixnum
 # Show DSM full version and model
 if [[ $buildphase == GM ]]; then buildphase=""; fi
 if [[ $smallfixnumber -gt "0" ]]; then smallfix="-$smallfixnumber"; fi
-echo "$model DSM $productversion-$buildnumber$smallfix $buildphase"
+echo "$model $arch DSM $productversion-$buildnumber$smallfix $buildphase"
 
 
 # Convert model to lower case
@@ -956,10 +970,11 @@ getdriveinfo(){
         # Account for SSD drives with spaces in their model name/number
         fwrev=$(/usr/syno/bin/syno_hdd_util --ssd_detect | grep "$device " | awk '{print $(NF-3)}')  # GitHub issue #86, 87
 
-        # Get M.2 SATA SSD firmware version
+        # Get firmware version with smartctl if $fwrev null
+        # for M.2 SATA SSD and SAS drives. Github issue #407
         if [[ -z $fwrev ]]; then
             dev=/dev/"$(basename -- "$1")"
-            fwrev=$(smartctl -a -d sat -T permissive "$dev" | grep -i firmware | awk '{print $NF}')
+            fwrev=$(smartctl -a -d ata -T permissive "$dev" | grep -i firmware | awk '{print $NF}')
         fi
 
         # Get drive GB size
@@ -2134,12 +2149,20 @@ if [[ $nodbupdate == "yes" ]]; then
         # Add drive_db_test_url="127.0.0.1"
         #echo 'drive_db_test_url="127.0.0.1"' >> "$synoinfo"
         /usr/syno/bin/synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
-        [ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+        # Junior boot
+        #[ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+        if [ -f /tmpRoot/usr/syno/bin/synosetkeyvalue ] && [ -f /tmpRoot/etc.defaults/synoinfo.conf ]; then
+            /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+        fi
         disabled="yes"
     elif [[ $url != "127.0.0.1" ]]; then
         # Edit drive_db_test_url=
         /usr/syno/bin/synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
-        [ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+        # Junior boot
+        #[ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+        if [ -f /tmpRoot/usr/syno/bin/synosetkeyvalue ] && [ -f /tmpRoot/etc.defaults/synoinfo.conf ]; then
+            /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+        fi
         disabled="yes"
     fi
 
@@ -2226,6 +2249,60 @@ if [[ -f "$strgmgr" ]] && [[ $buildnumber -gt 42962 ]]; then
             fi
         else
             echo -e "\nCreating pool in UI on drives in M.2 adaptor card already enabled."
+        fi
+    fi
+fi
+
+
+# Optionally update IronWolf Health Management
+if [[ $arch == "x86_64" ]]; then
+    if [[ $ihm == "yes" ]]; then
+        setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo support_ihm)"
+        if [[ $setting != "yes" ]]; then
+            # Enable support_ihm
+            /usr/syno/bin/synosetkeyvalue "$synoinfo" support_ihm "yes"
+            setting="$(/usr/syno/bin/synogetkeyvalue "$synoinfo" support_ihm)"
+            if [[ $setting == "yes" ]]; then
+                echo -e "\nEnabled support IronWolf Health Management."
+            fi
+        else
+            echo -e "\nSupport IronWolf Health Management already enabled."
+        fi
+
+        if [[ ! -f /usr/syno/sbin/dhm_tool ]]; then
+            # Install dhm_tool on models without it ('22 series and newer)
+            # Untested
+            md5hash="cf67c1d5006913297f85ca7f9d1795ba"
+            branch="main"
+            file_url="https://raw.githubusercontent.com/${repo}/${branch}/bin/dhm_tool"
+            # install_binfile <file> <file-url> <destination> <chmod> <bundled-path> <hash>
+            install_binfile dhm_tool "$file_url" /usr/syno/sbin/dhm_tool "755" bin/dhm_tool "$md5hash"
+        else
+            # Check if dhm_tool needs updating
+            dhm_version="$(dhm_tool --version | grep "Utility Version" | awk '{print $NF}')"
+            if ! printf "%s\n%s\n" "2.5.1" "$dhm_version" |
+                sort --check=quiet --version-sort >/dev/null ; then
+
+                # Backup existing dhm_tool
+                backupdb "/usr/syno/sbin/dhm_tool"
+
+                # Update dhm_tool
+                md5hash="cf67c1d5006913297f85ca7f9d1795ba"
+                branch="main"
+                file_url="https://raw.githubusercontent.com/${repo}/${branch}/bin/dhm_tool"
+                # install_binfile <file> <file-url> <destination> <chmod> <bundled-path> <hash>
+                install_binfile dhm_tool "$file_url" /usr/syno/sbin/dhm_tool "a+x" bin/dhm_tool "$md5hash"
+
+                # Check dhm_tool updated
+                dhm_version="$(dhm_tool --version | grep "Utility Version" | awk '{print $NF}')"
+                if [[ $dhm_version == "2.5.1" ]]; then
+                    echo "Updated IronWolf Health Management."
+                else
+                    echo "${Error}ERROR${Off} Failed to update IronWolf Health Management!"
+                fi
+            else
+                echo "IronWolf Health Management already updated."
+            fi
         fi
     fi
 fi
