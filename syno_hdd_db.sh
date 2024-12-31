@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.109"
+scriptver="v3.6.110"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1196,22 +1196,27 @@ fi
 
 
 # Expansion units
-# eSATA and InfiniBand ports both appear in syno_slot_mapping as:
-# Esata port count: 1
-# Eunit port 1 - RX1214
-# Only device tree models have syno_slot_mapping
-if which syno_slot_mapping >/dev/null; then
-    eunitlist=($(syno_slot_mapping | grep 'Eunit port' | awk '{print $5}'))
-else
-    # Create new /var/log/diskprediction log to ensure newly connected ebox is in latest log
-    # Otherwise the new /var/log/diskprediction log is only created a midnight.
-    /usr/syno/bin/syno_disk_data_collector record
+ebox_conected=$(synodisk --enum -t ebox)
+if [[ $ebox_conected ]]; then
+    # Only device tree models have syno_slot_mapping
+    # eSATA and InfiniBand ports both appear in syno_slot_mapping as:
+    # Esata port count: 1
+    # Eunit port 1 - RX1214
+    if which syno_slot_mapping >/dev/null; then
+        # syno_slot_mapping does not find SAS eunits
+        eunitlist=($(syno_slot_mapping | grep 'Eunit port' | awk '{print $5}'))
+    fi
+    if [[ ${#eunitlist[@]} -eq "0" ]]; then
+        # Create new /var/log/diskprediction log to ensure newly connected ebox is in latest log
+        # Otherwise the new /var/log/diskprediction log is only created a midnight.
+        /usr/syno/bin/syno_disk_data_collector record
 
-    # Get list of connected expansion units (aka eunit/ebox)
-    path="/var/log/diskprediction"
-    # shellcheck disable=SC2012
-    file=$(ls $path | tail -n1)
-    eunitlist=($(grep -Eowi "([FRD]XD?[0-9]{3,4})(rp|ii|sas){0,2}" "$path/$file" | uniq))
+        # Get list of connected expansion units (aka eunit/ebox)
+        path="/var/log/diskprediction"
+        # shellcheck disable=SC2012
+        file=$(ls $path | tail -n1)
+        eunitlist=($(grep -Eowi "([FRD]XD?[0-9]{3,4})(rp|ii|sas){0,2}" "$path/$file" | uniq))
+    fi
 fi
 
 # Sort eunitlist array into new eunits array to remove duplicates
