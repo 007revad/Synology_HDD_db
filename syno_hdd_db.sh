@@ -86,7 +86,7 @@ Options:
       --autoupdate=AGE  Auto update script (useful when script is scheduled)
                           AGE is how many days old a release must be before
                           auto-updating. AGE must be a number: 0 or greater
-  -I, --ihm             Update IronWolf Health Monitor to 2.5.1 to support
+  -I, --ihm             Update IronWolf Health Management to 2.5.1 to support
                         recent model IronWolf and IronWolf Pro drives.
                         For NAS with x86_64 CPUs only.
   -h, --help            Show this help message
@@ -168,7 +168,7 @@ if options="$(getopt -o SIabcdefghijklmnopqrstuvwxyz0123456789 -l \
             -p|--pcie)          # Enable creating volumes on M2 in unknown PCIe adaptor
                 forcepci=yes
                 ;;
-            -I|--ihm)           # Update IronWolf Health Monitor
+            -I|--ihm)           # Update IronWolf Health Management
                 ihm=yes
                 ;;
             --autoupdate)       # Auto update script
@@ -2250,7 +2250,7 @@ if [[ -f "$strgmgr" ]] && [[ $buildnumber -gt 42962 ]]; then
 fi
 
 
-# Optionally update IronWolf Health Monitor
+# Optionally update IronWolf Health Management
 if [[ $platform_name == "x86_64" ]]; then
     if [[ $ihm == "yes" ]]; then
         setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo support_ihm)"
@@ -2259,10 +2259,10 @@ if [[ $platform_name == "x86_64" ]]; then
             /usr/syno/bin/synosetkeyvalue "$synoinfo" support_ihm "yes"
             setting="$(/usr/syno/bin/synogetkeyvalue "$synoinfo" support_ihm)"
             if [[ $setting == "yes" ]]; then
-                echo -e "\nEnabled support IronWolf Health Monitor."
+                echo -e "\nEnabled support IronWolf Health Management."
             fi
         else
-            echo -e "\nSupport IronWolf Health Monitor already enabled."
+            echo -e "\nSupport IronWolf Health Management already enabled."
         fi
 
         # Check if dhm_tool needs updating
@@ -2283,12 +2283,12 @@ if [[ $platform_name == "x86_64" ]]; then
             # Check dhm_tool updated
             dhm_version="$(dhm_tool --version | grep "Utility Version" | awk '{print $NF}')"
             if [[ $dhm_version == "2.5.1" ]]; then
-                echo "Updated IronWolf Health Monitor."
+                echo "Updated IronWolf Health Management."
             else
-                echo "${Error}ERROR${Off} Failed to update IronWolf Health Monitor!"
+                echo "${Error}ERROR${Off} Failed to update IronWolf Health Management!"
             fi
         else
-            echo "IronWolf Health Monitor already updated."
+            echo "IronWolf Health Management already updated."
         fi
     fi
 fi
