@@ -1,3 +1,6 @@
+v3.6.110
+- Bug fix for not finding SAS expansion units. Issue #413
+
 v3.6.109
 - Added -I, --ihm option to update IronWolf Health Management to 2.5.1 to support recent model IronWolf and IronWolf Pro drives.
   - For NAS with x86_64 CPUs only.
