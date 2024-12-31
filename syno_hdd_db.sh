@@ -88,7 +88,7 @@ Options:
                           auto-updating. AGE must be a number: 0 or greater
   -I, --ihm             Update IronWolf Health Management to 2.5.1 to support
                         recent model IronWolf and IronWolf Pro drives.
-                        For NAS with x86_64 CPUs only.
+                        For NAS with x86_64 CPUs only
                         Installs IHM on '22 series and newer models (untested)
   -h, --help            Show this help message
   -v, --version         Show the script version
