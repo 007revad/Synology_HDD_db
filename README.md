@@ -106,7 +106,7 @@ There are optional flags you can use when running the script:
                           AGE is how many days old a release must be before
                           auto-updating. AGE must be a number: 0 or greater
   -I, --ihm             Update IronWolf Health Monitor to 2.5.1 to support
-                        recent model IronWolf and IronWolf Pro drives.
+                        recent model IronWolf and IronWolf Pro drives
   -h, --help            Show this help message
   -v, --version         Show the script version
 
