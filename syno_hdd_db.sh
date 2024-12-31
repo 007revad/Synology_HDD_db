@@ -264,6 +264,9 @@ modelname="$model"
 # Get CPU platform_name
 platform_name=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/synoinfo.conf platform_name)
 
+# Get CPU arch
+arch="$(uname -m)"
+
 
 # Show script version
 #echo -e "$script $scriptver\ngithub.com/$repo\n"
@@ -278,7 +281,7 @@ smallfixnumber=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION smallfixnum
 # Show DSM full version and model
 if [[ $buildphase == GM ]]; then buildphase=""; fi
 if [[ $smallfixnumber -gt "0" ]]; then smallfix="-$smallfixnumber"; fi
-echo "$model $platform_name DSM $productversion-$buildnumber$smallfix $buildphase"
+echo "$model $arch DSM $productversion-$buildnumber$smallfix $buildphase"
 
 
 # Convert model to lower case
@@ -2252,7 +2255,7 @@ fi
 
 
 # Optionally update IronWolf Health Management
-if [[ $platform_name == "x86_64" ]]; then
+if [[ $arch == "x86_64" ]]; then
     if [[ $ihm == "yes" ]]; then
         setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo support_ihm)"
         if [[ $setting != "yes" ]]; then
