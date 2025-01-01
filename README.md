@@ -229,7 +229,8 @@ Thank you to the PayPal and Buy Me a Coffee donators, GitHub sponsors and hardwa
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  | Flow | tsnyder | zhangchi198 | 
+|  |  | Will (war59312) | Christopher Maglio |
+| Flow | Jake Morrison | tsnyder | zhangchi198 | 
 | leadadri | Gary Plumbridge | frogger1805 | ctrlaltdelete | 
 | CannotTouch | Kevin Staude | Alistair Hathaway | 8347 | 
 | BrattishPlaque | Chris Bunnell | dansimau | Bsih | 
