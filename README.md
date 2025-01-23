@@ -229,7 +229,9 @@ Thank you to the PayPal and Buy Me a Coffee donators, GitHub sponsors and hardwa
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  |  | Will (war59312) | Christopher Maglio |
+|  |  |  | Richard Wilhelm | 
+| Mika255 | Ralf Edelwein | Martin | Alexander Habisreitinger | 
+| jrn | Marcus Wojtusik | Will (war59312) | Christopher Maglio |
 | Flow | Jake Morrison | tsnyder | zhangchi198 | 
 | leadadri | Gary Plumbridge | frogger1805 | ctrlaltdelete | 
 | CannotTouch | Kevin Staude | Alistair Hathaway | 8347 | 
