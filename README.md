@@ -41,7 +41,7 @@ It also has a restore option to undo all the changes made by the script.
 * Enables creating M.2 storage pools and volumes from within Storage Manager in DSM 7.2 and later **(newer models only?)**.
     * Including M.2 drives in PCIe adaptor cards like M2D20, M2D18, M2D17 and E10M20-T1 for DSM 7.2 and above **(schedule the script to run boot)**.
 * Optionally update IronWolf Health Monitor to v2.5.1 to support recent model IronWolf and IronWolf Pro drives. **(NAS with x86_64 CPUs only)**.
-    * Installs IronWolf Health Management on '22 series and newer models that don't have IronWolf Health Management **(untested)**.
+    * Also installs IronWolf Health Management on '22 series and newer models that don't have IronWolf Health Management **(untested)**.
 * Makes DSM recheck disk compatibility so rebooting is not needed if you don't have M.2 drives (DSM 7 only).
     * **If you have M.2 drives you may need to reboot.**
     * Reminds you that you may need to reboot the Synology after running the script.
@@ -91,35 +91,6 @@ There are optional flags you can use when running the script:
                         Do not use this option unless absolutely needed
   -w, --wdda            Disable WD Device Analytics to prevent DSM showing
                         a false warning for WD drives that are 3 years old
-                          DSM 7.2.1 already has WDDA disabled
-  -p, --pcie            Enable creating volumes on M2 in unknown PCIe adaptor
-  -e, --email           Disable colored text in output scheduler emails
-  -S, --ssd=DRIVE       Enable write_mostly on slow internal drives so DSM 
-                        runs from the fast internal drive(s).
-                          -S automatically sets internal SSDs as DSM preferred
-                          --ssd=DRIVE requires the fast drive(s) as argument,
-                          or restore as the argument to reset drives to default
-                          --ssd=sata1 or --ssd=sata1,sata2 or --ssd=sda etc
-                          --ssd=restore
-      --restore         Undo all changes made by the script (except -S --ssd)
-      --autoupdate=AGE  Auto update script (useful when script is scheduled)
-                          AGE is how many days old a release must be before
-                          auto-updating. AGE must be a number: 0 or greater
-  -I, --ihm             Update IronWolf Health Monitor to 2.5.1 to support
-                        recent model IronWolf and IronWolf Pro drives
-  -h, --help            Show this help message
-  -v, --version         Show the script version
-
-  -s, --showedits       Show edits made to <model>_host db and db.new file(s)
-  -n, --noupdate        Prevent DSM updating the compatible drive databases
-  -r, --ram             Disable memory compatibility checking (DSM 7.x only)
-                        and sets max memory to the amount of installed memory
-  -f, --force           Force DSM to not check drive compatibility
-                        Do not use this option unless absolutely needed
-  -i, --incompatible    Change incompatible drives to supported
-                        Do not use this option unless absolutely needed
-  -w, --wdda            Disable WD Device Analytics to prevent DSM showing
-                        a false warning for WD drives that are 3 years old
                           DSM 7.2.1 and later already has WDDA disabled
   -p, --pcie            Enable creating volumes on M2 in unknown PCIe adaptor
   -e, --email           Disable colored text in output scheduler emails
@@ -139,7 +110,7 @@ There are optional flags you can use when running the script:
   -I, --ihm             Update IronWolf Health Management to 2.5.1 to support
                         recent model IronWolf and IronWolf Pro drives.
                         For NAS with x86_64 CPUs only.
-                        Installs IHM on '22 series and newer models (untested)
+                        Also installs IHM on '22 series and newer models (untested)
   -h, --help            Show this help message
   -v, --version         Show the script version
 ```
