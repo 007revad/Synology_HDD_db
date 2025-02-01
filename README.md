@@ -200,7 +200,7 @@ Thank you to the PayPal and Buy Me a Coffee donators, GitHub sponsors and hardwa
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  |  |  | Richard Wilhelm | 
+|  |  | Daniel Meda | Richard Wilhelm | 
 | Mika255 | Ralf Edelwein | Martin | Alexander Habisreitinger | 
 | jrn | Marcus Wojtusik | Will (war59312) | Christopher Maglio |
 | Flow | Jake Morrison | tsnyder | zhangchi198 | 
