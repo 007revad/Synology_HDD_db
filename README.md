@@ -200,7 +200,8 @@ Thank you to the PayPal and Buy Me a Coffee donators, GitHub sponsors and hardwa
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  |  | Fabio Cecchinato | Jacek  |
+|  |  |  | Fabio Petgola | 
+| lonestar6262 | Netchoice | Fabio Cecchinato | Jacek  |
 | Dugan Audio LLC | MikeSx  | Toregev  | M. Verhoef | 
 | Philipp Ehmeier | Adrian Playle | Daniel Meda | Richard Wilhelm | 
 | Mika255 | Ralf Edelwein | Martin | Alexander Habisreitinger | 
