@@ -126,7 +126,7 @@ if options="$(getopt -o SIabcdefghijklmnopqrstuvwxyz0123456789 -l \
                 ;;
             --restore)          # Restore changes from backups
                 restore=yes
-                if $(echo "${args[@]}" | grep -q -- '--ssd=restore'); then
+                if echo "${args[@]}" | grep -q -- '--ssd=restore'; then
                     ssd_restore=yes
                 fi
                 #break
