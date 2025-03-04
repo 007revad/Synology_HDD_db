@@ -730,7 +730,7 @@ if [[ $restore == "yes" ]]; then
         if [[ $buildnumber -gt 64570 ]]; then
             # DSM 7.2.1 and later
             strgmgrver="$(/usr/syno/bin/synopkg version StorageManager)"
-        elif [[ $buildnumber -ge 64561 ]]; then
+        elif [[ $buildnumber -ge 42962 ]]; then
             # DSM 7.1.1 to 7.2
             strgmgrver="${buildnumber}${smallfixnumber}"
         fi
@@ -2230,7 +2230,7 @@ if [[ -f "$strgmgr" ]] && [[ $buildnumber -gt 42962 ]]; then
             if [[ $buildnumber -gt 64570 ]]; then
                 # DSM 7.2.1 and later
                 strgmgrver="$(/usr/syno/bin/synopkg version StorageManager)"
-            elif [[ $buildnumber -ge 64561 ]]; then
+            elif [[ $buildnumber -ge 42962 ]]; then
                 # DSM 7.1.1 to 7.2
                 strgmgrver="${buildnumber}${smallfixnumber}"
             fi
