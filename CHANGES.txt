@@ -1,3 +1,6 @@
+v3.6.111
+- Added support for M.2 volumes for NVMe drives in PCIe adaptor cards for DSM 7.1.1
+
 v3.6.110
 - Bug fix for not finding SAS expansion units. Issue #413
 
