@@ -200,7 +200,8 @@ Thank you to the PayPal and Buy Me a Coffee donators, GitHub sponsors and hardwa
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-| Jérôme MORIN | Sven Bauer | Fabien Vallet | Fabio Petgola | 
+|  |  | Jason DeCorte | Salovaara Antti Sakari |
+| Jérôme MORIN | Sven Bauer | Fabien Vallet | Fabio Petgola |
 | lonestar6262 | Netchoice | Fabio Cecchinato | Jacek  |
 | Dugan Audio LLC | MikeSx  | Toregev  | M. Verhoef | 
 | Philipp Ehmeier | Adrian Playle | Daniel Meda | Richard Wilhelm | 
