@@ -94,6 +94,9 @@
 
 - **<a href="https://github.com/007revad/Synology_Download_Station_Chrome_Extension">Synology_Download_Station_Chrome_Extension</a>**
   - Download Station Chrome Extension.
+ 
+- **<a href="https://github.com/007revad/Seagate_lowCurrentSpinup">Seagate_lowCurrentSpinup</a>**
+  - This script avoids the need to buy and install a higher wattage power supply when using multiple large Seagate SATA HDDs.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
