@@ -1,5 +1,16 @@
 ## 2025 series or later Plus models
 
+| Action | Works | Result | Solution |
+|--------|--------------|--------|----------|
+| Setup the NAS with Synology drive(s) | yes |  |  |
+| Setup the NAS with 3rd party SSD(s) | yes | Lots of warnings | Synology HDD db |
+| Migrate 3rd party drives from other Synology | yes | Lots of warnings | Synology HDD db |
+| Replace migrated 3rd party drive(s) with 3rd party drive(s) | **No!** |  | Synology HDD db |
+| Expand migrated 3rd party storage pool with 3rd party drive(s) | **No!** |  | Synology HDD db |
+| Use 3rd party drive as hot spare | **No!** |  | Synology HDD db |
+| Create a cache with 3rd party SSD(s) | **No!** |  | Synology HDD db |
+| Delete and create storage pool on migrated 3rd party drive(s) | **No!** |  | See <a href="#deleting-and-recreating-your-storage-pool-on-unverified-hdds">Recreating storage pool</a> |
+
 On 2025 series or later Plus models: 
 - You can migrate a storage pool on unverifed 3rd party HDDs from another Synology.
 - You can setup the NAS with a Synology HDD or with a 3rd party SSD.
