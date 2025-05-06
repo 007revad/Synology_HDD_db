@@ -4,6 +4,8 @@
 
 You can't download Synology HDD db to a volume because you've just deleted your storage pool. So you'd first need to download Synology HDD db to a system folder and run it from there.
 
+#### Via SSH
+
 1. Create and cd to /opt
     ```
     sudo mkdir /opt && sudo chmod 775 /opt
