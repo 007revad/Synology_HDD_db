@@ -67,7 +67,7 @@ Then create the scheduled task:
     curl -O "https://raw.githubusercontent.com/007revad/Synology_HDD_db/refs/heads/main/syno_hdd_db.sh"
     curl -O "https://raw.githubusercontent.com/007revad/Synology_HDD_db/refs/heads/main/syno_hdd_vendor_ids.txt"
     chmod 750 /opt/syno_hdd_db.sh
-    /opt/syno_hdd_db.sh
+    /opt/syno_hdd_db.sh -e
     ```
 8. Click **OK** > **OK** > type your password > **Submit** to save the scheduled task.
 9. Now select the scheduld task and click **Run** > **OK**.
