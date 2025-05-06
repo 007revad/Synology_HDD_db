@@ -17,9 +17,9 @@ DSM won't install on a 2025 or later series plus model if you only have unverifi
 3. Open a telnet client on your computer and log in to telnet with:
     - `root` for the username
     - `101-0101` for the password
-5. Execute the following command:
+5. Execute the following command: (using a while loop in case DSM is running in a VM)
     ```
-    touch /tmp/installable_check_pass
+    while true; do touch /tmp/installable_check_pass; sleep 1; done
     ```
 7. Refresh the web installation page and install DSM.
 8. Then in the telnet window, or via SSH, execute the following command:
