@@ -49,12 +49,12 @@ You can do this via SSH or via a scheduled task.
 
 
 ```
-sudo mkdir -m775 /opt
+mkdir -m775 /opt
 cd /opt || (echo "Failed to CD to /opt"; exit 1)
-sudo curl -O "https://raw.githubusercontent.com/007revad/Synology_HDD_db/refs/heads/main/syno_hdd_db.sh"
-sudo curl -O "https://raw.githubusercontent.com/007revad/Synology_HDD_db/refs/heads/main/syno_hdd_vendor_ids.txt"
-sudo chmod 750 /opt/syno_hdd_db.sh
-sudo -s /opt/syno_hdd_db.sh
+curl -O "https://raw.githubusercontent.com/007revad/Synology_HDD_db/refs/heads/main/syno_hdd_db.sh"
+curl -O "https://raw.githubusercontent.com/007revad/Synology_HDD_db/refs/heads/main/syno_hdd_vendor_ids.txt"
+chmod 750 /opt/syno_hdd_db.sh
+/opt/syno_hdd_db.sh
 ```
 
 You can now create your storage pool from Storage Manager
