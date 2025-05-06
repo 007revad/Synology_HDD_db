@@ -2,6 +2,8 @@
 
 ### Setting up a new 2025 or later plus model with only unverified HDDs
 
+Credit to Alex_of_Chaos on reddit
+
 DSM won't install on a 2025 or later series plus model if you only have unverified HDDs. But we can get around that.
 
 1. Start telnet by entering `http://<NAS-IP>:5000/webman/start_telnet.cgi` into your browser's address bar.
