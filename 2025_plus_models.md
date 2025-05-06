@@ -2,11 +2,13 @@
 
 ### Setting up a new 2025 or later plus model with only unverified HDDs
 
+Credit to Alex_of_Chaos on reddit
+
 DSM won't install on a 2025 or later series plus model if you only have unverified HDDs. But we can get around that.
 
 1. Start telnet by entering `http://<NAS-IP>:5000/webman/start_telnet.cgi` into your browser's address bar.
    - Replace `<NAS-IP>` with the IP address of the Synology NAS. 
-3. Open a telnet client on your computer and log in to telnet with
+3. Open a telnet client on your computer and log in to telnet with:
     - `root` for the username
     - `101-0101` for the password
 5. Execute the following command:
@@ -14,7 +16,7 @@ DSM won't install on a 2025 or later series plus model if you only have unverifi
     touch /tmp/installable_check_pass
     ```
 7. Refresh the web installation page and install DSM.
-8. Then in the telnet window, or via SSH, execute the following command
+8. Then in the telnet window, or via SSH, execute the following command:
    ```
    /usr/syno/bin/synosetkeyvalue support_disk_compatibility no
    ```
