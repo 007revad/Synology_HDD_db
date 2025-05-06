@@ -4,6 +4,8 @@
 
 You can't download Synology HDD db to a volume because you've just deleted your storage pool. So you'd first need to download Synology HDD db to a system folder and run it from there.
 
+You can do this via SSH or via a scheduled task.
+
 #### Via SSH
 
 1. Create and cd to /opt
@@ -42,4 +44,18 @@ You can't download Synology HDD db to a volume because you've just deleted your 
     ```
 
 8. You can now create your storage pool from Storage Manager
+
+#### Via a scheduled task
+
+
+```
+sudo mkdir -m775 /opt
+cd /opt || (echo "Failed to CD to /opt"; exit 1)
+sudo curl -O "https://raw.githubusercontent.com/007revad/Synology_HDD_db/refs/heads/main/syno_hdd_db.sh"
+sudo curl -O "https://raw.githubusercontent.com/007revad/Synology_HDD_db/refs/heads/main/syno_hdd_vendor_ids.txt"
+sudo chmod 750 /opt/syno_hdd_db.sh
+sudo -s /opt/syno_hdd_db.sh
+```
+
+You can now create your storage pool from Storage Manager
 
