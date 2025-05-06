@@ -1,5 +1,10 @@
 ## 2025 series or later Plus models
 
+On 2025 series or later Plus models: 
+- You can migrate a storage pool on unverifed 3rd party HDDs from another Synology.
+- You can setup the NAS with a Synology HDD or with a 3rd party SSD.
+- But you **offically** cannot setup the NAS with only unverified 3rd party HDDs. Unoffically we can...
+
 ### Setting up a new 2025 or later plus model with only unverified HDDs
 
 Credit to Alex_of_Chaos on reddit
