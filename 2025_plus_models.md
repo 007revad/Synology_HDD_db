@@ -34,8 +34,10 @@ You can't download Synology HDD db to a volume because you've just deleted your 
     sudo chmod 750 /opt/syno_hdd_db.sh
     ```
 
-6. Finally run
-    ```sudo -s /opt/syno_hdd_db.sh```
+6. Finally run syno_hdd_db. You don't need any options at this point.
+    ```
+    sudo -s /opt/syno_hdd_db.sh
+    ```
 
-7. You can now create your storage pool from Storage Manager
+8. You can now create your storage pool from Storage Manager
 
