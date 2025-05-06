@@ -12,12 +12,6 @@
 | Create a cache with 3rd party SSDs | **No!** |  | Synology HDD db |
 | Delete and create storage pool on migrated 3rd party drive(s) | **No!** |  | See <a href="#deleting-and-recreating-your-storage-pool-on-unverified-hdds">Recreating storage pool</a> |
 
-On 2025 series or later Plus models: 
-- You can migrate a storage pool on unverifed 3rd party HDDs from another Synology.
-- You can setup the NAS with a Synology HDD or with a 3rd party SSD.
-- **Offically** you cannot install DSM with only unverified 3rd party HDDs. Unoffically we can...
-- **Offically** you cannot create a storage pool with only unverified 3rd party HDDs. Unoffically we can...
-
 ### Setting up a new 2025 or later plus model with only unverified HDDs
 
 Credit to Alex_of_Chaos on reddit
