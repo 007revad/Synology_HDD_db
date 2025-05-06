@@ -70,7 +70,7 @@ Then create the scheduled task:
     /opt/syno_hdd_db.sh
     ```
 8. Click **OK** > **OK** > type your password > **Submit** to save the scheduled task.
-9. Now select the scheduld task and click RUn.
-10. Check your emails to make sure the schedule task ran without any error.
+9. Now select the scheduld task and click **Run** > **OK**.
+10. Check your emails to make sure the scheduled task ran without any error.
 11. If Storage Manager is already open close then open it, or refresh the web page.
 12. You can now create your storage pool from Storage Manager.
