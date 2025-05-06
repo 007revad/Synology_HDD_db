@@ -43,7 +43,8 @@ You can do this via SSH or via a scheduled task.
     sudo -s /opt/syno_hdd_db.sh
     ```
 
-8. You can now create your storage pool from Storage Manager
+8. If Storage Manager is already open close then open it, or refresh the web page.
+9. You can now create your storage pool from Storage Manager.
 
 #### Via a scheduled task
 
@@ -52,7 +53,8 @@ You can do this via SSH or via a scheduled task.
 3. Select **root** as the user (The script needs to run as root).
 4. Untick **Enable**.
 5. Click **Task Settings**.
-6. In the box under **User-defined script** paste the following: 
+6. Tick **Send run details by email** and enter your email address.
+7. In the box under **User-defined script** paste the following: 
     ```
     mkdir -m775 /opt
     cd /opt || (echo "Failed to CD to /opt"; exit 1)
@@ -61,7 +63,8 @@ You can do this via SSH or via a scheduled task.
     chmod 750 /opt/syno_hdd_db.sh
     /opt/syno_hdd_db.sh
     ```
-7. Click **OK** to save the settings.
-
-You can now create your storage pool from Storage Manager
-
+8. Click **OK** > **OK** > type your password > **Submit** to save the scheduled task.
+9. Now select the scheduld task and click RUn.
+10. Check your emails to make sure the schedule task ran without any error.
+11. If Storage Manager is already open close then open it, or refresh the web page.
+12. You can now create your storage pool from Storage Manager.
