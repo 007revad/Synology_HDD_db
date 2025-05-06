@@ -47,15 +47,21 @@ You can do this via SSH or via a scheduled task.
 
 #### Via a scheduled task
 
-
-```
-mkdir -m775 /opt
-cd /opt || (echo "Failed to CD to /opt"; exit 1)
-curl -O "https://raw.githubusercontent.com/007revad/Synology_HDD_db/refs/heads/main/syno_hdd_db.sh"
-curl -O "https://raw.githubusercontent.com/007revad/Synology_HDD_db/refs/heads/main/syno_hdd_vendor_ids.txt"
-chmod 750 /opt/syno_hdd_db.sh
-/opt/syno_hdd_db.sh
-```
+1. Go to **Control Panel** > **Task Scheduler** > click **Create** > **Scheduled Task** > **User-defined script**.
+2. Enter a task name.
+3. Select **root** as the user (The script needs to run as root).
+4. Untick **Enable**.
+5. Click **Task Settings**.
+6. In the box under **User-defined script** paste the following: 
+    ```
+    mkdir -m775 /opt
+    cd /opt || (echo "Failed to CD to /opt"; exit 1)
+    curl -O "https://raw.githubusercontent.com/007revad/Synology_HDD_db/refs/heads/main/syno_hdd_db.sh"
+    curl -O "https://raw.githubusercontent.com/007revad/Synology_HDD_db/refs/heads/main/syno_hdd_vendor_ids.txt"
+    chmod 750 /opt/syno_hdd_db.sh
+    /opt/syno_hdd_db.sh
+    ```
+7. Click **OK** to save the settings.
 
 You can now create your storage pool from Storage Manager
 
