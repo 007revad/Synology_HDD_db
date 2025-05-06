@@ -2,8 +2,9 @@
 
 | Action | Works | Result | Solution |
 |--------|--------------|--------|----------|
-| Setup the NAS with Synology drive(s) | yes |  |  |
-| Setup the NAS with 3rd party SSD(s) | yes | Lots of warnings | Synology HDD db |
+| Setup the NAS with Synology drives | yes |  |  |
+| Setup the NAS with 3rd party SSDs | yes | Lots of warnings | Synology HDD db |
+| Setup the NAS with 3rd party HDDs | **No!** |  | See <a href="#setting-up-a-new-2025-or-later-plus-model-with-only-unverified-hdds">Setup with unverifed HDDs</a> |
 | Migrate 3rd party drives from other Synology | yes | Lots of warnings | Synology HDD db |
 | Replace migrated 3rd party drive(s) with 3rd party drive(s) | **No!** |  | Synology HDD db |
 | Expand migrated 3rd party storage pool with 3rd party drive(s) | **No!** |  | Synology HDD db |
