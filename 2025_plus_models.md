@@ -14,11 +14,12 @@ DSM won't install on a 2025 or later series plus model if you only have unverifi
     touch /tmp/installable_check_pass
     ```
 7. Refresh the web installation page and install DSM.
-8. Then in the telnet window execute the following command
+8. Then in the telnet window, or via SSH, execute the following command
    ```
    /usr/syno/bin/synosetkeyvalue support_disk_compatibility no
    ```
-9.  You can now create your storage pool from Storage Manager.
+9.  If Storage Manager is already open close then open it, or refresh the web page.
+10. You can now create your storage pool from Storage Manager.
 
 
 ### Deleting and recreating your storage pool on unverified HDDs
