@@ -48,6 +48,12 @@ You can do this via SSH or via a scheduled task.
 
 #### Via a scheduled task
 
+First setup email notifications (if you haven't already):
+
+1. Go to **Control Panel** > **Notification** > **Email** > click **Setup**.
+
+Then create the scheduled task:
+
 1. Go to **Control Panel** > **Task Scheduler** > click **Create** > **Scheduled Task** > **User-defined script**.
 2. Enter a task name.
 3. Select **root** as the user (The script needs to run as root).
