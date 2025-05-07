@@ -12,7 +12,7 @@
 | Expand migrated 3rd party storage pool with 3rd party drives | **No!** |  | Use Synology HDD db |
 | Use 3rd party drive as hot spare | **No!** |  | Use Synology HDD db |
 | Create a cache with 3rd party SSDs | **No!** |  | Use Synology HDD db |
-| Delete and create storage pool on migrated 3rd party drive(s) | **No!** |  | See <a href="#deleting-and-recreating-your-storage-pool-on-unverified-hdds">Recreating storage pool</a> |
+| Delete and create storage pool on migrated 3rd party drives | **No!** |  | See <a href="#deleting-and-recreating-your-storage-pool-on-unverified-hdds">Recreating storage pool</a> |
 
 <br>
 
