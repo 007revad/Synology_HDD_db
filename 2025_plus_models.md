@@ -3,13 +3,13 @@
 | Action | Works | Result | Solution |
 |--------|--------------|--------|----------|
 | Setup the NAS with Synology drives | yes |  |  |
-| Setup the NAS with 3rd party SSDs | yes | Lots of warnings | Synology HDD db |
+| Setup the NAS with 3rd party SSDs | yes | Lots of warnings | Use Synology HDD db |
 | Setup the NAS with unverified 3rd party HDDs | **No!** |  | See <a href="#setting-up-a-new-2025-or-later-plus-model-with-only-unverified-hdds">Setup with unverifed HDDs</a> |
-| Migrate unverified 3rd party drives from other Synology | yes | Lots of warnings | Synology HDD db |
-| Replace migrated 3rd party drives with 3rd party drives | **No!** |  | Synology HDD db |
-| Expand migrated 3rd party storage pool with 3rd party drives | **No!** |  | Synology HDD db |
-| Use 3rd party drive as hot spare | **No!** |  | Synology HDD db |
-| Create a cache with 3rd party SSDs | **No!** |  | Synology HDD db |
+| Migrate unverified 3rd party drives from other Synology | yes | Lots of warnings | Use Synology HDD db |
+| Replace migrated 3rd party drives with 3rd party drives | **No!** |  | Use Synology HDD db |
+| Expand migrated 3rd party storage pool with 3rd party drives | **No!** |  | Use Synology HDD db |
+| Use 3rd party drive as hot spare | **No!** |  | Use Synology HDD db |
+| Create a cache with 3rd party SSDs | **No!** |  | Use Synology HDD db |
 | Delete and create storage pool on migrated 3rd party drive(s) | **No!** |  | See <a href="#deleting-and-recreating-your-storage-pool-on-unverified-hdds">Recreating storage pool</a> |
 
 ### Setting up a new 2025 or later plus model with only unverified HDDs
