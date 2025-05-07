@@ -1,5 +1,7 @@
 ## 2025 series or later Plus models
 
+### Unverified 3rd party drive limitations and unoffical solutions
+
 | Action | Works | Result | Solution |
 |--------|--------------|--------|----------|
 | Setup the NAS with Synology drives | yes |  |  |
@@ -11,6 +13,8 @@
 | Use 3rd party drive as hot spare | **No!** |  | Use Synology HDD db |
 | Create a cache with 3rd party SSDs | **No!** |  | Use Synology HDD db |
 | Delete and create storage pool on migrated 3rd party drive(s) | **No!** |  | See <a href="#deleting-and-recreating-your-storage-pool-on-unverified-hdds">Recreating storage pool</a> |
+
+<br>
 
 ### Setting up a new 2025 or later plus model with only unverified HDDs
 
@@ -35,6 +39,7 @@ DSM won't install on a 2025 or later series plus model if you only have unverifi
 9.  If Storage Manager is already open close then open it, or refresh the web page.
 10. You can now create your storage pool from Storage Manager.
 
+<br>
 
 ### Deleting and recreating your storage pool on unverified HDDs
 
