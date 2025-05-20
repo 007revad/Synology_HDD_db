@@ -9,7 +9,7 @@
 | Setup the NAS with unverified 3rd party HDDs | **No!** |  | See <a href="#setting-up-a-new-2025-or-later-plus-model-with-only-unverified-hdds">Setup with unverifed HDDs</a> |
 | Migrate unverified 3rd party drives from other Synology | yes | Lots of warnings | Use [Synology HDD db](https://github.com/007revad/Synology_HDD_db) |
 | Replace migrated 3rd party drives with 3rd party drives | **No!** |  | Use [Synology HDD db](https://github.com/007revad/Synology_HDD_db) |
-| Gradually replace migrated 3rd party drives with Synology drives | probably | Warnings until the last 3rd party drive to be replaced | See [Question about Pool Migration and Drive Replacement on DS925+](https://github.com/007revad/Synology_HDD_db/discussions/468#discussioncomment-13086639) |
+| Gradually replace migrated 3rd party drives with Synology drives | yes | Lots of warnings until all 3rd party drives replaced | Use [Synology HDD db](https://github.com/007revad/Synology_HDD_db) See [Migration and Drive Replacement](https://github.com/007revad/Synology_HDD_db/discussions/468#discussioncomment-13086639) |
 | Expand migrated 3rd party storage pool with 3rd party drives | **No!** |  | Use [Synology HDD db](https://github.com/007revad/Synology_HDD_db) |
 | Use 3rd party drive as hot spare | **No!** |  | Use [Synology HDD db](https://github.com/007revad/Synology_HDD_db) |
 | Create a cache with 3rd party SSDs | **No!** |  | Use [Synology HDD db](https://github.com/007revad/Synology_HDD_db) |
