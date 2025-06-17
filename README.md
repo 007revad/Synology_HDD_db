@@ -207,6 +207,10 @@ Thank you to the PayPal and Buy Me a Coffee donators, GitHub sponsors and hardwa
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
+| Chris Black Media | Brent Bertram | Carsten Schmidt | Christopher Nichols |
+| Roland Thätig | Sebastian Brandt | HFB2022 | jtrouzes |
+| stove | Simon Küest | Oliver Weber | Kevin Randino |
+| Alex Tripp | Peter Kleissner | Dominic Lee | Daniel Boecker |
 | Pat A Phillips | Craikeybaby | Jason DeCorte | Salovaara Antti Sakari |
 | Jérôme MORIN | Sven Bauer | Fabien Vallet | Fabio Petgola |
 | lonestar6262 | Netchoice | Fabio Cecchinato | Jacek  |
