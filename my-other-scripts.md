@@ -8,6 +8,7 @@
 - [Synology hardware restrictions](#synology-hardware-restrictions)
 - [How To Guides](#how-to-guides)
 - [Synology dev](#synology-dev)
+
 ##
 
 ### Plex
