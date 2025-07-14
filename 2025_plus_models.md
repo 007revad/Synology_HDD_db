@@ -36,7 +36,7 @@ DSM won't install on a 2025 or later series plus model if you only have unverifi
 7. Refresh the web installation page and install DSM.
 8. Then in the telnet window, or via SSH, execute the following command:
    ```
-   /usr/syno/bin/synosetkeyvalue support_disk_compatibility no
+   /usr/syno/bin/synosetkeyvalue /etc.defaults/synoinfo.conf support_disk_compatibility no
    ```
 9.  If Storage Manager is already open close then open it, or refresh the web page. If refreshing the page or restarting Storage Manager is not working, try restarting your Synology NAS.
 10. You can now create your storage pool from Storage Manager.
