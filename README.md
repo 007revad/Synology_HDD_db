@@ -207,7 +207,13 @@ Thank you to the PayPal and Buy Me a Coffee donators, GitHub sponsors and hardwa
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
-|  |  | bizIT Hirschberg | Alexander Ziemann |
+|  |  | EVOX S.R.L.S | Adam |
+| Danny Schoonderwoert | Andrew Ward | nickcolea | Bruno |
+| eColombel | LordGardenGnome | Dennis Struck | matthewslack |
+| Adrien | Florian Hinhamer | Patrick Witon | Sonwoa1 |
+| apbirch67 | Tim | Robert | Moritz Bloser |
+| Jason Huang | James Welsh | robinhood1995 | Paul Fiorento |
+| Gwystyl | Matt Hann | bizIT Hirschberg | Alexander Ziemann |
 | Chris Black Media | Brent Bertram | Carsten Schmidt | Christopher Nichols |
 | Roland Thätig | Sebastian Brandt | HFB2022 | jtrouzes |
 | stove | Simon Küest | Oliver Weber | Kevin Randino |
