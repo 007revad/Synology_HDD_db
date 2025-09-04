@@ -207,6 +207,7 @@ Thank you to the PayPal and Buy Me a Coffee donators, GitHub sponsors and hardwa
 
 |  |  |  |  | 
 |--------------------|--------------------|----------------------|----------------------|
+|  |  |  | David Koch |
 | EVOX S.R.L.S | Adam | Danny Schoonderwoert | Andrew Ward |
 | nickcolea | Bruno | eColombel | LordGardenGnome |
 | Dennis Struck | matthewslack | Adrien | Florian Hinhamer |
