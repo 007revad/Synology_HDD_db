@@ -17,7 +17,7 @@ The script works in DSM 7, including DSM 7.2, and DSM 6.
 
 It also has a restore option to undo all the changes made by the script.
 
-Works for 2025 series or later Plus models. See [2025_plus_models.md](https://github.com/007revad/Synology_HDD_db/blob/main/2025_plus_models.md)
+Also works for 2025 series or later Plus models. See [2025_plus_models.md](https://github.com/007revad/Synology_HDD_db/blob/main/2025_plus_models.md)
 
 #### What the script does:
 
