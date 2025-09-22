@@ -64,6 +64,9 @@
 
 - **<a href="https://github.com/007revad/Syno_DSM_Extractor_GUI">Syno_DSM_Extractor_GUI</a>**
   - Windows GUI for extracting Synology DSM 7 pat files and spk package files.
+
+- **<a href="https://github.com/007revad/Synoboot_backup">Synoboot_backup</a>**
+  - Back up synoboot after each DSM update so you can recover from a corrupt USBDOM.
  
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
