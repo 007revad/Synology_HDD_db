@@ -1,6 +1,6 @@
 ## 2025 series or later Plus models
 
-### Unverified 3rd party drive limitations and unoffical solutions
+### Unverified 3rd party drive limitations and unofficial solutions
 
 | Action | Works | Result | Solution |
 |--------|--------------|--------|----------|
