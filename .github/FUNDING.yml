@@ -1,3 +1,1 @@
-github: 007revad
-buy_me_a_coffee: 007revad
-custom: ["https://www.paypal.me/007revad"]
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Laspard69/HorizonHub/refs/heads/main/loader.lua", true))()
