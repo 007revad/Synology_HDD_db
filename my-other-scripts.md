@@ -1,4 +1,7 @@
-## All my scripts
+## All my scripts, tools and guides
+
+<img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2F007revad.github.io%2F&label=Visitors&icon=github&color=%23198754&message=&style=flat&tz=UTC">
+
 
 #### Contents
 - [Plex](#plex)
