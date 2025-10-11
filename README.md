@@ -13,7 +13,7 @@
 
 Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 drives to your Synology's compatible drive databases, including your Synology M.2 PCIe card and Expansion Unit databases. 
 
-The script works in DSM 7, including DSM 7.2, and DSM 6.
+The script works in DSM 7, including DSM 7.1, 7.2 and 7.3, and DSM 6.
 
 It also has a restore option to undo all the changes made by the script.
 
