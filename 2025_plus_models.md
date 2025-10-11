@@ -1,6 +1,20 @@
 ## 2025 series or later Plus models
 
-### Unverified 3rd party drive limitations and unofficial solutions
+### UPDATE 7 Oct 2025
+
+**DSM 7.3** has removed the many of the restrictions that were in DSM 7.2.2 for 2025 Plus models. 
+
+See https://kb.synology.com/en-global/DSM/tutorial/Drive_compatibility_policies
+
+The restrictions that remain in DSM 7.3 for 2025 Plus models are: 
+1. You cannot create a cache or volume on 3rd party NVMe drives.
+2. You still see lots of warnings in storage manager when using unverified 3rd party drives.
+
+Both 1 and 2 can be solved with [Synology HDD db](https://github.com/007revad/Synology_HDD_db)
+
+<br>
+
+### Unverified 3rd party drive limitations and unofficial solutions for DSM 7.2.2
 
 | Action | Works | Result | Solution |
 |--------|--------------|--------|----------|
@@ -18,7 +32,7 @@
 
 <br>
 
-### Setting up a new 2025 or later plus model with only unverified HDDs
+### Setting up a new 2025 or later plus model with only unverified HDDs in DSM 7.2.2
 
 Credit to Alex_of_Chaos on reddit
 
@@ -45,7 +59,7 @@ DSM won't install on a 2025 or later series plus model if you only have unverifi
 
 <br>
 
-### Deleting and recreating your storage pool on unverified HDDs
+### Deleting and recreating your storage pool on unverified HDDs in DSM 7.2.2
 
 You can't download Synology HDD db to a volume because you've just deleted your storage pool. So you'd first need to download Synology HDD db to a system folder and run it from there.
 
