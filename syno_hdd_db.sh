@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.111"
+scriptver="v3.6.112"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1326,6 +1326,16 @@ backupdb(){
 }
 
 
+compactdb(){ 
+    # Compact database file if needed (DSM 7.3 and later)
+    if grep -q ': ' "$1" && grep -q ', ' "$1"; then
+        jq -c . "$1" > "$1.compact" && chmod 644 "$1.compact"
+        jq -c . "$1.compact" > "$1" && chmod 644 "$1"
+    fi
+    return 0
+}
+
+
 # Backup host database file if needed
 for i in "${!db1list[@]}"; do
     backupdb "${db1list[i]}" ||{
@@ -1338,6 +1348,15 @@ for i in "${!db2list[@]}"; do
         ding
         exit 5  # maybe don't exit for .db.new file
         }
+done
+
+
+# Compact DSM 7.3.2 database files if needed
+for i in "${!db1list[@]}"; do
+    compactdb "${db1list[i]}"
+done
+for i in "${!db2list[@]}"; do
+    compactdb "${db2list[i]}"
 done
 
 
@@ -1515,10 +1534,12 @@ while [[ $num -lt "${#hdds[@]}" ]]; do
     # Expansion Units
     for i in "${!eunitdb1list[@]}"; do
         backupdb "${eunitdb1list[i]}" &&\
+            compactdb "${eunitdb1list[i]}" &&\
             updatedb "${hdds[$num]}" "${eunitdb1list[i]}"
     done
     for i in "${!eunitdb2list[@]}"; do
         backupdb "${eunitdb2list[i]}" &&\
+            compactdb "${eunitdb2list[i]}" &&\
             updatedb "${hdds[$num]}" "${eunitdb2list[i]}"
     done
     #------------------------------------------------
@@ -1540,10 +1561,12 @@ while [[ $num -lt "${#nvmes[@]}" ]]; do
     # M.2 adaptor cards
     for i in "${!m2carddb1list[@]}"; do
         backupdb "${m2carddb1list[i]}" &&\
+            compactdb "${m2carddb1list[i]}" &&\
             updatedb "${nvmes[$num]}" "${m2carddb1list[i]}"
     done
     for i in "${!m2carddb2list[@]}"; do
         backupdb "${m2carddb2list[i]}" &&\
+            compactdb "${m2carddb2list[i]}" &&\
             updatedb "${nvmes[$num]}" "${m2carddb2list[i]}"
     done
     #------------------------------------------------
