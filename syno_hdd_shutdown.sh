@@ -291,9 +291,9 @@ for share in "${shares_array[@]}"; do
     else
         # DSM 7.2 and earlier
         # synoshare --getmap is case insensitive
-        path="$(synoshare --getmap web_packages | grep volume | cut -d"[" -f2 | cut -d"]" -f1)"
+        path="$(synoshare --getmap "$share" | grep volume | cut -d"[" -f2 | cut -d"]" -f1)"
         # I could also have used:
-        # web_pkg_path=$(/usr/syno/sbin/synoshare --get web_packages | tr '[]' '\n' | sed -n "9p")
+        # web_pkg_path=$(/usr/syno/sbin/synoshare --get "$share" | tr '[]' '\n' | sed -n "9p")
     fi
 
     # Ignore external USB and eSATA volumes
