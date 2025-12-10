@@ -1,3 +1,11 @@
+v3.6.113
+- Added check that DSM 7.3 db file was successfully compacted.
+- Added drive's firmware version to messages.
+- Improved checking if drive and firmware version were successfully added to db file.
+- Bug fix for adding duplicate drive if 2 or more of the same drive model had different firmware versions.
+  - Also removes duplicate drive entries if they exist (before correctly editing the file).
+- Bug fix adding size_gb to to drive firmware version entries instead of just the "default" key section.
+
 v3.6.112
 - Bug fix for DSM 7.3 and later where new database files have a space after each : and ,
 
