@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.112"
+scriptver="v3.6.113"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1327,12 +1327,98 @@ backupdb(){
 
 
 compactdb(){ 
-    # Compact database file if needed (DSM 7.3 and later)
-    if grep -q ': ' "$1" && grep -q ', ' "$1"; then
-        jq -c . "$1" > "$1.compact" && chmod 644 "$1.compact"
-        jq -c . "$1.compact" > "$1" && chmod 644 "$1"
+    # Compact database file if needed
+    local lines
+    lines=$(wc -l "$1" | cut -d" " -f1)
+    if (grep -q ': ' "$1" && grep -q ', ' "$1") || [[ $lines -gt 1 ]]; then
+        # DSM 7.3 and later or pretty-print style
+        cp -p "$1" "$1.tmp" && jq -c . "$1.tmp" > "$1" && chmod 644 "$1" && rm "$1.tmp"
+
+        # Check database is now compact
+        lines=$(wc -l "$1" | cut -d" " -f1)
+        if (grep -q ': ' "$1" && grep -q ', ' "$1") || [[ $lines -gt 1 ]]; then
+            echo -e "${Error}ERROR${Off} Failed to compact ${1##*/}!" >&2
+            return 1
+        else
+            return 0
+        fi
     fi
-    return 0
+}
+
+
+# Python based function to remove duplicates using EOF method
+check_and_merge_dupes(){ 
+    local file="$1"
+    local count
+    local i
+    local array
+
+    [[ -z "$file" ]] && { echo "ERROR No file specified"; return 1; }
+
+    # Detect duplicate 2nd-level keys (drive models) in json (db) file
+    # jq removes the duplicates so we start with an array of drive models
+    readarray -t array < <(jq . "$file" | grep -e '^    "' | cut -d'"' -f2)
+
+    # Loop through array of drives in db file checking for duplicates
+    for i in "${array[@]}"; do
+        # Check if more than 1 of each drive in db file
+        #count=$(grep -Eo "\"$i\"" "$file" | wc -l)
+        count=$(grep -Foc "$i" "$file")
+        if [[ $count -gt 1 ]]; then
+
+            # Python 3 and 2.7 compatible HERE document
+            python <<EOF
+from __future__ import print_function
+import json
+import shutil
+from collections import OrderedDict
+import io
+import sys
+
+file_path = "$file"
+backup_path = file_path + ".tmp"
+
+# Create a backup first
+shutil.copy(file_path, backup_path)
+
+try:
+    # io.open is compatible with both Python 2 and 3
+    with io.open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    disk_info_items = list(data["disk_compatbility_info"].items())
+    merged = OrderedDict()
+
+    for k, v in disk_info_items:
+        if k not in merged:
+            merged[k] = v
+        else:
+            # merge nested dicts (firmware entries)
+            merged[k].update(v)
+
+    data["disk_compatbility_info"] = merged
+
+    with io.open(file_path, "w", encoding="utf-8") as f:
+        # json.dump(data, f, indent=2, ensure_ascii=False)
+        json.dump(data, f, separators=(',', ':'), ensure_ascii=False)
+
+except Exception as e:
+    print("Error occurred: {}".format(e))
+    # Restore backup on error
+    shutil.copy(backup_path, file_path)
+    raise
+EOF
+
+            if [[ $count -eq 2 ]]; then
+                echo "Removed 1 duplicate drive from ${file##*/}"
+            else
+                echo "Removed $((count -1)) duplicate drives from ${file##*/}"
+            fi
+            
+            chmod 644 "$file"
+            break
+        fi
+    done
 }
 
 
@@ -1353,10 +1439,12 @@ done
 
 # Compact DSM 7.3.2 database files if needed
 for i in "${!db1list[@]}"; do
-    compactdb "${db1list[i]}"
+    compactdb "${db1list[i]}" &&\
+    check_and_merge_dupes "${db1list[i]}"
 done
 for i in "${!db2list[@]}"; do
-    compactdb "${db2list[i]}"
+    compactdb "${db2list[i]}" &&\
+    check_and_merge_dupes "${db2list[i]}"
 done
 
 
@@ -1377,20 +1465,30 @@ editdb7(){
     if [[ $1 == "append" ]]; then  # model not in db file
         #if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # append
         if sed -i "s/}}}/}},\"${hdmodel//\//\\/}\":{$fwstrng$default/" "$2"; then  # append
-            echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
-            editcount "$2"
+            if jq -e --arg hdmodel "$hdmodel" --arg fwrev "$fwrev" \
+                '.disk_compatbility_info[$hdmodel] | has($fwrev)' "$2" > /dev/null; then
+                echo -e "Added ${Yellow}$hdmodel ($fwrev)${Off} to ${Cyan}$(basename -- "$2")${Off}"
+                editcount "$2"
+            else
+                echo -e "\n${Error}ERROR{Off} Failed to add $hdmodel ($fwrev) to $(basename -- "$2")${Off}"
+            fi
         else
-            echo -e "\n${Error}ERROR 6a${Off} Failed to update $(basename -- "$2")${Off}"
+            echo -e "\n${Error}ERROR 6a${Off} Failed to add $hdmodel ($fwrev) to $(basename -- "$2")${Off}"
             #exit 6
         fi
 
     elif [[ $1 == "insert" ]]; then  # model and default exists
         #if sed -i "s/\"$hdmodel\":{/\"$hdmodel\":{$fwstrng/" "$2"; then  # insert firmware
         if sed -i "s/\"${hdmodel//\//\\/}\":{/\"${hdmodel//\//\\/}\":{$fwstrng/" "$2"; then  # insert firmware
-            echo -e "Updated ${Yellow}$hdmodel${Off} in ${Cyan}$(basename -- "$2")${Off}"
-            #editcount "$2"
+            if jq -e --arg hdmodel "$hdmodel" --arg fwrev "$fwrev" \
+                '.disk_compatbility_info[$hdmodel] | has($fwrev)' "$2" > /dev/null; then
+                echo -e "Updated ${Yellow}$hdmodel ($fwrev)${Off} in ${Cyan}$(basename -- "$2")${Off}"
+                #editcount "$2"
+            else
+                echo -e "\n${Error}ERROR{Off} Failed to update $hdmodel for ($fwrev) in $(basename -- "$2")"
+            fi
         else
-            echo -e "\n${Error}ERROR 6b${Off} Failed to update $(basename -- "$2")${Off}"
+            echo -e "\n${Error}ERROR 6b${Off} Failed to update $hdmodel for ($fwrev) in $(basename -- "$2")"
             #exit 6
         fi
 
@@ -1398,10 +1496,15 @@ editdb7(){
         #if sed -i "s/{}/{\"$hdmodel\":{$fwstrng${default}}/" "$2"; then  # empty
         #if sed -i "s/{}/{\"${hdmodel//\//\\/}\":{$fwstrng${default}}/" "$2"; then  # empty
         if sed -i "s/{}/{\"${hdmodel//\//\\/}\":{$fwstrng${default}/" "$2"; then  # empty
-            echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
-            editcount "$2"
+            if jq -e --arg hdmodel "$hdmodel" --arg fwrev "$fwrev" \
+                '.disk_compatbility_info[$hdmodel] | has($fwrev)' "$2" > /dev/null; then
+                echo -e "Added ${Yellow}$hdmodel ($fwrev)${Off} to ${Cyan}$(basename -- "$2")${Off}"
+                editcount "$2"
+            else
+                echo -e "\n${Error}ERROR{Off} Failed to add $hdmodel ($fwrev) to $(basename -- "$2")"
+            fi
         else
-            echo -e "\n${Error}ERROR 6c${Off} Failed to update $(basename -- "$2")${Off}"
+            echo -e "\n${Error}ERROR 6c${Off} Failed to add $hdmodel ($fwrev) to $(basename -- "$2")"
             #exit 6
         fi
     fi
@@ -1423,11 +1526,13 @@ updatedb(){
 
     if [[ $dbtype -gt "6" ]]; then
         # db type 7 used from DSM 7.1 and later
-        if grep -q "$hdmodel"'":{"'"$fwrev" "$2"; then
-            echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
+        if jq -e --arg hdmodel "$hdmodel" --arg fwrev "$fwrev" \
+            '.disk_compatbility_info[$hdmodel] | has($fwrev)' "$2" > /dev/null; then
+            echo -e "${Yellow}$hdmodel ($fwrev)${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
         else
-            common_string=\"size_gb\":$size_gb,
-            common_string="$common_string"\"compatibility_interval\":[{
+            #common_string=\"size_gb\":$size_gb,
+            #common_string="$common_string"\"compatibility_interval\":[{
+            common_string=\"compatibility_interval\":[{
             common_string="$common_string"\"compatibility\":\"support\",
             common_string="$common_string"\"not_yet_rolling_status\":\"support\",
             common_string="$common_string"\"fw_dsm_update_status_notify\":false,
@@ -1440,7 +1545,8 @@ updatedb(){
             fwstrng="$fwstrng$common_string"
             fwstrng="$fwstrng"}]},
 
-            default=\"default\":{
+            #default=\"default\":{
+            default=\"default\":{\"size_gb\":$size_gb,
             default="$default$common_string"
             default="$default"}]}}}
 
@@ -1451,7 +1557,7 @@ updatedb(){
                 #echo "Edit empty db file:"  # debug
                 editdb7 "empty" "$2"
 
-            elif grep -q '"'"$hdmodel"'":' "$2"; then
+            elif jq -e --arg hdmodel "$hdmodel" '.disk_compatbility_info[$hdmodel]' "$2" >/dev/null; then
                 # Replace "WD40PURX-64GVNY0":{ with "WD40PURX-64GVNY0":{"80.00A80":{ ... }}},
                 #echo "Insert firmware version:"  # debug
                 editdb7 "insert" "$2"
@@ -1497,7 +1603,7 @@ updatedb(){
             #if sed -i "s/$startstring/$startstring$string/" "$2"; then
             #if sed -i "s/${startstring//\//\\/}/${startstring//\//\\/}$string/" "$2"; then
             if sed -i "s/$startstring/$startstring${string//\//\\/}/" "$2"; then
-                echo -e "Added ${Yellow}$hdmodel${Off} to ${Cyan}$(basename -- "$2")${Off}"
+                echo -e "Added ${Yellow}$hdmodel$ ($fwrev){Off} to ${Cyan}$(basename -- "$2")${Off}"
             else
                 ding
                 echo -e "\n${Error}ERROR 8${Off} Failed to update $(basename -- "$2")${Off}" >&2
@@ -1535,11 +1641,13 @@ while [[ $num -lt "${#hdds[@]}" ]]; do
     for i in "${!eunitdb1list[@]}"; do
         backupdb "${eunitdb1list[i]}" &&\
             compactdb "${eunitdb1list[i]}" &&\
+            check_and_merge_dupes "${eunitdb1list[i]}" &&\
             updatedb "${hdds[$num]}" "${eunitdb1list[i]}"
     done
     for i in "${!eunitdb2list[@]}"; do
         backupdb "${eunitdb2list[i]}" &&\
             compactdb "${eunitdb2list[i]}" &&\
+            check_and_merge_dupes "${eunitdb2list[i]}" &&\
             updatedb "${hdds[$num]}" "${eunitdb2list[i]}"
     done
     #------------------------------------------------
@@ -1562,11 +1670,13 @@ while [[ $num -lt "${#nvmes[@]}" ]]; do
     for i in "${!m2carddb1list[@]}"; do
         backupdb "${m2carddb1list[i]}" &&\
             compactdb "${m2carddb1list[i]}" &&\
+            check_and_merge_dupes "${m2carddb1list[i]}" &&\
             updatedb "${nvmes[$num]}" "${m2carddb1list[i]}"
     done
     for i in "${!m2carddb2list[@]}"; do
         backupdb "${m2carddb2list[i]}" &&\
             compactdb "${m2carddb2list[i]}" &&\
+            check_and_merge_dupes "${m2carddb2list[i]}" &&\
             updatedb "${nvmes[$num]}" "${m2carddb2list[i]}"
     done
     #------------------------------------------------
