@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.113"
+scriptver="v3.6.114"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -257,6 +257,11 @@ if [[ $dsm -gt "6" ]]; then
     version="_v$dsm"
 fi
 
+# Get DSM major and minor version
+major=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION majorversion)
+minor=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION minorversion)
+dsmversion="$major$minor"
+
 # Get Synology model
 model=$(cat /proc/sys/kernel/syno_hw_version)
 modelname="$model"
@@ -301,7 +306,25 @@ fi
 # Get StorageManager version
 storagemgrver=$(/usr/syno/bin/synopkg version StorageManager)
 # Show StorageManager version
-if [[ $storagemgrver ]]; then echo -e "StorageManager $storagemgrver\n"; fi
+if [[ $storagemgrver ]]; then echo -e "StorageManager $storagemgrver"; fi
+
+# Get SynoOnlinePack version
+if [[ $dsmversion -gt "72" ]]; then
+    # Is DSM 7.3 or later
+    if [[ -f /var/packages/SynoOnlinePack_v3/INFO ]]; then
+        SOPinfo="/var/packages/SynoOnlinePack_v3/INFO"
+        v2="_v3"
+    elif [[ -f /var/packages/SynoOnlinePack_v2/INFO ]]; then
+        SOPinfo="/var/packages/SynoOnlinePack_v2/INFO"
+        v2="_v2"
+    else
+        SOPinfo="/var/packages/SynoOnlinePack/INFO"
+    fi
+    SOPpkgver="$(/usr/syno/bin/synogetkeyvalue $SOPinfo version)"
+    echo -e "SynoOnlinePack$v2 version $SOPpkgver\n"
+else
+    echo ""
+fi
 
 # Show host drive db version
 if [[ -f "/var/lib/disk-compatibility/${model}_host_v7.version" ]]; then
@@ -410,7 +433,9 @@ get_script_vol() {
 get_script_vol # sets $vol_name to /dev/whatever
 if grep -qE "^${vol_name#/dev/} .+ nvme" /proc/mdstat
 then
+    ding
     echo -e "\n${Yellow}WARNING${Off} Don't store this script on an NVMe volume!"
+    exit 3
 fi
 
 
@@ -500,6 +525,15 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
                                 echo -e "${Error}ERROR${Off} Failed to copy"\
                                     "$script-$shorttag sh file(s) to:\n $scriptpath/${scriptfile}"
                                 syslog_set warn "$script failed to copy $tag to script location"
+                            fi
+
+                            # Copy new script companion sh file to script location
+                            if ! cp -p "/tmp/$script-$shorttag/syno_hdd_shutdown.sh" "${scriptpath}/syno_hdd_shutdown.sh";
+                            then
+                                copyerr=1
+                                echo -e "${Error}ERROR${Off} Failed to copy"\
+                                    "$script-$shorttag sh file(s) to:\n $scriptpath/syno_hdd_shutdown.sh"
+                                syslog_set warn "$script failed to copy syno_hdd_shutdown.sh to script location"
                             fi
 
                             # Copy new syno_hdd_vendor_ids.txt file
@@ -2278,60 +2312,109 @@ if ls /dev | grep -q "nv[cm]"; then
 fi
 
 
-# Edit synoinfo.conf to prevent drive db updates
-dtu=drive_db_test_url
-url="$(/usr/syno/bin/synogetkeyvalue $synoinfo ${dtu})"
-disabled=""
-if [[ $nodbupdate == "yes" ]]; then
-    if [[ ! $url ]]; then
-        # Add drive_db_test_url="127.0.0.1"
-        #echo 'drive_db_test_url="127.0.0.1"' >> "$synoinfo"
-        /usr/syno/bin/synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
-        # Junior boot
-        #[ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
-        if [ -f /tmpRoot/usr/syno/bin/synosetkeyvalue ] && [ -f /tmpRoot/etc.defaults/synoinfo.conf ]; then
-            /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+# Prevent drive db updates
+if [[ $dsmversion -lt "73" ]]; then
+    # Edit synoinfo.conf to prevent drive db updates
+    dtu=drive_db_test_url
+    url="$(/usr/syno/bin/synogetkeyvalue $synoinfo ${dtu})"
+    disabled=""
+    if [[ $nodbupdate == "yes" ]]; then
+        if [[ ! $url ]]; then
+            # Add drive_db_test_url="127.0.0.1"
+            #echo 'drive_db_test_url="127.0.0.1"' >> "$synoinfo"
+            /usr/syno/bin/synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
+            # Junior boot
+            #[ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+            if [ -f /tmpRoot/usr/syno/bin/synosetkeyvalue ] && [ -f /tmpRoot/etc.defaults/synoinfo.conf ]; then
+                /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+            fi
+            disabled="yes"
+        elif [[ $url != "127.0.0.1" ]]; then
+            # Edit drive_db_test_url=
+            /usr/syno/bin/synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
+            # Junior boot
+            #[ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+            if [ -f /tmpRoot/usr/syno/bin/synosetkeyvalue ] && [ -f /tmpRoot/etc.defaults/synoinfo.conf ]; then
+                /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
+            fi
+            disabled="yes"
         fi
-        disabled="yes"
-    elif [[ $url != "127.0.0.1" ]]; then
-        # Edit drive_db_test_url=
-        /usr/syno/bin/synosetkeyvalue "$synoinfo" "$dtu" "127.0.0.1"
-        # Junior boot
-        #[ -d /tmpRoot ] && /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
-        if [ -f /tmpRoot/usr/syno/bin/synosetkeyvalue ] && [ -f /tmpRoot/etc.defaults/synoinfo.conf ]; then
-            /tmpRoot/usr/syno/bin/synosetkeyvalue /tmpRoot/etc.defaults/synoinfo.conf "$dtu" "127.0.0.1"
-        fi
-        disabled="yes"
-    fi
 
-    # Check if we disabled drive db auto updates
-    url="$(/usr/syno/bin/synogetkeyvalue $synoinfo drive_db_test_url)"
-    if [[ $disabled == "yes" ]]; then
-        if [[ $url == "127.0.0.1" ]]; then
-            echo -e "\nDisabled drive db auto updates."
+        # Check if we disabled drive db auto updates
+        url="$(/usr/syno/bin/synogetkeyvalue $synoinfo drive_db_test_url)"
+        if [[ $disabled == "yes" ]]; then
+            if [[ $url == "127.0.0.1" ]]; then
+                echo -e "\nDisabled drive db auto updates."
+            else
+                echo -e "\n${Error}ERROR${Off} Failed to disable drive db auto updates!"
+            fi
         else
-            echo -e "\n${Error}ERROR${Off} Failed to disable drive db auto updates!"
+            echo -e "\nDrive db auto updates already disabled."
         fi
     else
-        echo -e "\nDrive db auto updates already disabled."
+        # Re-enable drive db updates
+        #if [[ $url == "127.0.0.1" ]]; then
+        if [[ $url ]]; then
+            # Delete "drive_db_test_url=127.0.0.1" line (inc. line break)
+            sed -i "/drive_db_test_url=*/d" "$synoinfo"
+            sed -i "/drive_db_test_url=*/d" /etc/synoinfo.conf
+
+            # Check if we re-enabled drive db auto updates
+            url="$(/usr/syno/bin/synogetkeyvalue $synoinfo drive_db_test_url)"
+            if [[ $url != "127.0.0.1" ]]; then
+                echo -e "\nRe-enabled drive db auto updates."
+            else
+                echo -e "\n${Error}ERROR${Off} Failed to enable drive db auto updates!"
+            fi
+        else
+            echo -e "\nDrive db auto updates already enabled."
+        fi
     fi
 else
-    # Re-enable drive db updates
-    #if [[ $url == "127.0.0.1" ]]; then
-    if [[ $url ]]; then
-        # Delete "drive_db_test_url=127.0.0.1" line (inc. line break)
-        sed -i "/drive_db_test_url=*/d" "$synoinfo"
-        sed -i "/drive_db_test_url=*/d" /etc/synoinfo.conf
+    # Is DSM 7.3 or later
+    if [[ -f /var/packages/SynoOnlinePack_v3/INFO ]]; then
+        SOPinfo="/var/packages/SynoOnlinePack_v3/INFO"
+    elif [[ -f /var/packages/SynoOnlinePack_v2/INFO ]]; then
+        SOPinfo="/var/packages/SynoOnlinePack_v2/INFO"
+    else
+        SOPinfo="/var/packages/SynoOnlinePack/INFO"
+    fi
+    SOPpkgver="$(/usr/syno/bin/synogetkeyvalue $SOPinfo version)"
 
-        # Check if we re-enabled drive db auto updates
-        url="$(/usr/syno/bin/synogetkeyvalue $synoinfo drive_db_test_url)"
-        if [[ $url != "127.0.0.1" ]]; then
-            echo -e "\nRe-enabled drive db auto updates."
+    if [[ $nodbupdate == "yes" ]]; then
+        if [[ ${SOPpkgver:0:4} != "9999" ]]; then
+            # Prepend version with 9999
+            /usr/syno/bin/synosetkeyvalue "$SOPinfo" version "9999$SOPpkgver"
+            disabled="yes"
+        fi
+
+        # Check if we disabled drive db auto updates
+        SOPpkgver2="$(/usr/syno/bin/synogetkeyvalue $SOPinfo version)"
+        if [[ $disabled == "yes" ]]; then
+            if [[ $SOPpkgver2 -gt "$SOPpkgver" ]]; then
+                echo -e "\nDisabled drive db auto updates."
+            else
+                echo -e "\n${Error}ERROR${Off} Failed to disable drive db auto updates!"
+            fi
         else
-            echo -e "\n${Error}ERROR${Off} Failed to enable drive db auto updates!"
+            echo -e "\nDrive db auto updates already disabled."
         fi
     else
-        echo -e "\nDrive db auto updates already enabled."
+        # Re-enable drive db updates
+        if [[ ${SOPpkgver:0:4} == "9999" ]]; then
+            # Remove 9999 from version
+            /usr/syno/bin/synosetkeyvalue "$SOPinfo" version "${SOPpkgver:4}"
+
+            # Check if we re-enabled drive db auto updates
+            SOPpkgver2="$(/usr/syno/bin/synogetkeyvalue $SOPinfo version)"
+            if [[ ${SOPpkgver2:0:4} != "9999" ]]; then
+                echo -e "\nRe-enabled drive db auto updates."
+            else
+                echo -e "\n${Error}ERROR${Off} Failed to enable drive db auto updates!"
+            fi
+        else
+            echo -e "\nDrive db auto updates already enabled."
+        fi
     fi
 fi
 

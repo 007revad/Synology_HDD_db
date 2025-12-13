@@ -1,3 +1,8 @@
+v3.6.114
+- Added syno_hdd_shutdown.sh to the auto update code.
+- Now if script is located on an NVMe volume it warns you and exits. Previously it just warned you and continued.
+- Bug fix for DSM 7.3 not disabling compatible drive database auto update.
+
 v3.6.113
 - Added check that DSM 7.3 db file was successfully compacted.
 - Added drive's firmware version to messages.
