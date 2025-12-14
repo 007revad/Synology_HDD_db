@@ -1,3 +1,7 @@
+v3.6.116
+- Moved the "Warn if script located on NVMe volume" code to after the "check for new script version code. Issue #540
+- Bug fix for incorrectly warning that the script is located on an NVMe volume when it is on a SHR HDD volume that has, or had, different HDD sizes. Issue #540
+
 v3.6.115
 - Added syno_hdd_shutdown.sh to the auto update code.
 - Now if script is located on an NVMe volume it warns you and exits. Previously it just warned you and continued.
