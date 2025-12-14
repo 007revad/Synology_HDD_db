@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.115"
+scriptver="v3.6.116"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -414,31 +414,6 @@ echo "Running from: ${scriptpath}/$scriptfile"
 #echo "scriptver: $scriptver"  # debug
 
 
-# Warn if script located on M.2 drive
-get_script_vol() {
-    local script_root vol_num vg_name
-    script_root="${scriptpath#/*}"
-    script_root="${script_root%%/*}"
-    if [[ $script_root =~ ^volume ]]
-    then
-        vol_num="${script_root:6}"
-        vg_name=$(lvs --noheadings --select=lv_name="volume_$vol_num" --options=vg_name)
-        vg_name="${vg_name// }"
-        vol_name=$(pvs --noheadings --select=vg_name="$vg_name" --options=pv_name)
-        vol_name="${vol_name// }"
-    else
-        vol_name=$(df --output=source "/$script_root" |sed 1d)
-    fi
-}
-get_script_vol # sets $vol_name to /dev/whatever
-if grep -qE "^${vol_name#/dev/} .+ nvme" /proc/mdstat
-then
-    ding
-    echo -e "\n${Yellow}WARNING${Off} Don't store this script on an NVMe volume!"
-    #exit 3
-fi
-
-
 cleanup_tmp(){ 
     cleanup_err=
 
@@ -607,6 +582,29 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
             fi
         fi
     fi
+fi
+
+
+# Warn if script located on M.2 drive
+get_script_vol() {
+    local script_root vol_num vg_name
+    script_root="${scriptpath#/*}"
+    script_root="${script_root%%/*}"
+    if [[ $script_root =~ ^volume ]]; then
+        vol_num="${script_root:6}"
+        vg_name=$(lvs --noheadings --select=lv_name="volume_$vol_num" --options=vg_name)
+        vg_name="${vg_name// }"
+        # Only get first partition on volume group
+        vol_name=$(pvs --noheadings --select=vg_name="$vg_name" --options=pv_name | awk '{print $1}' | head -n 1)
+    else
+        vol_name=$(df --output=source "/$script_root" | sed 1d)  # sed 1d = delete first line
+    fi
+}
+get_script_vol # sets $vol_name to /dev/whatever
+if grep -qE "^${vol_name#/dev/} .+ nvme" /proc/mdstat; then
+    ding
+    echo -e "\n${Yellow}WARNING${Off} Don't store this script on an NVMe volume!"
+    exit 3
 fi
 
 
@@ -1400,7 +1398,7 @@ check_and_merge_dupes(){
         count=$(grep -Foc "$i" "$file")
         if [[ $count -gt 1 ]]; then
 
-            # Python 3 and 2.7 compatible HERE document
+			# Python 3 and 2.7 compatible HERE document
             python <<EOF
 from __future__ import print_function
 import json
