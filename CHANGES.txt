@@ -1,3 +1,7 @@
+v3.6.117
+- Added SSD TRIM warning of possible data loss if non-Synology SSDs or NVMes are in RAID 5, 6 or SHR with more than 3 drives.
+  - See https://kb.synology.com/en-global/DSM/tutorial/Why_is_SSD_TRIM_available_only_for_SSDs_in_the_compatibility_list
+
 v3.6.116
 - Moved the "Warn if script located on NVMe volume" code to after the "check for new script version code. Issue #540
 - Bug fix for incorrectly warning that the script is located on an NVMe volume when it is on a SHR HDD volume that has, or had, different HDD sizes. Issue #540
