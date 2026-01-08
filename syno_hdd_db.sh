@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.116"
+scriptver="v3.6.117"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1107,22 +1107,43 @@ m2_drive(){
     fi
 }
 
+is_ssd(){ 
+    # $1 is sda, sata1 or nvme0
+    # Show TRIM warning if SSD or NVMe in RAID 5 or 6
+    if ! synodisk --isssd /dev/"$1" >/dev/null; then
+        # exit code 0 = is not SSD
+        # exit code 1 = is SSD
+
+        # Ignore Synology SSDs/NVMe drives
+        brand="$(cat /sys/block/"$1"/device/vendor)"
+
+        if grep -q "$1" /proc/mdstat | grep -E 'raid5|raid6'; then
+            if [[ $show_trim_warning != "yes" ]] && [[ $brand != "Synology" ]]; then
+                show_trim_warning="yes" 
+            fi
+        fi
+    fi
+}
+
 for d in /sys/block/*; do
     # $d is /sys/block/sata1 etc
     case "$(basename -- "${d}")" in
         sd*|hd*)
             if [[ $d =~ [hs]d[a-z][a-z]?$ ]]; then
                 getdriveinfo "$d"
+                is_ssd "$d"
             fi
         ;;
         sas*)
             if [[ $d =~ sas[0-9][0-9]?[0-9]?$ ]]; then
                 getdriveinfo "$d"
+                is_ssd "$d"
             fi
         ;;
         sata*)
             if [[ $d =~ sata[0-9][0-9]?[0-9]?$ ]]; then
                 getdriveinfo "$d"
+                is_ssd "$d"
 
                 # In case it's a SATA M.2 SSD in device tree model NAS
                 # M.2 SATA drives in M2D18 or M2S17
@@ -1132,11 +1153,13 @@ for d in /sys/block/*; do
         nvme*)
             if [[ $d =~ nvme[0-9][0-9]?n[0-9][0-9]?$ ]]; then
                 m2_drive "$d" "nvme"
+                is_ssd "$d"
             fi
         ;;
         nvc*)  # M.2 SATA drives (in PCIe M2D18 or M2S17 only?)
             if [[ $d =~ nvc[0-9][0-9]?$ ]]; then
                 m2_drive "$d" "nvc"
+                is_ssd "$d"
             fi
         ;;
     esac
@@ -2565,6 +2588,16 @@ if [[ -f /usr/syno/sbin/synostgdisk ]]; then  # DSM 6.2.3 does not have synostgd
             rebootmsg=yes  # Show reboot message at end
         fi
     fi
+fi
+
+# Show TRIM warning if required
+if [[ $show_trim_warning == "yes" ]]; then
+    ding
+    echo -e "\n${Error}WARNING${Off} Enabling SSD TRIM on drives in RAID 5, 6 or SHR with 3 more drives can"
+    echo "result in data loss if the SSD/NVMe drives marks trimmed blocks as released."
+    echo "SSDs that use Method 1 are okay. Do NOT enable TRIM for SSDs that use Method 2."
+    echo "See Why_is_SSD_TRIM_available_only_for_SSDs_in_the_compatibility_list here:"
+    echo "https://tinyurl.com/ssd-trim"
 fi
 
 # Show reboot message if required
