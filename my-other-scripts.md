@@ -105,6 +105,9 @@
  
 - **<a href="https://github.com/007revad/Seagate_lowCurrentSpinup">Seagate_lowCurrentSpinup</a>**
   - This script avoids the need to buy and install a higher wattage power supply when using multiple large Seagate SATA HDDs.
+ 
+- **<a href="https://github.com/007revad/Synology_created_date">Synology_created_date</a>**
+  - Script to show you the created year and month of your Synology NAS or expansion unit.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
