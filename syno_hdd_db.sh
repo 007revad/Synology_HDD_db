@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.117"
+scriptver="v3.6.118"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -2590,10 +2590,18 @@ if [[ -f /usr/syno/sbin/synostgdisk ]]; then  # DSM 6.2.3 does not have synostgd
     fi
 fi
 
+# Enable creating M.2 storage pool and volume in Storage Manager  # GitHub issue #441
+for d in /sys/block/nvme*; do
+    # $d is /sys/block/nvme0n1 etc
+    if [[ $d =~ nvme[0-9][0-9]?n[0-9][0-9]?$ ]]; then
+        m2_pool_support "$d"
+    fi
+done
+
 # Show TRIM warning if required
 if [[ $show_trim_warning == "yes" ]]; then
     ding
-    echo -e "\n${Error}WARNING${Off} Enabling SSD TRIM on drives in RAID 5, 6 or SHR with 3 more drives can"
+    echo -e "\n${Warning}WARNING${Off} Enabling SSD TRIM on drives in RAID 5, 6 or SHR with 3 more drives can"
     echo "result in data loss if the SSD/NVMe drives marks trimmed blocks as released."
     echo "SSDs that use Method 1 are okay. Do NOT enable TRIM for SSDs that use Method 2."
     echo "See Why_is_SSD_TRIM_available_only_for_SSDs_in_the_compatibility_list here:"
