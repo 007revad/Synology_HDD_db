@@ -1,3 +1,6 @@
+v3.6.119
+- Bug fix for "cat: /sys/block//sys/block/sata1/device/vendor: No such file or directory" errors. Issue #554
+
 v3.6.118
 - Changed to enable creating M.2 storage pool and volume in Storage Manager after making DSM check disk compatibility. Issue #441
 - Added SSD TRIM warning of possible data loss if non-Synology SSDs or NVMes are in RAID 5, 6 or SHR with more than 3 drives.

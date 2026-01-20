@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.118"
+scriptver="v3.6.119"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1131,19 +1131,19 @@ for d in /sys/block/*; do
         sd*|hd*)
             if [[ $d =~ [hs]d[a-z][a-z]?$ ]]; then
                 getdriveinfo "$d"
-                is_ssd "$d"
+                is_ssd "$(basename -- "${d}")"
             fi
         ;;
         sas*)
             if [[ $d =~ sas[0-9][0-9]?[0-9]?$ ]]; then
                 getdriveinfo "$d"
-                is_ssd "$d"
+                is_ssd "$(basename -- "${d}")"
             fi
         ;;
         sata*)
             if [[ $d =~ sata[0-9][0-9]?[0-9]?$ ]]; then
                 getdriveinfo "$d"
-                is_ssd "$d"
+                is_ssd "$(basename -- "${d}")"
 
                 # In case it's a SATA M.2 SSD in device tree model NAS
                 # M.2 SATA drives in M2D18 or M2S17
@@ -1153,13 +1153,13 @@ for d in /sys/block/*; do
         nvme*)
             if [[ $d =~ nvme[0-9][0-9]?n[0-9][0-9]?$ ]]; then
                 m2_drive "$d" "nvme"
-                is_ssd "$d"
+                #is_ssd "$(basename -- "${d}")"
             fi
         ;;
         nvc*)  # M.2 SATA drives (in PCIe M2D18 or M2S17 only?)
             if [[ $d =~ nvc[0-9][0-9]?$ ]]; then
                 m2_drive "$d" "nvc"
-                is_ssd "$d"
+                is_ssd "$(basename -- "${d}")"
             fi
         ;;
     esac
@@ -1421,7 +1421,7 @@ check_and_merge_dupes(){
         count=$(grep -Foc "$i" "$file")
         if [[ $count -gt 1 ]]; then
 
-			# Python 3 and 2.7 compatible HERE document
+            # Python 3 and 2.7 compatible HERE document
             python <<EOF
 from __future__ import print_function
 import json
@@ -2590,7 +2590,7 @@ if [[ -f /usr/syno/sbin/synostgdisk ]]; then  # DSM 6.2.3 does not have synostgd
     fi
 fi
 
-# Enable creating M.2 storage pool and volume in Storage Manager  # GitHub issue #441
+# Enable creating M.2 storage pool and volume in Storage Manager
 for d in /sys/block/nvme*; do
     # $d is /sys/block/nvme0n1 etc
     if [[ $d =~ nvme[0-9][0-9]?n[0-9][0-9]?$ ]]; then
