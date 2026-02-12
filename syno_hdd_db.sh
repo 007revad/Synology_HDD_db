@@ -1026,7 +1026,7 @@ getdriveinfo(){
 
         # Get drive model
         hdmodel=$(cat "$1/device/model")
-        hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
+        hdmodel=$(echo "$hdmodel" | sed 's/^[[:space:]]//;s/[[:space:]]$//')  # trim leading and trailing white space
 
         # Fix dodgy model numbers
         fixdrivemodel "$hdmodel"
