@@ -2,6 +2,7 @@ v3.6.120
 - Added --reboot option to reboot the NAS after a DSM update where the build number has changed.
   - Only needed if NVMe volume or PCIe card need a 2nd reboot after DSM update.
   - Note: This version of the script needs to run once to create the file that tracks the DSM build number.
+- Bug fix for drive models with multiple consecutive spaces in model name. Issue #559
 
 v3.6.119
 - Bug fix for "cat: /sys/block//sys/block/sata1/device/vendor: No such file or directory" errors. Issue #554
