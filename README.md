@@ -116,6 +116,10 @@ There are optional flags you can use when running the script:
                         recent model IronWolf and IronWolf Pro drives.
                         For NAS with x86_64 CPUs only.
                         Also installs IHM on '22 series and newer models (untested)
+      --reboot          Reboot after a DSM update when build number has changed
+                        Only works if script is running from a boot-up schedule
+                        Only needed if NVMe volume or PCIe card need a 2nd 
+                        reboot after DSM update
   -h, --help            Show this help message
   -v, --version         Show the script version
 ```
