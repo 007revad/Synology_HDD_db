@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.120"
+scriptver="v3.6.121"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1026,7 +1026,7 @@ getdriveinfo(){
 
         # Get drive model
         hdmodel=$(cat "$1/device/model")
-        hdmodel=$(echo "$hdmodel" | sed 's/^[[:space:]]//;s/[[:space:]]$//')  # trim leading and trailing white space
+        hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
 
         # Fix dodgy model numbers
         fixdrivemodel "$hdmodel"
