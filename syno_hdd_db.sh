@@ -117,7 +117,6 @@ args=("$@")
 # Check for flags with getopt
 if options="$(getopt -o SIabcdefghijklmnopqrstuvwxyz0123456789 -l \
     ssd:,ihm,restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,pcie,wdda,email,autoupdate:,reboot,help,version,debug -- "$@")"; then
-    -- "$@")"; then
     eval set -- "$options"
     while true; do
         case "$1" in
