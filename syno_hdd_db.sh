@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.121"
+scriptver="v3.6.122"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -116,9 +116,7 @@ args=("$@")
 
 # Check for flags with getopt
 if options="$(getopt -o SIabcdefghijklmnopqrstuvwxyz0123456789 -l \
-    ssd:,ihm,restore,showedits,noupdate,nodbupdate,m2,force,\
-    incompatible,ram,pcie,wdda,email,autoupdate:,reboot,help,version,debug \
-    -- "$@")"; then
+    ssd:,ihm,restore,showedits,noupdate,nodbupdate,m2,force,incompatible,ram,pcie,wdda,email,autoupdate:,reboot,help,version,debug -- "$@")"; then
     eval set -- "$options"
     while true; do
         case "$1" in
@@ -1026,7 +1024,8 @@ getdriveinfo(){
 
         # Get drive model
         hdmodel=$(cat "$1/device/model")
-        hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space
+        #hdmodel=$(printf "%s" "$hdmodel" | xargs)  # trim leading and trailing white space (also replaces multiple spaces in model with 1 space)
+        hdmodel="$(printf "%s" "$hdmodel" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"  # trim leading and trailing white space
 
         # Fix dodgy model numbers
         fixdrivemodel "$hdmodel"
@@ -1066,13 +1065,15 @@ getdriveinfo(){
 getm2info(){ 
     # $1 is /sys/block/nvme0n1 etc
     nvmemodel=$(cat "$1/device/model")
-    nvmemodel=$(printf "%s" "$nvmemodel" | xargs)  # trim leading and trailing white space
+    #nvmemodel=$(printf "%s" "$nvmemodel" | xargs)  # trim leading and trailing white space (also replaces multiple spaces in model with 1 space)
+    nvmemodel="$(printf "%s" "$nvmemodel" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"  # trim leading and trailing white space
     if [[ $2 == "nvme" ]]; then
         nvmefw=$(cat "$1/device/firmware_rev")
     elif [[ $2 == "nvc" ]]; then
         nvmefw=$(cat "$1/device/rev")
     fi
-    nvmefw=$(printf "%s" "$nvmefw" | xargs)  # trim leading and trailing white space
+    #nvmefw=$(printf "%s" "$nvmefw" | xargs)  # trim leading and trailing white space (also replaces multiple spaces in model with 1 space)
+    nvmefw="$(printf "%s" "$nvmefw" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"  # trim leading and trailing white space
 
     # Get drive GB size
     size_gb=$(get_size_gb "$1")
