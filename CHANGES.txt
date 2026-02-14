@@ -1,6 +1,7 @@
 v3.6.122
 - Bug fix for drive models with multiple consecutive spaces in model name. Issue #559
 - Bug fix for nvme drives with multiple consecutive spaces in firmware version.
+- Bug fix for options not working. Issue #559 and #563
 
 v3.6.121
 - Added --reboot option to reboot the NAS after a DSM update where the build number has changed.
