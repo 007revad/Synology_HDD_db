@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.122"
+scriptver="v3.6.123"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -91,8 +91,9 @@ Options:
                         For NAS with x86_64 CPUs only
                         Installs IHM on '22 series and newer models (untested)
       --reboot          Reboot after a DSM update when build number has changed
-                        Only needed if NVMe volume or PCIe card need a 2nd 
-                        reboot after DSM update                        
+                        Only works if script is running from a boot-up schedule
+                        Only needed if NVMe volume or PCIe card need a 2nd
+                        reboot after DSM update
   -h, --help            Show this help message
   -v, --version         Show the script version
 
@@ -1002,9 +1003,15 @@ fixdrivemodel(){
         hdmodel=${hdmodel#"Hitachi "}   # Remove "Hitachi " from start of model name
         hdmodel=${hdmodel#"SAMSUNG "}   # Remove "SAMSUNG " from start of model name
         hdmodel=${hdmodel#"FUJISTU "}   # Remove "FUJISTU " from start of model name
+        
+        # Remove any leading spaces
+        var=$(echo "$var" | sed -e 's/^[[:space:]]*//')
     elif [[ $1 =~ ^'APPLE HDD '.* ]]; then
         # Old drive brands
         hdmodel=${hdmodel#"APPLE HDD "} # Remove "APPLE HDD " from start of model name
+        
+        # Remove any leading spaces
+        var=$(echo "$var" | sed -e 's/^[[:space:]]*//')
     fi
 }
 
