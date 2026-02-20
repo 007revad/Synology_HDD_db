@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.123"
+scriptver="v3.6.124"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -693,29 +693,37 @@ set_writemostly(){
     if [[ ${1::2} == "sd" ]]; then
         # sda etc
         # md0 DSM system partition
-        echo "$1" > /sys/block/md0/md/dev-"${2}"1/state
-        # Show setting
-        echo -n "  $2 DSM partition:  "
-        cat /sys/block/md0/md/dev-"${2}"1/state
+        if [[ -d /sys/block/md0/md/dev-"${2}"1 ]]; then
+            echo "$1" > /sys/block/md0/md/dev-"${2}"1/state
+            # Show setting
+            echo -n "  $2 DSM partition:  "
+            cat /sys/block/md0/md/dev-"${2}"1/state
+        fi
 
         # md1 DSM swap partition
-        echo "$1" > /sys/block/md1/md/dev-"${2}"2/state
-        # Show setting
-        echo -n "  $2 Swap partition: "
-        cat /sys/block/md1/md/dev-"${2}"2/state
+        if [[ -d /sys/block/md1/md/dev-"${2}"2 ]]; then
+            echo "$1" > /sys/block/md1/md/dev-"${2}"2/state
+            # Show setting
+            echo -n "  $2 Swap partition: "
+            cat /sys/block/md1/md/dev-"${2}"2/state
+        fi
     else
         # sata1 or sas1 etc
         # md0 DSM system partition
-        echo "$1" > /sys/block/md0/md/dev-"${2}"p1/state
-        # Show setting
-        echo -n "  $2 DSM partition:  "
-        cat /sys/block/md0/md/dev-"${2}"p1/state
+        if [[ -d /sys/block/md0/md/dev-"${2}"p1 ]]; then
+            echo "$1" > /sys/block/md0/md/dev-"${2}"p1/state
+            # Show setting
+            echo -n "  $2 DSM partition:  "
+            cat /sys/block/md0/md/dev-"${2}"p1/state
+        fi
 
         # md1 DSM swap partition
-        echo "$1" > /sys/block/md1/md/dev-"${2}"p2/state
-        # Show setting
-        echo -n "  $2 Swap partition: "
-        cat /sys/block/md1/md/dev-"${2}"p2/state
+        if [[ -d /sys/block/md1/md/dev-"${2}"p2 ]]; then
+            echo "$1" > /sys/block/md1/md/dev-"${2}"p2/state
+            # Show setting
+            echo -n "  $2 Swap partition: "
+            cat /sys/block/md1/md/dev-"${2}"p2/state
+        fi
     fi
 }
 
@@ -1136,7 +1144,11 @@ m2_drive(){
                 # Fix unknown vendor id if needed. GitHub issue #161
                 # "Failed to get disk vendor" from synonvme --vendor-get
                 # causes "Unsupported firmware version" warning.
-                get_vid /dev/"$(basename -- "$1")"
+
+                # Skip for models without nvme command
+                if which synonvme >/dev/null; then
+                    get_vid /dev/"$(basename -- "$1")"
+                fi
 
                 # Get M2 model and firmware version
                 getm2info "$1" "$2"

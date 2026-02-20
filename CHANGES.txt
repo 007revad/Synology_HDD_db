@@ -1,3 +1,7 @@
+v3.6.124
+- Bug fix for script trying to set write_mostly on SATA M.2 drives. Issue #567
+- Bug fix for script trying to use nvme command to get SATA M.2 drives' vendor id. Issue #567
+
 v3.6.123
 - Bug fix for WD Ultrastar drives that have "WDC  " before the model name. Issue #559
 
