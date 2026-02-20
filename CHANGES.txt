@@ -1,3 +1,6 @@
+v3.6.123
+- Bug fix for WD Ultrastar drives that have "WDC  " before the model name. Issue #559
+
 v3.6.122
 - Bug fix for drive models with multiple consecutive spaces in model name. Issue #559
 - Bug fix for nvme drives with multiple consecutive spaces in firmware version.
