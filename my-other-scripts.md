@@ -5,6 +5,7 @@
 
 #### Contents
 - [Plex](#plex)
+- [Asustor scripts](#asustor)
 - [Synology docker](#synology-docker)
 - [Synology recovery](#synology-recovery)
 - [Other Synology scripts](#other-synology-scripts)
@@ -14,6 +15,14 @@
 - [Synology dev](#synology-dev)
 
 ***
+
+### Asustor
+
+- **<a href="https://github.com/007revad/Asustor_SMART_info">Asustor_SMART_info</a>**
+  - Show Asustor smart health and attributes. Can also email you when important values change.
+
+- **<a href="https://github.com/007revad/Asustor_Plex_Backup">Asustor_Plex_Backup</a>**
+  - Backup your Asustor's Plex Media Server settings and database.
 
 ### Plex
 
@@ -92,7 +101,7 @@
   - Get and log Synology NAS CPU temperature via SSH.
 
 - **<a href="https://github.com/007revad/Synology_SMART_info">Synology_SMART_info</a>**
-  - Show Synology smart test progress or smart health and attributes.
+  - Show Synology smart health and attributes. Can also email you when important values change.
 
 - **<a href="https://github.com/007revad/Synology_Cleanup_Coredumps">Synology_Cleanup_Coredumps</a>**
   - Cleanup memory core dumps from crashed processes.
@@ -108,6 +117,9 @@
  
 - **<a href="https://github.com/007revad/Synology_created_date">Synology_created_date</a>**
   - Script to show you the created year and month of your Synology NAS or expansion unit.
+  
+  - **<a href="https://github.com/007revad/Restore_RS3621_Fan_Speed">Restore_RS3621_Fan_Speed</a>**
+  - Script to restore RS3621xs+ and RS3621RPxs Quiet mode and Cool mode fan speeds back to how it was before DSM 7.3.2.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
