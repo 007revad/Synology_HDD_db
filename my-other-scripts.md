@@ -85,6 +85,9 @@
 
 ### Other Synology scripts
 
+- **<a href="https://github.com/007revad/Synology_Ookla_Speedtest">Synology Ookla Speedtest</a>**
+  - Synology package to install Ookla Speedtest and run it in a GUI.
+
 - **<a href="https://github.com/007revad/Synology_app_mover">Synology app mover</a>**
   - Easily move Synology packages from one volume to another volume.
 
