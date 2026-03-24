@@ -18,6 +18,9 @@
 
 ### Asustor
 
+- **<a href="https://github.com/007revad/Asustor_Ookla_Speedtest">Asustor Ookla Speedtest</a>**
+  - Asustor package to install Ookla Speedtest and run it in a GUI.
+
 - **<a href="https://github.com/007revad/Asustor_SMART_info">Asustor SMART info</a>**
   - Show Asustor smart health and attributes. Can also email you when important values change.
 
@@ -121,7 +124,7 @@
 - **<a href="https://github.com/007revad/Synology_created_date">Synology created date</a>**
   - Script to show you the created year and month of your Synology NAS or expansion unit.
   
-  - **<a href="https://github.com/007revad/Restore_RS3621_Fan_Speed">Restore RS3621 Fan Speed</a>**
+- **<a href="https://github.com/007revad/Restore_RS3621_Fan_Speed">Restore RS3621 Fan Speed</a>**
   - Script to restore RS3621xs+ and RS3621RPxs Quiet mode and Cool mode fan speeds back to how it was before DSM 7.3.2.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
