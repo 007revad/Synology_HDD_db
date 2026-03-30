@@ -1,31 +1,37 @@
-## All my scripts, tools and guides
+## All my scripts, packages, tools and guides
 
 <img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2F007revad.github.io%2F&label=Visitors&icon=github&color=%23198754&message=&style=flat&tz=UTC">
 
 
 #### Contents
+- [Speed testing](#speed-testing)
 - [Plex](#plex)
-- [Asustor scripts](#asustor)
+- [Asustor scripts and packages](#asustor-and-packages)
 - [Synology docker](#synology-docker)
 - [Synology recovery](#synology-recovery)
-- [Other Synology scripts](#other-synology-scripts)
+- [Other Synology scripts and packages](#other-synology-scripts-and-packages)
 - [Synology hardware restrictions](#synology-hardware-restrictions)
-- [2025 plus models](#2025-plus-models)
+- [Synology 2025 plus models](#synology-2025-plus-models)
 - [How To Guides](#how-to-guides)
 - [Synology dev](#synology-dev)
 
 ***
 
-### Asustor
+### Speed Testing
+
+- **<a href="https://github.com/007revad/Synology_Ookla_Speedtest">Synology Ookla Speedtest</a>**
+  - Synology DSM 7 package to install Ookla Speedtest and run it in a GUI to test your internet speed.
+
+- **<a href="https://github.com/007revad/Synology_Open_Speedtest">Synology Open Speedtest</a>**
+  - Synology DSM 7 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
 
 - **<a href="https://github.com/007revad/Asustor_Ookla_Speedtest">Asustor Ookla Speedtest</a>**
-  - Asustor package to install Ookla Speedtest and run it in a GUI.
+  - Asustor ADM 5 package to install Ookla Speedtest and run it in a GUI to test your internet speed.
 
-- **<a href="https://github.com/007revad/Asustor_SMART_info">Asustor SMART info</a>**
-  - Show Asustor smart health and attributes. Can also email you when important values change.
+- **<a href="https://github.com/007revad/Asustor_Open_Speedtest">Asustor Open Speedtest</a>**
+  - Asustor ADM 5 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
 
-- **<a href="https://github.com/007revad/Asustor_Plex_Backup">Asustor Plex Backup</a>**
-  - Backup your Asustor's Plex Media Server settings and database.
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
 ### Plex
 
@@ -42,6 +48,25 @@
 - **<a href="https://github.com/007revad/Plex_Server_Sync">Plex Server Sync</a>**
   - Sync your main Plex server database & metadata to a backup Plex server.
   - Works for Synology, Asustor, Linux and supports Plex package or Plex in docker.
+
+- **<a href="https://github.com/007revad/Transcode_for_x25">Transcode for x25</a>**
+  - Installs the modules needed for Plex or Jellyfin hardware transcoding on Synology DS425+ and DS225+.
+
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
+
+### Asustor
+
+- **<a href="https://github.com/007revad/Asustor_Ookla_Speedtest">Asustor Ookla Speedtest</a>**
+  - Asustor ADM 5 package to install Ookla Speedtest and run it in a GUI to test your internet speed.
+
+- **<a href="https://github.com/007revad/Asustor_Open_Speedtest">Asustor Open Speedtest</a>**
+  - Asustor ADM 5 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
+
+- **<a href="https://github.com/007revad/Asustor_SMART_info">Asustor SMART info</a>**
+  - Show Asustor smart health and attributes. Can also email you when important values change.
+
+- **<a href="https://github.com/007revad/Asustor_Plex_Backup">Asustor Plex Backup</a>**
+  - Backup your Asustor's Plex Media Server settings and database.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
@@ -86,10 +111,13 @@
  
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
-### Other Synology scripts
+### Other Synology scripts and packages
 
 - **<a href="https://github.com/007revad/Synology_Ookla_Speedtest">Synology Ookla Speedtest</a>**
-  - Synology package to install Ookla Speedtest and run it in a GUI.
+  - Synology DSM 7 package to install Ookla Speedtest and run it in a GUI to test your internet speed.
+
+- **<a href="https://github.com/007revad/Synology_Open_Speedtest">Synology Open Speedtest</a>**
+  - Synology DSM 7 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
 
 - **<a href="https://github.com/007revad/Synology_app_mover">Synology app mover</a>**
   - Easily move Synology packages from one volume to another volume.
@@ -161,10 +189,10 @@
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
-### 2025 plus models
+### Synology 2025 plus models
 
 - **<a href="https://github.com/007revad/Transcode_for_x25">Transcode for x25</a>**
-  - Installs the modules needed for Plex or Jellyfin hardware transcoding in DS425+ and DS225+.
+  - Installs the modules needed for Plex or Jellyfin hardware transcoding on Synology DS425+ and DS225+.
 
 - **<a href="https://github.com/007revad/Synology_HDD_db/blob/main/2025_plus_models.md">2025 series or later Plus models</a>**
   - Unverified 3rd party drive limitations and unofficial solutions.
