@@ -6,7 +6,7 @@
 #### Contents
 - [Speed testing](#speed-testing)
 - [Plex](#plex)
-- [Asustor scripts and packages](#asustor-and-packages)
+- [Asustor scripts and packages](#asustor)
 - [Synology docker](#synology-docker)
 - [Synology recovery](#synology-recovery)
 - [Other Synology scripts and packages](#other-synology-scripts-and-packages)
