@@ -28,6 +28,9 @@
 - **<a href="https://github.com/007revad/Asustor_Ookla_Speedtest">Asustor Ookla Speedtest</a>**
   - Asustor ADM 5 package to install Ookla Speedtest and run it in a GUI to test your internet speed.
 
+- **<a href="https://github.com/007revad/Asustor_Libra_Speedtest">Asustor LibraSpeed Speedtest</a>**
+  - Asustor ADM 5 package to install LibraSpeed Speedtest and run it in a GUI to test your LAN speed.
+
 - **<a href="https://github.com/007revad/Asustor_Open_Speedtest">Asustor Open Speedtest</a>**
   - Asustor ADM 5 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
 
