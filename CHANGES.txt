@@ -1,3 +1,6 @@
+v3.6.125
+- Bug fix for missing lvs and pvs errors for 1 bay NAS (that don't have LVM).
+
 v3.6.124
 - Bug fix for script trying to set write_mostly on SATA M.2 drives. Issue #567
 - Bug fix for script trying to use nvme command to get SATA M.2 drives' vendor id. Issue #567
