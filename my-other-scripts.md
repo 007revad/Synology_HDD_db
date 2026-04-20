@@ -54,6 +54,7 @@
 
 - **<a href="https://github.com/007revad/Transcode_for_x25">Transcode for x25</a>**
   - Installs the modules needed for Plex or Jellyfin hardware transcoding on Synology DS425+ and DS225+.
+  - Available as a package and a script.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
