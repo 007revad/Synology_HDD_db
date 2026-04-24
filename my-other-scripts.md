@@ -26,7 +26,10 @@
 ### Speed Testing
 
 - **<a href="https://github.com/007revad/Synology_Ookla_Speedtest">Synology Ookla Speedtest</a>**
-  - Synology Package Source to add to Package Center so you can install popular packages from GitHub developers.
+  - Synology DSM 7 package to install Ookla Speedtest and run it in a GUI to test your Internet speed.
+
+- **<a href="https://github.com/007revad/Synology_Libre_Speedtest">Synology Libre Speedtest</a>**
+  - Synology DSM 7 package to install Libre Speedtest and run it in a GUI to test your LAN speed.
 
 - **<a href="https://github.com/007revad/Synology_Open_Speedtest">Synology Open Speedtest</a>**
   - Synology DSM 7 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
