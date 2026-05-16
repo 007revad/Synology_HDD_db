@@ -126,6 +126,9 @@
 
 ### Other Synology scripts and packages
 
+- **<a href="https://github.com/007revad/DSM_Update">DSM Update</a>**
+  - Script to automatically download the correct pat file and update DSM using the downloaded pat file.
+
 - **<a href="https://github.com/007revad/Synology_Ookla_Speedtest">Synology Ookla Speedtest</a>**
   - Synology DSM 7 package to install Ookla Speedtest and run it in a GUI to test your internet speed.
 
