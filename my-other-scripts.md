@@ -126,6 +126,9 @@
 
 ### Other Synology scripts and packages
 
+- **<a href="https://github.com/007revad/DSM_Notify">DSM Notify</a>**
+  - Synology package to allow my scheduled scripts to send notifications to DSM 7.
+
 - **<a href="https://github.com/007revad/DSM_Update">DSM Update</a>**
   - Script to automatically download the correct pat file and update DSM using the downloaded pat file.
 
