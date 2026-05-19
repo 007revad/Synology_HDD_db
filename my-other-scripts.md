@@ -126,6 +126,9 @@
 
 ### Other Synology scripts and packages
 
+- **<a href="https://github.com/007revad/Check_UPS_Connected">Check_UPS_Connected</a>**
+  - Script to email you the USP status. Also works for Synology NAS that are UPS clients.
+
 - **<a href="https://github.com/007revad/DSM_Notify">DSM Notify</a>**
   - Synology package to allow my scheduled scripts to send notifications to DSM 7.
 
