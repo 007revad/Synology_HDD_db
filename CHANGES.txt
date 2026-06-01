@@ -4,6 +4,7 @@ v3.6.126
   - If a DSM update, or the user, has updated the drive databases the old db file backups are replaced with new backups of the unedited db files.
 - Bug fix for db files with a space in their name, like "rxd1219sas module_v7.db".
 - Bug fix for restore mode failing to restore E10M20-T1 nic support on NAS models that don't officially support the E10M20-T1.
+- Bug fix for XPE not showing drive's correct temperature. Issue #586
 
 v3.6.125
 - Bug fix for missing lvs and pvs errors for 1 bay NAS (that don't have LVM).

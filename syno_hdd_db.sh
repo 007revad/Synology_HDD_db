@@ -1360,27 +1360,29 @@ fi
 # Check databases and add our drives if needed
 
 # Host db files
-db1list=($(find "$dbpath" -maxdepth 1 -name "*_host*.db"))
-db2list=($(find "$dbpath" -maxdepth 1 -name "*_host*.db.new"))
+#db1list=($(find "$dbpath" -maxdepth 1 -name "*_host*.db"))
+#db2list=($(find "$dbpath" -maxdepth 1 -name "*_host*.db.new"))
 #db1list=($(find "$dbpath" -maxdepth 1 -regextype posix-extended\
 #    -iregex ".*_host(_v7)?.db"))
 #db2list=($(find "$dbpath" -maxdepth 1 -regextype posix-extended\
 #    -iregex ".*_host(_v7)?.db.new"))
+readarray -t db1list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db" | sort)
+readarray -t db2list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db.new" | sort)
 
 # Expansion Unit db files
 for i in "${!eunits[@]}"; do
     #eunitdb1list+=($(find "$dbpath" -maxdepth 1 -name "${eunits[i],,}*.db"))
-    eunitdb1list+=($(find "$dbpath" -maxdepth 1 -regextype posix-extended\
-        -iregex ".*${eunits[i],,}(_v7)?.db"))
+    eunitdb1list+=("$(find "$dbpath" -maxdepth 1 -regextype posix-extended\
+        -iregex ".*${eunits[i],,}(_v7)?.db")")
     #eunitdb2list+=($(find "$dbpath" -maxdepth 1 -name "${eunits[i],,}*.db.new"))
-    eunitdb2list+=($(find "$dbpath" -maxdepth 1 -regextype posix-extended\
-        -iregex ".*${eunits[i],,}(_v7)?.db.new"))
+    eunitdb2list+=("$(find "$dbpath" -maxdepth 1 -regextype posix-extended\
+        -iregex ".*${eunits[i],,}(_v7)?.db.new")")
 done
 
 # M.2 Card db files
 for i in "${!m2cards[@]}"; do
-    m2carddb1list+=($(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db"))
-    m2carddb2list+=($(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db.new"))
+    m2carddb1list+=("$(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db")")
+    m2carddb2list+=("$(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db.new")")
 done
 
 
@@ -1684,12 +1686,14 @@ updatedb(){
             common_string="$common_string"\"smart_test_ignore\":false,
             common_string="$common_string"\"smart_attr_ignore\":false
 
-            fwstrng=\"$fwrev\":{
+            #fwstrng=\"$fwrev\":{
+            fwstrng=\"$fwrev\":{\"fw_buildnumber\":1,  # Issue 585. Fix drive temperature for XPE
             fwstrng="$fwstrng$common_string"
             fwstrng="$fwstrng"}]},
 
             #default=\"default\":{
             default=\"default\":{\"size_gb\":$size_gb,
+            #default=\"default\":{\"fw_buildnumber\":1,\"size_gb\":$size_gb,  # Issue 585. Fix drive temperature for XPE
             default="$default$common_string"
             default="$default"}]}}}
 
