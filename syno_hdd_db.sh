@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.125"
+scriptver="v3.6.126"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -282,8 +282,9 @@ minor=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION minorversion)
 dsmversion="$major$minor"
 
 # Get Synology model
-model=$(cat /proc/sys/kernel/syno_hw_version)
-modelname="$model"
+#model=$(cat /proc/sys/kernel/syno_hw_version)
+#modelname="$model"
+modelname=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/synoinfo.conf upnpmodelname)
 
 # Get CPU platform_name
 #platform_name=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/synoinfo.conf platform_name)
@@ -305,22 +306,24 @@ smallfixnumber=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION smallfixnum
 # Show DSM full version and model
 if [[ $buildphase == GM ]]; then buildphase=""; fi
 if [[ $smallfixnumber -gt "0" ]]; then smallfix="-$smallfixnumber"; fi
-echo "$model $arch DSM $productversion-$buildnumber$smallfix $buildphase"
+#echo "$model $arch DSM $productversion-$buildnumber$smallfix $buildphase"
+echo "$modelname $arch DSM $productversion-$buildnumber$smallfix $buildphase"
 
 
 # Convert model to lower case
-model=${model,,}
+#model=${model,,}
+model=${modelname,,}
 
 # Check for dodgy characters after model number
-if [[ $model =~ 'pv10-j'$ ]]; then  # GitHub issue #10
-    modelname=${modelname%??????}+  # replace last 6 chars with +
-    model=${model%??????}+          # replace last 6 chars with +
-    echo -e "\nUsing model: $model"
-elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
-    modelname=${modelname%??}     # remove last 2 chars
-    model=${model%??}             # remove last 2 chars
-    echo -e "\nUsing model: $model"
-fi
+#if [[ $model =~ 'pv10-j'$ ]]; then  # GitHub issue #10
+#    modelname=${modelname%??????}+  # replace last 6 chars with +
+#    model=${model%??????}+          # replace last 6 chars with +
+#    echo -e "\nUsing model: $model"
+#elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
+#    modelname=${modelname%??}     # remove last 2 chars
+#    model=${model%??}             # remove last 2 chars
+#    echo -e "\nUsing model: $model"
+#fi
 
 # Get StorageManager version
 storagemgrver=$(/usr/syno/bin/synopkg version StorageManager)
@@ -631,6 +634,7 @@ get_script_vol() {
     fi
 }
 if which lvm >/dev/null; then
+    # Single bay Synology NAS don't have lvm
     get_script_vol # sets $vol_name to /dev/whatever
     if grep -qE "^${vol_name#/dev/} .+ nvme" /proc/mdstat; then
         ding
@@ -734,11 +738,7 @@ set_writemostly(){
 # Restore changes from backups
 
 if [[ $restore == "yes" ]]; then
-    dbbaklist=($(find $dbpath -maxdepth 1 \( -name "*.db.new.bak" -o -name "*.db.bak" \)))
-    # Sort array
-    IFS=$'\n'
-    dbbakfiles=($(sort <<<"${dbbaklist[*]}"))
-    unset IFS
+    readarray -t dbbakfiles < <(find "$dbpath" -maxdepth 1 \( -name "*.db.new.bak" -o -name "*.db.bak" \) | sort)
 
     echo ""
     if [[ ${#dbbakfiles[@]} -gt "0" || -f ${synoinfo}.bak ||\
@@ -783,8 +783,8 @@ if [[ $restore == "yes" ]]; then
 
             # Make sure they don't lose E10M20-T1 network connection
             modelrplowercase=${modelname//RP/rp}
-            /usr/syno/bin/set_section_key_value ${adapter_cards} E10M20-T1_sup_nic "$modelrplowercase"
-            /usr/syno/bin/set_section_key_value ${adapter_cards2} E10M20-T1_sup_nic "$modelrplowercase"
+            /usr/syno/bin/set_section_key_value ${adapter_cards} E10M20-T1_sup_nic "$modelrplowercase" yes
+            /usr/syno/bin/set_section_key_value ${adapter_cards2} E10M20-T1_sup_nic "$modelrplowercase" yes
         fi
 
         # Restore model.dtb from backup
@@ -1416,23 +1416,51 @@ getdbtype(){
 
 backupdb(){ 
     # Backup database file if needed
+    local bakversion newversion fname
+    if [[ $2 == "long" ]]; then
+        fname="$1"
+    else
+        fname=$(basename -- "${1}")
+    fi
+
     if [[ ! -f "$1.bak" ]]; then
+        # No existing backup
         if [[ $(basename "$1") == "synoinfo.conf" ]]; then
             echo "" >&2  # Formatting for stdout
         fi
-        if [[ $2 == "long" ]]; then
-            fname="$1"
-        else
-            fname=$(basename -- "${1}")
-        fi
         if cp -p "$1" "$1.bak"; then
             echo -e "Backed up ${fname}" >&2
+            if [[ "${1##*.}" == "db" ]]; then
+                # Backup db version file as well
+                cp -p "$1.version" "$1.bakver"
+            fi
         else
             echo -e "${Error}ERROR 5${Off} Failed to backup ${fname}!" >&2
             return 1
         fi
+    elif [[ "${1##*.}" == "db" ]]; then
+        # Only .db files have version files
+        if [[ ! -f "$1.bakver" ]]; then
+            # Existing backup has no .bakver file, create one
+            cp -p "$1.version" "$1.bakver"
+        fi
+        bakversion=$(cat "$1.bakver" 2>/dev/null)
+        newversion=$(cat "$1.version" 2>/dev/null)
+        if [[ "$newversion" -gt "$bakversion" ]]; then
+            # Newer version db files have been installed
+            if cp -p "$1" "$1.bak"; then
+                echo -e "Backed up ${fname}" >&2
+                # Update db version backup as well
+                cp -p "$1.version" "$1.bakver"
+            else
+                echo -e "${Error}ERROR 5${Off} Failed to backup ${fname}!" >&2
+                return 1
+            fi
+        fi
     fi
+
     # Fix permissions if needed
+    local octal
     octal=$(stat -c "%a %n" "$1" | cut -d" " -f1)
     if [[ ! $octal -eq 644 ]]; then
         chmod 644 "$1"
