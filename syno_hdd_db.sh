@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.126"
+scriptver="v3.6.127"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1028,7 +1028,9 @@ fixdrivemodel(){
 get_size_gb(){ 
     # $1 is /sys/block/sata1 or /sys/block/nvme0n1 etc
     local disk_size_gb
-    disk_size_gb=$(synodisk --info /dev/"$(basename -- "$1")" 2>/dev/null | grep 'Total capacity' | awk '{print int($4 * 1.073741824)}')
+    #disk_size_gb=$(synodisk --info /dev/"$(basename -- "$1")" 2>/dev/null | grep 'Total capacity' | awk '{print int($4 * 1.073741824)}')
+    # Prevent 6 TB drives getting rounded up to 6001 !!!
+    disk_size_gb=$(synodisk --info /dev/"$(basename -- "$1")" 2>/dev/null | grep 'Total capacity' | awk '{gb = $4 * 1.073741824; printf "%d\n", int(gb / 4 + 0.5) * 4}')
     echo "$disk_size_gb"
 }
 
@@ -1761,15 +1763,29 @@ updatedb(){
 }
 
 
-# Fix ,, instead of , bug caused by v3.3.75
+# Fix "size_gb": 6001, for 6 TB drives caused by v3.5.104 to v3.6.126
 if [[ "${#db1list[@]}" -gt "0" ]]; then
     for i in "${!db1list[@]}"; do
-        sed -i "s/,,/,/"  "${db1list[i]}"
+        sed -i 's/"size_gb": 6001/"size_gb": 6000/g' "${db1list[i]}"
+        sed -i 's/"size_gb":6001/"size_gb":6000/g' "${db1list[i]}"
     done
 fi
 if [[ "${#db2list[@]}" -gt "0" ]]; then
     for i in "${!db2list[@]}"; do
-        sed -i "s/,,/,/"  "${db2list[i]}"
+        sed -i 's/"size_gb": 6001/"size_gb": 6000/g' "${db2list[i]}"
+        sed -i 's/"size_gb":6001/"size_gb":6000/g' "${db2list[i]}"
+    done
+fi
+
+# Fix ,, instead of , bug caused by v3.3.75
+if [[ "${#db1list[@]}" -gt "0" ]]; then
+    for i in "${!db1list[@]}"; do
+        sed -i "s/,,/,/" "${db1list[i]}"
+    done
+fi
+if [[ "${#db2list[@]}" -gt "0" ]]; then
+    for i in "${!db2list[@]}"; do
+        sed -i "s/,,/,/" "${db2list[i]}"
     done
 fi
 
