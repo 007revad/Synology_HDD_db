@@ -1,6 +1,7 @@
 v3.6.127
-- Bug fix for 6 TB drives having '"size_gb": 6001' in db files instead of '"size_gb": 6000'.
 - Bug fix for trying to backup "*_v7.db.version" instead of "*_v7.version".
+- Bug fix for 6 TB drives having '"size_gb": 6001' in db files instead of '"size_gb": 6000'.
+  - Also replaces any existing '"size_gb": 6001' in db files with '"size_gb": 6000'.
 
 v3.6.126
 - Changed to a more reliable way of getting the NAS model name.
