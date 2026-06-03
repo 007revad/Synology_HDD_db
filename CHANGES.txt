@@ -1,3 +1,6 @@
+v3.6.129
+- Bug fix for backing up expansion unit db files (introduced in v3.6.126).
+
 v3.6.128
 - Bug fix for trying to backup "*_v7.db.version" instead of "*_v7.version".
 

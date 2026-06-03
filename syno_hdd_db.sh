@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.128"
+scriptver="v3.6.129"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1362,23 +1362,13 @@ fi
 # Check databases and add our drives if needed
 
 # Host db files
-#db1list=($(find "$dbpath" -maxdepth 1 -name "*_host*.db"))
-#db2list=($(find "$dbpath" -maxdepth 1 -name "*_host*.db.new"))
-#db1list=($(find "$dbpath" -maxdepth 1 -regextype posix-extended\
-#    -iregex ".*_host(_v7)?.db"))
-#db2list=($(find "$dbpath" -maxdepth 1 -regextype posix-extended\
-#    -iregex ".*_host(_v7)?.db.new"))
 readarray -t db1list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db" | sort)
 readarray -t db2list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db.new" | sort)
 
 # Expansion Unit db files
-for i in "${!eunits[@]}"; do
-    #eunitdb1list+=($(find "$dbpath" -maxdepth 1 -name "${eunits[i],,}*.db"))
-    eunitdb1list+=("$(find "$dbpath" -maxdepth 1 -regextype posix-extended\
-        -iregex ".*${eunits[i],,}(_v7)?.db")")
-    #eunitdb2list+=($(find "$dbpath" -maxdepth 1 -name "${eunits[i],,}*.db.new"))
-    eunitdb2list+=("$(find "$dbpath" -maxdepth 1 -regextype posix-extended\
-        -iregex ".*${eunits[i],,}(_v7)?.db.new")")
+for i in "${eunits[@]}"; do
+    readarray -t -O "${#eunitdb1list[@]}" eunitdb1list < <(find "$dbpath" -maxdepth 1 -name "${i,,}*.db" | sort)
+    readarray -t -O "${#eunitdb2list[@]}" eunitdb2list < <(find "$dbpath" -maxdepth 1 -name "${i,,}*.db.new" | sort)
 done
 
 # M.2 Card db files
