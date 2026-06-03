@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.127"
+scriptver="v3.6.128"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1436,7 +1436,9 @@ backupdb(){
             echo -e "Backed up ${fname}" >&2
             if [[ "${1##*.}" == "db" ]]; then
                 # Backup db version file as well
-                cp -p "$1.version" "$1.bakver"
+                if [[ -f "${1%.db}.version" ]]; then
+                    cp -p "${1%.db}.version" "${1%.db}.bakver"
+                fi
             fi
         else
             echo -e "${Error}ERROR 5${Off} Failed to backup ${fname}!" >&2
@@ -1446,7 +1448,9 @@ backupdb(){
         # Only .db files have version files
         if [[ ! -f "${1%.db}.bakver" ]]; then
             # Existing backup has no .bakver file, create one
-            cp -p "${1%.db}.version" "${1%.db}.bakver"
+            if [[ -f "${1%.db}.version" ]]; then
+                cp -p "${1%.db}.version" "${1%.db}.bakver"
+            fi
         fi
         bakversion=$(cat "${1%.db}.bakver" 2>/dev/null)
         newversion=$(cat "${1%.db}.version" 2>/dev/null)
@@ -1455,7 +1459,9 @@ backupdb(){
             if cp -p "$1" "$1.bak"; then
                 echo -e "Backed up ${fname}" >&2
                 # Update db version backup as well
-                cp -p "${1%.db}.version" "${1%.db}.bakver"
+                if [[ -f "${1%.db}.version" ]]; then
+                    cp -p "${1%.db}.version" "${1%.db}.bakver"
+                fi
             else
                 echo -e "${Error}ERROR 5${Off} Failed to backup ${fname}!" >&2
                 return 1
