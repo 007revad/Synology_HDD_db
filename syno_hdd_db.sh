@@ -1444,18 +1444,18 @@ backupdb(){
         fi
     elif [[ "${1##*.}" == "db" ]]; then
         # Only .db files have version files
-        if [[ ! -f "$1.bakver" ]]; then
+        if [[ ! -f "${1%.db}.bakver" ]]; then
             # Existing backup has no .bakver file, create one
-            cp -p "$1.version" "$1.bakver"
+            cp -p "${1%.db}.version" "${1%.db}.bakver"
         fi
-        bakversion=$(cat "$1.bakver" 2>/dev/null)
-        newversion=$(cat "$1.version" 2>/dev/null)
+        bakversion=$(cat "${1%.db}.bakver" 2>/dev/null)
+        newversion=$(cat "${1%.db}.version" 2>/dev/null)
         if [[ "$newversion" -gt "$bakversion" ]]; then
             # Newer version db files have been installed
             if cp -p "$1" "$1.bak"; then
                 echo -e "Backed up ${fname}" >&2
                 # Update db version backup as well
-                cp -p "$1.version" "$1.bakver"
+                cp -p "${1%.db}.version" "${1%.db}.bakver"
             else
                 echo -e "${Error}ERROR 5${Off} Failed to backup ${fname}!" >&2
                 return 1
