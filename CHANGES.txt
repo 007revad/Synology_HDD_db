@@ -1,3 +1,7 @@
+v3.6.130
+- Bug fix for Samsung SSDs that have 2.5" in their model name.
+- Bug fix for not removing leading spaces in drive model names (introduced in v3.6.123).
+
 v3.6.129
 - Bug fix for backing up expansion unit db files (introduced in v3.6.126).
 

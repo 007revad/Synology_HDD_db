@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.129"
+scriptver="v3.6.130"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1015,13 +1015,13 @@ fixdrivemodel(){
         hdmodel=${hdmodel#"FUJISTU "}   # Remove "FUJISTU " from start of model name
         
         # Remove any leading spaces
-        var=$(echo "$var" | sed -e 's/^[[:space:]]*//')
+        hdmodel=$(echo "$hdmodel" | sed -e 's/^[[:space:]]*//')
     elif [[ $1 =~ ^'APPLE HDD '.* ]]; then
         # Old drive brands
         hdmodel=${hdmodel#"APPLE HDD "} # Remove "APPLE HDD " from start of model name
         
         # Remove any leading spaces
-        var=$(echo "$var" | sed -e 's/^[[:space:]]*//')
+        hdmodel=$(echo "$hdmodel" | sed -e 's/^[[:space:]]*//')
     fi
 }
 
@@ -1605,9 +1605,12 @@ editcount(){
 
 
 editdb7(){ 
+    local hdmodel_sed
+    hdmodel_sed="${hdmodel//\"/\\\"}"   # escape " for sed/JSON
+    hdmodel_sed="${hdmodel_sed//\//\\/}"  # escape / for sed
+
     if [[ $1 == "append" ]]; then  # model not in db file
-        #if sed -i "s/}}}/}},\"$hdmodel\":{$fwstrng$default/" "$2"; then  # append
-        if sed -i "s/}}}/}},\"${hdmodel//\//\\/}\":{$fwstrng$default/" "$2"; then  # append
+        if sed -i "s/}}}/}},\"${hdmodel_sed}\":{$fwstrng$default/" "$2"; then  # append
             if jq -e --arg hdmodel "$hdmodel" --arg fwrev "$fwrev" \
                 '.disk_compatbility_info[$hdmodel] | has($fwrev)' "$2" > /dev/null; then
                 echo -e "Added ${Yellow}$hdmodel ($fwrev)${Off} to ${Cyan}$(basename -- "$2")${Off}"
@@ -1621,8 +1624,7 @@ editdb7(){
         fi
 
     elif [[ $1 == "insert" ]]; then  # model and default exists
-        #if sed -i "s/\"$hdmodel\":{/\"$hdmodel\":{$fwstrng/" "$2"; then  # insert firmware
-        if sed -i "s/\"${hdmodel//\//\\/}\":{/\"${hdmodel//\//\\/}\":{$fwstrng/" "$2"; then  # insert firmware
+        if sed -i "s/\"${hdmodel_sed}\":{/\"${hdmodel_sed}\":{$fwstrng/" "$2"; then  # insert firmware
             if jq -e --arg hdmodel "$hdmodel" --arg fwrev "$fwrev" \
                 '.disk_compatbility_info[$hdmodel] | has($fwrev)' "$2" > /dev/null; then
                 echo -e "Updated ${Yellow}$hdmodel ($fwrev)${Off} in ${Cyan}$(basename -- "$2")${Off}"
@@ -1636,9 +1638,7 @@ editdb7(){
         fi
 
     elif [[ $1 == "empty" ]]; then  # db file only contains {}
-        #if sed -i "s/{}/{\"$hdmodel\":{$fwstrng${default}}/" "$2"; then  # empty
-        #if sed -i "s/{}/{\"${hdmodel//\//\\/}\":{$fwstrng${default}}/" "$2"; then  # empty
-        if sed -i "s/{}/{\"${hdmodel//\//\\/}\":{$fwstrng${default}/" "$2"; then  # empty
+        if sed -i "s/{}/{\"${hdmodel_sed}\":{$fwstrng${default}/" "$2"; then  # empty
             if jq -e --arg hdmodel "$hdmodel" --arg fwrev "$fwrev" \
                 '.disk_compatbility_info[$hdmodel] | has($fwrev)' "$2" > /dev/null; then
                 echo -e "Added ${Yellow}$hdmodel ($fwrev)${Off} to ${Cyan}$(basename -- "$2")${Off}"
@@ -1733,6 +1733,10 @@ updatedb(){
         fi
     elif [[ $dbtype -eq "6" ]]; then
         # db type 6 used up to DSM 7.0.1
+        local hdmodel_sed
+        hdmodel_sed="${hdmodel//\"/\\\"}"   # escape " for sed/JSON
+        hdmodel_sed="${hdmodel_sed//\//\\/}"  # escape / for sed
+
         if grep -q "$hdmodel" "$2"; then
             echo -e "${Yellow}$hdmodel${Off} already exists in ${Cyan}$(basename -- "$2")${Off}" >&2
         else
@@ -1740,7 +1744,8 @@ updatedb(){
             # {"model":"WD60EFRX-68MYMN1","firmware":"82.00A82","rec_intvl":[1]},
             # Don't need to add firmware version?
             #string="{\"model\":\"${hdmodel}\",\"firmware\":\"${fwrev}\",\"rec_intvl\":\[1\]},"
-            string="{\"model\":\"${hdmodel}\",\"firmware\":\"\",\"rec_intvl\":\[1\]},"
+            #string="{\"model\":\"${hdmodel}\",\"firmware\":\"\",\"rec_intvl\":\[1\]},"
+            string="{\"model\":\"${hdmodel_sed}\",\"firmware\":\"\",\"rec_intvl\":\[1\]},"
             # {"success":1,"list":[
             startstring="{\"success\":1,\"list\":\["
             # example:
