@@ -36,7 +36,7 @@ Both 1 and 2 can be solved with [Synology HDD db](https://github.com/007revad/Sy
 
 Credit to Alex_of_Chaos on reddit
 
-DSM won't install on a 2025 or later series plus model if you only have unverified HDDs. But we can get around that.
+DSM 7.2.2 won't install on a 2025 or later series plus model if you only have unverified HDDs. But we can get around that.
 
 1. Get the Synology's IP address from Synology Assistant.
 2. Start DSM's telnet server by entering `http://<NAS-IP>:5000/webman/start_telnet.cgi` into your browser's address bar.
@@ -45,11 +45,12 @@ DSM won't install on a 2025 or later series plus model if you only have unverifi
     ```
     telnet <NAS-IP>
     ```
-    - Replace `<NAS-IP>` with the IP address of the Synology NAS. 
+    - Replace `<NAS-IP>` with the IP address of the Synology NAS.
+    - **Note:** If using a Mac you may need to install Terminal. 
 4. When it asks you to log in use:
     - `root` for the login
     - `101-0101` for the password
-    - Note: When you type the password you may not see what you are typing.
+    - **Note:** When you type the password you may not see what you are typing.
 5. Execute the following command:
     ```
     touch /tmp/installable_check_pass
