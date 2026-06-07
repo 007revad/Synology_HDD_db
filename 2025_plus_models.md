@@ -46,10 +46,15 @@ DSM won't install on a 2025 or later series plus model if you only have unverifi
     telnet <NAS-IP>
     ```
     - Replace `<NAS-IP>` with the IP address of the Synology NAS. 
-4. Log into telnet with:
+4. When it asks you to log in use:
     - `root` for the login
     - `101-0101` for the password
-5. Execute the following command: (using a while loop in case DSM is running in a VM)
+    - Note: When you type the password you may not see what you are typing.
+5. Execute the following command:
+    ```
+    touch /tmp/installable_check_pass
+    ```
+    - If DSM is running in a virtual machine use this command instead: 
     ```
     while true; do touch /tmp/installable_check_pass; sleep 1; done
     ```
