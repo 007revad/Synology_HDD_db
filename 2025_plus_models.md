@@ -40,22 +40,25 @@ DSM won't install on a 2025 or later series plus model if you only have unverifi
 
 1. Start telnet by entering `http://<NAS-IP>:5000/webman/start_telnet.cgi` into your browser's address bar.
     - Replace `<NAS-IP>` with the IP address of the Synology NAS. 
-2. Open a telnet client (powershell, PuTTY etc) on your computer and connect to the Synology with 'telnet <NAS-IP>`.
+2. Open a telnet client (powershell, PuTTY, Terminal etc) on your computer and connect to the Synology by typing the following in the telent window then press enter:
+    ```
+    telnet <NAS-IP>
+    ```
     - Replace `<NAS-IP>` with the IP address of the Synology NAS. 
-3. Log into telnet with:
+4. Log into telnet with:
     - `root` for the login
     - `101-0101` for the password
-4. Execute the following command: (using a while loop in case DSM is running in a VM)
+5. Execute the following command: (using a while loop in case DSM is running in a VM)
     ```
     while true; do touch /tmp/installable_check_pass; sleep 1; done
     ```
-5. Refresh the web installation page and install DSM.
-6. Then in the telnet window, or via SSH, execute the following command:
+6. Refresh the web browser installation page and install DSM.
+7. Then back in the telnet window, or via SSH, paste the following command and press enter:
    ```
    /usr/syno/bin/synosetkeyvalue /etc.defaults/synoinfo.conf support_disk_compatibility no
    ```
-7.  If Storage Manager is already open close then open it, or refresh the web page. If refreshing the page or restarting Storage Manager is not working, try restarting your Synology NAS.
-8. You can now create your storage pool from Storage Manager.
+8.  If Storage Manager is already open close then open it, or refresh the web page. If refreshing the page or restarting Storage Manager is not working, try restarting your Synology NAS.
+9. You can now create your storage pool from Storage Manager.
 
 <br>
 
