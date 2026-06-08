@@ -41,12 +41,32 @@ DSM 7.2.2 won't install on a 2025 or later series plus model if you only have un
 1. Get the Synology's IP address from Synology Assistant.
 2. Start DSM's telnet server by entering `http://<NAS-IP>:5000/webman/start_telnet.cgi` into your browser's address bar.
     - Replace `<NAS-IP>` with the IP address of the Synology NAS. 
-3. Open a telnet client (PowerShell, PuTTY, Terminal etc) on your computer and connect to the Synology by typing the following in the telent window then press enter:
+3. Open a telnet client (PowerShell, PuTTY, Terminal etc) on your computer and connect to the Synology by typing the following in the telnet window then press enter:
     ```
     telnet <NAS-IP>
     ```
     - Replace `<NAS-IP>` with the IP address of the Synology NAS.
-    - **Note:** If using a Mac you may need to install Terminal. 
+    - **Note:** If using a Mac you may need to install Terminal.
+
+      <details>
+        <summary>Click here to see how to install telnet on a Mac</summary>
+
+        **Installing telnet on a Mac**
+
+        a. Open your Terminal app.
+
+        b. If you don't have Homebrew installed, copy and paste the following command into Terminal and press Enter:
+        ```
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        ```
+
+        c. Once Homebrew is installed, simply run the installation command:
+        ```
+        brew install telnet
+        ```
+
+    </details>
+
 4. When it asks you to log in use:
     - `root` for the login
     - `101-0101` for the password
