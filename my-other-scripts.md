@@ -126,6 +126,9 @@
 
 ### Other Synology scripts and packages
 
+- **<a href="https://github.com/007revad/Synology_fix_size_units>Synology_fix_size_units</a>**
+  - Make DSM show the correct TiB, GiB, MiB and KiB IEC labels instead of TB, GB, MB and KB binary labels.
+
 - **<a href="https://github.com/007revad/Check_UPS_Connected">Check_UPS_Connected</a>**
   - Script to email you the USP status. Also works for Synology NAS that are UPS clients.
 
