@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.130"
+scriptver="v3.6.131"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -738,7 +738,7 @@ set_writemostly(){
 # Restore changes from backups
 
 if [[ $restore == "yes" ]]; then
-    readarray -t dbbakfiles < <(find "$dbpath" -maxdepth 1 \( -name "*.db.new.bak" -o -name "*.db.bak" \) | sort)
+    readarray -t dbbakfiles < <(find "$dbpath" -maxdepth 1 \( -name "*.db.new.bak" -o -name "*.db.bak" \) ! -name "rule_*" | sort)
 
     echo ""
     if [[ ${#dbbakfiles[@]} -gt "0" || -f ${synoinfo}.bak ||\
@@ -1362,8 +1362,8 @@ fi
 # Check databases and add our drives if needed
 
 # Host db files
-readarray -t db1list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db" | sort)
-readarray -t db2list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db.new" | sort)
+readarray -t db1list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db" ! -name "rule_*" | sort)
+readarray -t db2list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db.new" ! -name "rule_*" | sort)
 
 # Expansion Unit db files
 for i in "${eunits[@]}"; do

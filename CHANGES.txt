@@ -1,3 +1,6 @@
+v3.6.131
+- Fix for DSM 7.4 including "rules" db files in drive db file folder.
+
 v3.6.130
 - Bug fix for Samsung SSDs that have 2.5" in their model name.
 - Bug fix for not removing leading spaces in drive model names (introduced in v3.6.123).
