@@ -126,7 +126,10 @@
 
 ### Other Synology scripts and packages
 
-- **<a href="https://github.com/007revad/Synology_fix_size_units">Synolog fix size units</a>**
+- **<a href="https://github.com/007revad/Synology_drive_info">Synology_drive_info</a>**
+  - Show drive device id, DSM number, model and serial number for all drives in your Synology NAS.
+
+- **<a href="https://github.com/007revad/Synology_fix_size_units">Synology fix size units</a>**
   - Make DSM show the correct TiB, GiB, MiB and KiB IEC labels instead of TB, GB, MB and KB binary labels.
 
 - **<a href="https://github.com/007revad/Check_UPS_Connected">Check UPS Connected</a>**
