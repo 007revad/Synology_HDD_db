@@ -1,5 +1,5 @@
 v3.6.131
-- Fix for DSM 7.4 including "rules" db files in drive db file folder.
+- Fix for DSM 7.4 including "rules" db files in the drive db files folder.
 
 v3.6.130
 - Bug fix for Samsung SSDs that have 2.5" in their model name.
