@@ -186,7 +186,7 @@ You only need to edit syno_hdd_vendor_ids.txt if the script warns you about a mi
 
 If DSM doesn't know the brand of your NVMe drives they will show up in Storage Manager as Unknown brand, and Unrecognised firmware version.
 
-<p align="left"><img src="images/unknown.png"></p>
+<p align="left"><kbd><img src="images/unknown.png"></kbd></p>
 
 In this case the script will show you the vendor ID and advise you to add it to the syno_hdd_vendor_ids.txt file.
 
@@ -195,7 +195,7 @@ In this case the script will show you the vendor ID and advise you to add it to 
 ### Ironwolf Health
 
 Ironwolf Health working with the latest version of Ironwolf Health Monitor.
-<p align="left"><img src="images/ihm.png"></p>
+<p align="left"><kbd><img src="images/ihm.png"></kbd></p>
 
 <br>
 
