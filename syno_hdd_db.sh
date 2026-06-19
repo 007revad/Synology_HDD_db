@@ -1312,6 +1312,30 @@ if [[ $m2 != "no" ]]; then
 fi
 
 
+get_eunit_container_aliases(){
+    # DSM can report one expansion unit with different model names.
+    # For example, detection can return RX1217RP while the attached disks'
+    # runtime container is RX1217-1 and DSM reads the rx1217 drive database.
+    local ebox_info="$1"
+    local runtime_root="${2:-/run/synostorage/disks}"
+    local disk
+    local container
+
+    while IFS= read -r disk; do
+        [[ -n $disk ]] || continue
+
+        container=$(cat "$runtime_root/${disk##*/}/container" 2>/dev/null)
+        container=$(printf "%s" "$container" | sed -E 's/-[0-9]+$//')
+
+        if printf "%s\n" "$container" |
+            grep -Eqi '^([FRD]XD?[0-9]{3,4})(rp|ii|sas)?$';
+        then
+            printf "%s\n" "$container"
+        fi
+    done < <(printf "%s\n" "$ebox_info" | awk '/Disk path:/ {print $NF}')
+}
+
+
 # Expansion units
 ebox_conected=$(synodisk --enum -t ebox)
 if [[ $ebox_conected ]]; then
@@ -1334,6 +1358,12 @@ if [[ $ebox_conected ]]; then
         file=$(ls $path | tail -n1)
         eunitlist=($(grep -Eowi "([FRD]XD?[0-9]{3,4})(rp|ii|sas){0,2}" "$path/$file" | uniq))
     fi
+
+    # Include the model name DSM uses for each expansion disk's runtime
+    # container. The existing sort below removes duplicates.
+    while IFS= read -r eunit_alias; do
+        [[ -n $eunit_alias ]] && eunitlist+=("$eunit_alias")
+    done < <(get_eunit_container_aliases "$ebox_conected")
 fi
 
 # Sort eunitlist array into new eunits array to remove duplicates
@@ -1365,11 +1395,27 @@ fi
 readarray -t db1list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db" ! -name "rule_*" | sort)
 readarray -t db2list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db.new" ! -name "rule_*" | sort)
 
+find_eunit_db_files(){
+    # Match an exact expansion-unit model family while allowing Synology's
+    # "_v7" and space-delimited filename suffixes. Do not let RX1217 also
+    # select RX1217RP or RX1217SAS.
+    local db_dir="$1"
+    local extension="$2"
+    local eunit
+    shift 2
+
+    for eunit in "$@"; do
+        find "$db_dir" -maxdepth 1 -type f \
+            \( -name "${eunit,,}${extension}" \
+            -o -name "${eunit,,}_*${extension}" \
+            -o -name "${eunit,,} *${extension}" \)
+    done | sort -u
+}
+
+
 # Expansion Unit db files
-for i in "${eunits[@]}"; do
-    readarray -t -O "${#eunitdb1list[@]}" eunitdb1list < <(find "$dbpath" -maxdepth 1 -name "${i,,}*.db" | sort)
-    readarray -t -O "${#eunitdb2list[@]}" eunitdb2list < <(find "$dbpath" -maxdepth 1 -name "${i,,}*.db.new" | sort)
-done
+readarray -t eunitdb1list < <(find_eunit_db_files "$dbpath" ".db" "${eunits[@]}")
+readarray -t eunitdb2list < <(find_eunit_db_files "$dbpath" ".db.new" "${eunits[@]}")
 
 # M.2 Card db files
 for i in "${!m2cards[@]}"; do
@@ -2734,4 +2780,3 @@ elif [[ $dsm -eq "6" || $rebootmsg == "yes" ]]; then
 fi
 
 exit
-
