@@ -2,7 +2,7 @@ v3.6.132
 - Bug fix for expansion units that DSM reports with different model names. Issue #578
   - Adds aliases from each expansion disk's runtime container, such as mapping RX1217-1 to RX1217 when detection reports RX1217RP.
   - Uses exact model-family matching so RX1217 does not also edit RX1217RP or RX1217SAS database files.
-Thanks @aretaon 
+Thanks @tkirkland 
 
 v3.6.131
 - Fix for DSM 7.4 including "rules" db files in the drive db files folder.
