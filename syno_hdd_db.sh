@@ -1312,7 +1312,7 @@ if [[ $m2 != "no" ]]; then
 fi
 
 
-get_eunit_container_aliases(){
+get_eunit_container_aliases(){ 
     # DSM can report one expansion unit with different model names.
     # For example, detection can return RX1217RP while the attached disks'
     # runtime container is RX1217-1 and DSM reads the rx1217 drive database.
@@ -1395,7 +1395,7 @@ fi
 readarray -t db1list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db" ! -name "rule_*" | sort)
 readarray -t db2list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db.new" ! -name "rule_*" | sort)
 
-find_eunit_db_files(){
+find_eunit_db_files(){ 
     # Match an exact expansion-unit model family while allowing Synology's
     # "_v7" and space-delimited filename suffixes. Do not let RX1217 also
     # select RX1217RP or RX1217SAS.
