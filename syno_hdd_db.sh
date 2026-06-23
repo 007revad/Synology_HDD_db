@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.131"
+scriptver="v3.6.132"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -342,9 +342,13 @@ if [[ $dsmversion -gt "72" ]]; then
     else
         SOPinfo="/var/packages/SynoOnlinePack/INFO"
     fi
-    SOPpkgver="$(/usr/syno/bin/synogetkeyvalue $SOPinfo version)"
-    #echo -e "SynoOnlinePack$v2 version $SOPpkgver\n"
-    echo "- SynoOnlinePack$v2 version $SOPpkgver"
+    if [[ -f "$SOPinfo" ]]; then
+        SOPpkgver="$(/usr/syno/bin/synogetkeyvalue $SOPinfo version)"
+        #echo -e "SynoOnlinePack$v2 version $SOPpkgver\n"
+        echo "- SynoOnlinePack$v2 version $SOPpkgver"
+    else
+        echo "- SynoOnlinePack$v2 version not found"
+    fi
 #else
 #    echo ""
 fi
@@ -1457,6 +1461,7 @@ getdbtype(){
 backupdb(){ 
     # Backup database file if needed
     local bakversion newversion fname
+    [[ -z "$1" || ! -f "$1" ]] || return 0  # Don't try to backup non-existent files
     if [[ $2 == "long" ]]; then
         fname="$1"
     else
