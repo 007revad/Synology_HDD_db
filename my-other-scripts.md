@@ -28,20 +28,20 @@
 - **<a href="https://github.com/007revad/Synology_Ookla_Speedtest">Synology Ookla Speedtest</a>**
   - Synology DSM 7 package to install Ookla Speedtest and run it in a GUI to test your Internet speed.
 
-- **<a href="https://github.com/007revad/Synology_Libre_Speedtest">Synology Libre Speedtest</a>**
-  - Synology DSM 7 package to install Libre Speedtest and run it in a GUI to test your LAN speed.
-
 - **<a href="https://github.com/007revad/Synology_Open_Speedtest">Synology Open Speedtest</a>**
   - Synology DSM 7 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
+
+- **<a href="https://github.com/007revad/Synology_Libre_Speedtest">Synology Libre Speedtest</a>**
+  - Synology DSM 7 package to install Libre Speedtest and run it in a GUI to test your LAN speed.
 
 - **<a href="https://github.com/007revad/Asustor_Ookla_Speedtest">Asustor Ookla Speedtest</a>**
   - Asustor ADM 5 package to install Ookla Speedtest and run it in a GUI to test your internet speed.
 
-- **<a href="https://github.com/007revad/Asustor_Libre_Speedtest">Asustor LibreSpeed Speedtest</a>**
-  - Asustor ADM 5 package to install LibreSpeed Speedtest and run it in a GUI to test your LAN speed.
-
 - **<a href="https://github.com/007revad/Asustor_Open_Speedtest">Asustor Open Speedtest</a>**
   - Asustor ADM 5 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
+
+- **<a href="https://github.com/007revad/Asustor_Libre_Speedtest">Asustor LibreSpeed Speedtest</a>**
+  - Asustor ADM 5 package to install LibreSpeed Speedtest and run it in a GUI to test your LAN speed.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
@@ -74,6 +74,9 @@
 
 - **<a href="https://github.com/007revad/Asustor_Open_Speedtest">Asustor Open Speedtest</a>**
   - Asustor ADM 5 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
+
+- **<a href="https://github.com/007revad/Asustor_Libre_Speedtest">Asustor LibreSpeed Speedtest</a>**
+  - Asustor ADM 5 package to install LibreSpeed Speedtest and run it in a GUI to test your LAN speed.
 
 - **<a href="https://github.com/007revad/Asustor_SMART_info">Asustor SMART info</a>**
   - Show Asustor smart health and attributes. Can also email you when important values change.
@@ -146,6 +149,9 @@
 
 - **<a href="https://github.com/007revad/Synology_Open_Speedtest">Synology Open Speedtest</a>**
   - Synology DSM 7 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
+
+- **<a href="https://github.com/007revad/Synology_Libre_Speedtest">Synology Libre Speedtest</a>**
+  - Synology DSM 7 package to install Libre Speedtest and run it in a GUI to test your LAN speed.
 
 - **<a href="https://github.com/007revad/Synology_app_mover">Synology app mover</a>**
   - Easily move Synology packages from one volume to another volume.
