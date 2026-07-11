@@ -130,7 +130,7 @@
 ### Other Synology scripts and packages
 
 - **<a href="https://github.com/007revad/Synology_drive_info">Synology_drive_info</a>**
-  - DSM 7 package to show drive device id, DSM number, model and serial number for all drives in your Synology NAS.
+  - DSM package to show drive device id, DSM drive number, location, model, serial number, health and S.M.A.R.T. values for all drives in all your Synology NAS.
 
 - **<a href="https://github.com/007revad/Synology_fix_size_units">Synology fix size units</a>**
   - Make DSM show the correct TiB, GiB, MiB and KiB IEC labels instead of TB, GB, MB and KB binary labels.
