@@ -1,3 +1,9 @@
+v3.6.133
+- Bug fix for not updating db files with each drive's firmware version if drives were previously added to the db files without firmware version from an older script version. Issue #598
+- Bug fix for restore mode not re-enabling drive database updates in DSM 7.3 and later.
+- Bug fix for sometimes not detecting script was running from scheduled task.
+- Bug fix for errors showing in all red instead of just ERROR being in red.
+
 v3.6.132
 - Bug fix for expansion units that DSM reports with different model names. Issue #574
   - Adds aliases from each expansion disk's runtime container, such as mapping RX1217-1 to RX1217 when detection reports RX1217RP.
