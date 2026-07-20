@@ -1,5 +1,5 @@
 v3.6.134
-- Bug for trying to backup M.2 PCIe card's .db.new when it didn't exist which caused the following error. Issue #599
+- Bug fix for trying to backup M.2 PCIe card's .db.new when it didn't exist which caused the following error. Issue #599
   - **cp: cannot stat '': No such file or directory
   - ERROR 5 Failed to backup !**
 
