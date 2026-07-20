@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.133"
+scriptver="v3.6.134"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1453,8 +1453,10 @@ readarray -t eunitdb2list < <(find_eunit_db_files "$dbpath" ".db.new" "${eunits[
 
 # M.2 Card db files
 for i in "${!m2cards[@]}"; do
-    m2carddb1list+=("$(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db")")
-    m2carddb2list+=("$(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db.new")")
+    m2card_db1=$(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db")
+    m2card_db2=$(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db.new")
+    [[ -n "$m2card_db1" ]] && m2carddb1list+=("$m2card_db1")
+    [[ -n "$m2card_db2" ]] && m2carddb2list+=("$m2card_db2")
 done
 
 
@@ -1493,7 +1495,7 @@ getdbtype(){
 backupdb(){ 
     # Backup database file if needed
     local bakversion newversion fname
-    [[ -z "$1" || ! -f "$1" ]] && return 0  # Don't try to backup non-existent files
+    [[ -z "$1" || ! -f "$1" ]] && return 1  # Don't try to backup non-existent files
     if [[ $2 == "long" ]]; then
         fname="$1"
     else
