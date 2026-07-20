@@ -1,3 +1,8 @@
+v3.6.134
+- Bug for trying to backup M.2 PCIe card's .db.new when it didn't exist which caused the following error:
+  - **cp: cannot stat '': No such file or directory
+  - ERROR 5 Failed to backup !**
+
 v3.6.133
 - Bug fix for not updating db files with each drive's firmware version if drives were previously added to the db files without firmware version from an older script version. Issue #598
 - Bug fix for restore mode not re-enabling drive database updates in DSM 7.3 and later.

@@ -1493,7 +1493,7 @@ getdbtype(){
 backupdb(){ 
     # Backup database file if needed
     local bakversion newversion fname
-    [[ -z "$1" || ! -f "$1" ]] || return 0  # Don't try to backup non-existent files
+    [[ -z "$1" || ! -f "$1" ]] && return 0  # Don't try to backup non-existent files
     if [[ $2 == "long" ]]; then
         fname="$1"
     else
