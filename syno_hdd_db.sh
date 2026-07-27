@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.134"
+scriptver="v3.6.135"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -258,17 +258,18 @@ if [[ $( whoami ) != "root" ]]; then
     exit 1
 fi
 
+
 detect_scheduler(){ 
-    # Check if stdin is a terminal (interactive)
-    [ ! -t 0 ] && return 0
-    
-    # Check parent process
-    local parent
-    parent=$(ps -p $PPID -o comm=)
-    [[ "$parent" =~ (TaskS|systemd-run|sched|crond) ]] && return 0
-    
+    local pid=$PPID
+    local comm
+    while [[ "$pid" != "1" && -n "$pid" ]]; do
+        comm=$(ps -p "$pid" -o comm=)
+        [[ "$comm" =~ (SYNO.Core.TaskS|SYNO.Core.Event|systemd-run|sched|crond) ]] && return 0
+        pid=$(ps -p "$pid" -o ppid= | tr -d ' ')
+    done
     return 1
 }
+
 
 # Get DSM major version
 dsm=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION majorversion)
@@ -688,7 +689,7 @@ reboot_file="${scriptpath}/syno_hdd_reboot.txt"
 if [[ ! -f "$reboot_file" ]]; then
     echo "Do NOT delete this file!" > "$reboot_file"
     echo "It is used to track if DSM has updated." >> "$reboot_file"
-    synosetkeyvalue "$reboot_file" dsm_build "$buildnumber"
+    /usr/syno/bin/synosetkeyvalue "$reboot_file" dsm_build "$buildnumber"
 fi
 
 
@@ -1062,9 +1063,9 @@ fixdrivemodel(){
 get_size_gb(){ 
     # $1 is /sys/block/sata1 or /sys/block/nvme0n1 etc
     local disk_size_gb
-    #disk_size_gb=$(synodisk --info /dev/"$(basename -- "$1")" 2>/dev/null | grep 'Total capacity' | awk '{print int($4 * 1.073741824)}')
+    #disk_size_gb=$(/usr/syno/bin/synodisk --info /dev/"$(basename -- "$1")" 2>/dev/null | grep 'Total capacity' | awk '{print int($4 * 1.073741824)}')
     # Prevent 6 TB drives getting rounded up to 6001 !!!
-    disk_size_gb=$(synodisk --info /dev/"$(basename -- "$1")" 2>/dev/null | grep 'Total capacity' | awk '{gb = $4 * 1.073741824; printf "%d\n", int(gb / 4 + 0.5) * 4}')
+    disk_size_gb=$(/usr/syno/bin/synodisk --info /dev/"$(basename -- "$1")" 2>/dev/null | grep 'Total capacity' | awk '{gb = $4 * 1.073741824; printf "%d\n", int(gb / 4 + 0.5) * 4}')
     echo "$disk_size_gb"
 }
 
@@ -1371,7 +1372,7 @@ get_eunit_container_aliases(){
 
 
 # Expansion units
-ebox_conected=$(synodisk --enum -t ebox)
+ebox_conected=$(/usr/syno/bin/synodisk --enum -t ebox)
 if [[ $ebox_conected ]]; then
     # Only device tree models have syno_slot_mapping
     # eSATA and InfiniBand ports both appear in syno_slot_mapping as:
@@ -1379,7 +1380,7 @@ if [[ $ebox_conected ]]; then
     # Eunit port 1 - RX1214
     if which syno_slot_mapping >/dev/null; then
         # syno_slot_mapping does not find SAS eunits
-        eunitlist=($(syno_slot_mapping | grep 'Eunit port' | awk '{print $5}'))
+        eunitlist=($(/usr/syno/bin/syno_slot_mapping | grep 'Eunit port' | awk '{print $5}'))
     fi
     if [[ ${#eunitlist[@]} -eq "0" ]]; then
         # Create new /var/log/diskprediction log to ensure newly connected ebox is in latest log
@@ -1492,6 +1493,19 @@ getdbtype(){
 }
 
 
+sanitize_smart_quotes(){ 
+    # Fix manually edited db files edited in iOS or Word. Issue #591
+    # Replace curly/smart quotes with straight ASCII quotes
+    # Fixes db files that were hand-edited with an editor/app that
+    # auto-converts straight quotes to curly quotes, breaking the JSON
+    local file="$1"
+    if grep -q $'\xe2\x80\x9c\|\xe2\x80\x9d' "$file" 2>/dev/null; then
+        sed -i $'s/\xe2\x80\x9c/"/g; s/\xe2\x80\x9d/"/g' "$file"
+        echo -e "Fixed smart quotes in ${Cyan}$(basename -- "$file")${Off}" >&2
+    fi
+}
+
+
 backupdb(){ 
     # Backup database file if needed
     local bakversion newversion fname
@@ -1500,6 +1514,12 @@ backupdb(){
         fname="$1"
     else
         fname=$(basename -- "${1}")
+    fi
+
+    # Fix smart quotes before backing up or using the file, so the
+    # backup (and every later jq call) sees clean JSON
+    if [[ "$1" =~ \.db$ || "$1" =~ \.db\.new$ ]]; then
+        sanitize_smart_quotes "$1"
     fi
 
     if [[ ! -f "$1.bak" ]]; then
@@ -1961,7 +1981,7 @@ enable_card(){
                 # /usr/syno/etc/adapter_cards.conf
                 /usr/syno/bin/set_section_key_value "$adapter_cards2" "$2" "$modelrplowercase" yes
                 echo -e "Enabled ${Yellow}$3${Off} for ${Cyan}$modelname${Off}" >&2
-                rebootmsg=yes
+                rebootmsg=yes  # Show reboot message at end
             else
                 echo -e "${Error}ERROR 9${Off} Failed to enable $3 for ${modelname}!" >&2
             fi
@@ -2193,7 +2213,7 @@ edit_modeldtb(){
             chmod a+r "$dtb_file"
             chown root:root "$dtb_file"
             cp -pu "$dtb_file" "$dtb2_file"  # Copy dtb file to /etc
-            rebootmsg=yes
+            rebootmsg=yes  # Show reboot message at end
         else
             echo -e "${Error}ERROR${Off} Missing /usr/sbin/dtc or not executable!" >&2
         fi
@@ -2799,15 +2819,16 @@ if [[ $show_trim_warning == "yes" ]]; then
     echo "https://tinyurl.com/ssd-trim"
 fi
 
+
 # Show reboot message or reboot cleanly once if needed
 if [[ $do_reboot == "yes" && $sch_task == "yes" ]]; then
     # Reboot cleanly after DSM update if needed
-    previous_build="$(synogetkeyvalue "$reboot_file" dsm_build)"
+    previous_build="$(/usr/syno/bin/synogetkeyvalue "$reboot_file" dsm_build)"
     if [[ $buildnumber -gt "$previous_build" ]]; then
-        synosetkeyvalue "$reboot_file" dsm_build "$buildnumber"  # Update buildnumber
+        /usr/syno/bin/synosetkeyvalue "$reboot_file" dsm_build "$buildnumber"  # Update buildnumber
         echo -e "\nDSM has updated from build $previous_build to $buildnumber"
         echo "Rebooting..."
-        synoshutdown --reboot  # Reboot cleanly
+        /usr/syno/sbin/synoshutdown --reboot  # Reboot cleanly
         exit
     fi
 elif [[ $dsm -eq "6" || $rebootmsg == "yes" ]]; then
