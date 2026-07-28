@@ -129,8 +129,11 @@
 
 ### Other Synology scripts and packages
 
-- **<a href="https://github.com/007revad/Synology_drive_info">Synology_drive_info</a>**
-  - DSM package to show drive device id, DSM drive number, location, model, serial number, health and S.M.A.R.T. values for all drives in all your Synology NAS.
+- **<a href="https://github.com/007revad/Synology_drive_info">Synology Dive Info</a>**
+  - Synology package to show drive device id, DSM drive number, location, model, serial number, health and S.M.A.R.T. values for all drives in all your Synology NAS.
+
+- **<a href="https://github.com/007revad/Syno_Package_Source_Managero">Syno Package Source Manager</a>**
+  - Synology package that allows you to disable and enable community package sources you have added to Package Center. It also allows adding known, working, package sources without having to type and paste anything in Package Center's settings.
 
 - **<a href="https://github.com/007revad/Synology_fix_size_units">Synology fix size units</a>**
   - Make DSM show the correct TiB, GiB, MiB and KiB IEC labels instead of TB, GB, MB and KB binary labels.
