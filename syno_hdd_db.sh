@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.135"
+scriptver="v3.6.136"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -260,11 +260,13 @@ fi
 
 
 detect_scheduler(){ 
+    # SYNO.Core.TaskS is regular scheduled task
+    # SYNO.Core.Event is triggered scheduled task
     local pid=$PPID
     local comm
     while [[ "$pid" != "1" && -n "$pid" ]]; do
         comm=$(ps -p "$pid" -o comm=)
-        [[ "$comm" =~ (SYNO.Core.TaskS|SYNO.Core.Event|systemd-run|sched|crond) ]] && return 0
+        [[ "$comm" =~ (SYNO.Core.TaskS|SYNO.Core.Event|crond) ]] && return 0
         pid=$(ps -p "$pid" -o ppid= | tr -d ' ')
     done
     return 1
@@ -358,12 +360,12 @@ fi
 if [[ -f "/var/lib/disk-compatibility/${model}_host_v7.version" ]]; then
     echo -n "- ${model}_host_v7 version "
     cat "/var/lib/disk-compatibility/${model}_host_v7.version"
-    echo -e "\n"
+    #echo -e "\n"
 fi
 if [[ -f "/var/lib/disk-compatibility/${model}_host.version" ]]; then
     echo -n "- ${model}_host version "
     cat "/var/lib/disk-compatibility/${model}_host.version"
-    echo -e "\n"
+    #echo -e "\n"
 fi
 
 
@@ -373,6 +375,19 @@ if [[ ${#args[@]} -gt "0" ]]; then
 fi
 
 #echo ""  # To keep output readable
+
+
+# Check if script is running in an interactive shell or from schedule
+if [[ -t 1 ]]; then  # Running in terminal
+    echo -e "- Running in an interactive shell (user terminal).\n"
+else
+    # Check if running via task scheduler
+    if detect_scheduler; then
+        sch_task="yes"
+        color="no"
+    fi
+    echo -e "- Running from a scheduled task.\n"
+fi
 
 
 # shellcheck disable=SC2317  # Don't warn about unreachable commands in this function
@@ -2272,11 +2287,15 @@ if [[ $ssd == "yes" ]]; then
     elif [[ ${#ssds_writemostly[@]} -gt "0" ]]; then
         # User specified their fast drive(s)
         echo -e "\nSetting slow internal HDDs state to write_mostly"
-        for idrive in "${internal_drives[@]}"; do
-            if [[ ! ${ssds_writemostly[*]} =~ $idrive ]]; then
-                set_writemostly writemostly "$idrive"
-            fi
-        done
+        if [[ ${ssds_writemostly[*]} =~ "nvme" ]]; then
+            echo "NVMe drives don't have DSM system or swap partitions"
+        else
+            for idrive in "${internal_drives[@]}"; do
+                if [[ ! ${ssds_writemostly[*]} =~ $idrive ]]; then
+                    set_writemostly writemostly "$idrive"
+                fi
+            done
+        fi
 
     else
         # Get list of internal HDDs and qty of SSDs
@@ -2301,6 +2320,8 @@ if [[ $ssd == "yes" ]]; then
             for idrive in "${internal_hdds[@]}"; do
                 set_writemostly writemostly "$idrive"
             done
+        else
+            echo -e "\nNo internal 2.5 inch SSDs found so not setting write mostly on the HDDs"
         fi
     fi
 fi
