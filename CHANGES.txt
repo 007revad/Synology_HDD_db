@@ -1,7 +1,12 @@
+v3.6.136
+- Added messages when write mostly options were used but write mostly cannot be set. Issue #602
+   - Message for when the `-S` option is used and there are no internal 2.5 inch SDDs found. 
+   - Message for when the user used `-ssd=nvmeNnN` as NVMe drives do not contain DSM system or swap partitions.
+
 v3.6.135
-- Changed to replace curly/smart quotes (from db files edited in Word or in iOS) before backing db files to prevent jq errors.
+- Changed to replace curly/smart quotes (from db files edited in Word or in iOS) before backing up db files to prevent jq errors.
 - Added `/usr/syno/bin` or `/usr/syno/sbin` to the syno... commmands that were missing the full path (for people with a corrupt or edited PATH). Issue #601
-   - The change above also fixes js errors caused by those commmands not returning anything. Issue #601
+   - The change above also fixes jq errors caused by those commmands not returning anything. Issue #601
 - Bug fix for not detecting script was running from triggered scheduled task.
 
 v3.6.134
