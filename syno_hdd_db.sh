@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.136"
+scriptver="v3.6.137"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -1469,8 +1469,8 @@ readarray -t eunitdb2list < <(find_eunit_db_files "$dbpath" ".db.new" "${eunits[
 
 # M.2 Card db files
 for i in "${!m2cards[@]}"; do
-    m2card_db1=$(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db")
-    m2card_db2=$(find "$dbpath" -maxdepth 1 -name "*_${m2cards[i],,}*.db.new")
+    m2card_db1=$(find "$dbpath" -maxdepth 1 -name "${model}_${m2cards[i],,}*.db")
+    m2card_db2=$(find "$dbpath" -maxdepth 1 -name "${model}_${m2cards[i],,}*.db.new")
     [[ -n "$m2card_db1" ]] && m2carddb1list+=("$m2card_db1")
     [[ -n "$m2card_db2" ]] && m2carddb2list+=("$m2card_db2")
 done
