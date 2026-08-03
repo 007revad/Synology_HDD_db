@@ -36,26 +36,56 @@ Both 1 and 2 can be solved with [Synology HDD db](https://github.com/007revad/Sy
 
 Credit to Alex_of_Chaos on reddit
 
-DSM won't install on a 2025 or later series plus model if you only have unverified HDDs. But we can get around that.
+DSM 7.2.2 won't install on a 2025 or later series plus model if you only have unverified HDDs. But we can get around that.
 
-1. Start telnet by entering `http://<NAS-IP>:5000/webman/start_telnet.cgi` into your browser's address bar.
+1. Get the Synology's IP address from Synology Assistant.
+2. Start DSM's telnet server by entering `http://<NAS-IP>:5000/webman/start_telnet.cgi` into your browser's address bar.
     - Replace `<NAS-IP>` with the IP address of the Synology NAS. 
-2. Open a telnet client (powershell, PuTTY etc) on your computer and connect to the Synology with 'telnet <NAS-IP>`.
-    - Replace `<NAS-IP>` with the IP address of the Synology NAS. 
-3. Log into telnet with:
+3. Open a telnet client (PowerShell, PuTTY, Terminal etc) on your computer and connect to the Synology by typing the following in the telnet window then press enter:
+    ```
+    telnet <NAS-IP>
+    ```
+    - Replace `<NAS-IP>` with the IP address of the Synology NAS.
+    - **Note:** If using a Mac you may need to install Terminal.
+
+      <details>
+        <summary>Click here to see how to install telnet on a Mac</summary>
+
+        **Installing telnet on a Mac**
+
+        a. Open your Terminal app.
+
+        b. If you don't have Homebrew installed, copy and paste the following command into Terminal and press Enter:
+        ```
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        ```
+
+        c. Once Homebrew is installed, simply run the installation command:
+        ```
+        brew install telnet
+        ```
+
+    </details>
+
+4. When it asks you to log in use:
     - `root` for the login
     - `101-0101` for the password
-4. Execute the following command: (using a while loop in case DSM is running in a VM)
+    - **Note:** When you type the password you may not see what you are typing.
+5. Execute the following command:
+    ```
+    touch /tmp/installable_check_pass
+    ```
+    - If DSM is running in a virtual machine use this command instead: 
     ```
     while true; do touch /tmp/installable_check_pass; sleep 1; done
     ```
-5. Refresh the web installation page and install DSM.
-6. Then in the telnet window, or via SSH, execute the following command:
+6. Refresh the web browser installation page and install DSM.
+7. Then back in the telnet window, or via SSH, paste the following command and press enter:
    ```
    /usr/syno/bin/synosetkeyvalue /etc.defaults/synoinfo.conf support_disk_compatibility no
    ```
-7.  If Storage Manager is already open close then open it, or refresh the web page. If refreshing the page or restarting Storage Manager is not working, try restarting your Synology NAS.
-8. You can now create your storage pool from Storage Manager.
+8.  If Storage Manager is already open close then open it, or refresh the web page. If refreshing the page or restarting Storage Manager is not working, try restarting your Synology NAS.
+9. You can now create your storage pool from Storage Manager.
 
 <br>
 

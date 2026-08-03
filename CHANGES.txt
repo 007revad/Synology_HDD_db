@@ -1,3 +1,67 @@
+v3.6.137
+- Bug fix for the wrong E10M20-T1, M2D20, M2D18 and M2D17 db files getting processed if the main drives were migrated from a different Synology model.
+  - Resulted in NVMe drives in one of the above PCIe cards still showing as Unverified.
+
+v3.6.136
+- Added messages when write mostly options were used but write mostly cannot be set. Issue #602
+   - Message for when the `-S` option is used and there are no internal 2.5 inch SDDs found. 
+   - Message for when the user used `-ssd=nvmeNnN` as NVMe drives do not contain DSM system or swap partitions.
+
+v3.6.135
+- Changed to replace curly/smart quotes (from db files edited in Word or in iOS) before backing up db files to prevent jq errors.
+- Added `/usr/syno/bin` or `/usr/syno/sbin` to the syno... commmands that were missing the full path (for people with a corrupt or edited PATH). Issue #601
+   - The change above also fixes jq errors caused by those commmands not returning anything. Issue #601
+- Bug fix for not detecting script was running from triggered scheduled task.
+
+v3.6.134
+- Bug fix for trying to backup M.2 PCIe card's .db.new when it didn't exist which caused the following error. Issue #599
+  - **cp: cannot stat '': No such file or directory
+  - ERROR 5 Failed to backup !**
+
+v3.6.133
+- Bug fix for not updating db files with each drive's firmware version if drives were previously added to the db files without firmware version from an older script version. Issue #598
+- Bug fix for restore mode not re-enabling drive database updates in DSM 7.3 and later.
+- Bug fix for sometimes not detecting script was running from scheduled task.
+- Bug fix for some errors showing in all red instead of just ERROR being in red.
+
+v3.6.132
+- Bug fix for expansion units that DSM reports with different model names. Issue #574
+  - Adds aliases from each expansion disk's runtime container, such as mapping RX1217-1 to RX1217 when detection reports RX1217RP.
+  - Uses exact model-family matching so RX1217 does not also edit RX1217RP or RX1217SAS database files.
+- Bug fix for trying to backup non-existent file. Issue #574
+- Bug fix for SynoOnlinePack version not found causing an error.
+
+Thanks @tkirkland 
+
+v3.6.131
+- Fix for DSM 7.4 including "rules" db files in the drive db files folder.
+
+v3.6.130
+- Bug fix for Samsung SSDs that have 2.5" in their model name.
+- Bug fix for not removing leading spaces in drive model names (introduced in v3.6.123).
+
+v3.6.129
+- Bug fix for backing up expansion unit db files (introduced in v3.6.126).
+
+v3.6.128
+- Bug fix for trying to backup "*_v7.db.version" instead of "*_v7.version".
+
+v3.6.127
+- Bug fix for trying to backup "*_v7.db.version" instead of "*_v7.version".
+- Bug fix for 6 TB drives having '"size_gb": 6001' in db files instead of '"size_gb": 6000'.
+  - Also replaces any existing '"size_gb": 6001' in db files with '"size_gb": 6000'.
+
+v3.6.126
+- Changed to a more reliable way of getting the NAS model name.
+- Changed to keep db file backups up to date.
+  - If a DSM update, or the user, has updated the drive databases the old db file backups are replaced with new backups of the unedited db files.
+- Bug fix for db files with a space in their name, like "rxd1219sas module_v7.db".
+- Bug fix for restore mode failing to restore E10M20-T1 nic support on NAS models that don't officially support the E10M20-T1.
+- Bug fix for XPE not showing drive's correct temperature. Issue #585
+
+v3.6.125
+- Bug fix for missing lvs and pvs errors for 1 bay NAS (that don't have LVM).
+
 v3.6.124
 - Bug fix for script trying to set write_mostly on SATA M.2 drives. Issue #567
 - Bug fix for script trying to use nvme command to get SATA M.2 drives' vendor id. Issue #567
@@ -441,4 +505,3 @@ v1.0.1
 
 v1.0.0
 - Initial release.
-

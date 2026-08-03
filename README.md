@@ -13,7 +13,7 @@
 
 Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 drives to your Synology's compatible drive databases, including your Synology M.2 PCIe card and Expansion Unit databases. 
 
-The script works in DSM 7, including DSM 7.1, 7.2 and 7.3, and DSM 6.
+The script works in DSM 7, including DSM 7.1, 7.2, 7.3 and 7.4, and DSM 6.
 
 It also has a restore option to undo all the changes made by the script.
 
@@ -186,7 +186,7 @@ You only need to edit syno_hdd_vendor_ids.txt if the script warns you about a mi
 
 If DSM doesn't know the brand of your NVMe drives they will show up in Storage Manager as Unknown brand, and Unrecognised firmware version.
 
-<p align="left"><img src="images/unknown.png"></p>
+<p align="left"><kbd><img src="images/unknown.png"></kbd></p>
 
 In this case the script will show you the vendor ID and advise you to add it to the syno_hdd_vendor_ids.txt file.
 
@@ -195,7 +195,7 @@ In this case the script will show you the vendor ID and advise you to add it to 
 ### Ironwolf Health
 
 Ironwolf Health working with the latest version of Ironwolf Health Monitor.
-<p align="left"><img src="images/ihm.png"></p>
+<p align="left"><kbd><img src="images/ihm.png"></kbd></p>
 
 <br>
 

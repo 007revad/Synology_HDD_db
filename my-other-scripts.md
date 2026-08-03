@@ -1,152 +1,239 @@
-## All my scripts, tools and guides
+## All my scripts, packages, tools and guides
 
 <img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2F007revad.github.io%2F&label=Visitors&icon=github&color=%23198754&message=&style=flat&tz=UTC">
 
 
 #### Contents
+- [Synology Package Source](#synology-package-source)
+- [Speed testing](#speed-testing)
 - [Plex](#plex)
+- [Asustor scripts and packages](#asustor)
 - [Synology docker](#synology-docker)
 - [Synology recovery](#synology-recovery)
-- [Other Synology scripts](#other-synology-scripts)
+- [Other Synology scripts and packages](#other-synology-scripts-and-packages)
 - [Synology hardware restrictions](#synology-hardware-restrictions)
-- [2025 plus models](#2025-plus-models)
+- [Synology 2025 plus models](#synology-2025-plus-models)
 - [How To Guides](#how-to-guides)
 - [Synology dev](#synology-dev)
 
 ***
 
+### Synology Package Source
+
+- **<a href="https://github.com/007revad/Synology_package_source">Synology Package Source</a>**
+  - Synology Package Source adds DSM packages that are available from GitHub to Package Center so users can easily install packages from various GitHub developers and Package Center can update the packages when newer versions are released.
+
+### Speed Testing
+
+- **<a href="https://github.com/007revad/Synology_Ookla_Speedtest">Synology Ookla Speedtest</a>**
+  - Synology DSM 7 package to install Ookla Speedtest and run it in a GUI to test your Internet speed.
+
+- **<a href="https://github.com/007revad/Synology_Open_Speedtest">Synology Open Speedtest</a>**
+  - Synology DSM 7 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
+
+- **<a href="https://github.com/007revad/Synology_Libre_Speedtest">Synology Libre Speedtest</a>**
+  - Synology DSM 7 package to install Libre Speedtest and run it in a GUI to test your LAN speed.
+
+- **<a href="https://github.com/007revad/Asustor_Ookla_Speedtest">Asustor Ookla Speedtest</a>**
+  - Asustor ADM 5 package to install Ookla Speedtest and run it in a GUI to test your internet speed.
+
+- **<a href="https://github.com/007revad/Asustor_Open_Speedtest">Asustor Open Speedtest</a>**
+  - Asustor ADM 5 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
+
+- **<a href="https://github.com/007revad/Asustor_Libre_Speedtest">Asustor LibreSpeed Speedtest</a>**
+  - Asustor ADM 5 package to install LibreSpeed Speedtest and run it in a GUI to test your LAN speed.
+
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
+
 ### Plex
 
-- **<a href="https://github.com/007revad/Synology_Plex_Backup">Synology_Plex_Backup</a>**
+- **<a href="https://github.com/007revad/Synology_Plex_Backup">Synology Plex Backup</a>**
   - A script to backup Plex to a tgz file foror DSM 7 and DSM 6.
   - Works for Plex Synology package and Plex in docker.
 
-- **<a href="https://github.com/007revad/Asustor_Plex_Backup">Asustor_Plex_Backup</a>**
+- **<a href="https://github.com/007revad/Asustor_Plex_Backup">Asustor Plex Backup</a>**
   - Backup your Asustor's Plex Media Server settings and database.
 
-- **<a href="https://github.com/007revad/Linux_Plex_Backup">Linux_Plex_Backup</a>**
+- **<a href="https://github.com/007revad/Linux_Plex_Backup">Linux Plex Backup</a>**
   - Backup your Linux Plex Media Server's settings and database.
 
-- **<a href="https://github.com/007revad/Plex_Server_Sync">Plex_Server_Sync</a>**
+- **<a href="https://github.com/007revad/Plex_Server_Sync">Plex Server Sync</a>**
   - Sync your main Plex server database & metadata to a backup Plex server.
   - Works for Synology, Asustor, Linux and supports Plex package or Plex in docker.
+
+- **<a href="https://github.com/007revad/Transcode_for_x25">Transcode for x25</a>**
+  - Installs the modules needed for Plex or Jellyfin hardware transcoding on Synology DS425+ and DS225+.
+  - Available as a package and a script.
+
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
+
+### Asustor
+
+- **<a href="https://github.com/007revad/Asustor_Ookla_Speedtest">Asustor Ookla Speedtest</a>**
+  - Asustor ADM 5 package to install Ookla Speedtest and run it in a GUI to test your internet speed.
+
+- **<a href="https://github.com/007revad/Asustor_Open_Speedtest">Asustor Open Speedtest</a>**
+  - Asustor ADM 5 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
+
+- **<a href="https://github.com/007revad/Asustor_Libre_Speedtest">Asustor LibreSpeed Speedtest</a>**
+  - Asustor ADM 5 package to install LibreSpeed Speedtest and run it in a GUI to test your LAN speed.
+
+- **<a href="https://github.com/007revad/Asustor_SMART_info">Asustor SMART info</a>**
+  - Show Asustor smart health and attributes. Can also email you when important values change.
+
+- **<a href="https://github.com/007revad/Asustor_Plex_Backup">Asustor Plex Backup</a>**
+  - Backup your Asustor's Plex Media Server settings and database.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
 ### Synology docker
 
-- **<a href="https://github.com/007revad/Synology_Docker_Export">Synology_Docker_export</a>**
+- **<a href="https://github.com/007revad/Synology_Docker_Export">Synology Docker export</a>**
   - Export all Synology Container Manager or Docker containers' settings as json files to your docker shared folder.
 
-- **<a href="https://github.com/007revad/Synology_ContainerManager_IPv6">Synology_ContainerManager_IPv6</a>**
+- **<a href="https://github.com/007revad/Synology_ContainerManager_IPv6">Synology Container Manager IPv6</a>**
   - Enable IPv6 for Container Manager's bridge network.
 
-- **<a href="https://github.com/007revad/ContainerManager_for_all_armv8">ContainerManager_for_all_armv8</a>**
+- **<a href="https://github.com/007revad/ContainerManager_for_all_armv8">Container Manager for all armv8</a>**
   - Script to install Container Manager on a RS819, DS119j, DS418, DS418j, DS218, DS218play or DS118.
  
-- **<a href="https://github.com/007revad/Docker_Autocompose">Docker_Autocompose</a>**
+- **<a href="https://github.com/007revad/Docker_Autocompose">Docker Auto compose</a>**
   - Create .yml files from your docker existing containers.
 
-- **<a href="https://github.com/007revad/Synology_docker_cleanup">Synology_docker_cleanup</a>**
+- **<a href="https://github.com/007revad/Synology_docker_cleanup">Synology docker cleanup</a>**
   - Remove orphan docker btrfs subvolumes and images in Synology DSM 7 and DSM 6.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
 ### Synology recovery
 
-- **<a href="https://github.com/007revad/Synology_DSM_reinstall">Synology_DSM_reinstall</a>**
+- **<a href="https://github.com/007revad/Synology_DSM_reinstall">Synology DSM reinstall</a>**
   - Easily re-install the same DSM version without losing any data or settings.
 
-- **<a href="https://github.com/007revad/Synology_Recover_Data">Synology_Recover_Data</a>**
+- **<a href="https://github.com/007revad/Synology_Recover_Data">Synology Recover Data</a>**
   - A script to make it easy to recover your data from your Synology's drives using a computer.
 
 - **<a href="https://github.com/007revad/Synology_clear_drive_error">Synology clear drive error</a>**
   - Clear drive critical errors so DSM will let you use the drive.
 
-- **<a href="https://github.com/007revad/Synology_DSM_Telnet_Password">Synology_DSM_Telnet_Password</a>**
+- **<a href="https://github.com/007revad/Synology_DSM_Telnet_Password">Synology DSM Telnet Password</a>**
   - Synology DSM Recovery Telnet Password of the Day generator.
 
-- **<a href="https://github.com/007revad/Syno_DSM_Extractor_GUI">Syno_DSM_Extractor_GUI</a>**
+- **<a href="https://github.com/007revad/Syno_DSM_Extractor_GUI">Syno DSM Extractor GUI</a>**
   - Windows GUI for extracting Synology DSM 7 pat files and spk package files.
 
-- **<a href="https://github.com/007revad/Synoboot_backup">Synoboot_backup</a>**
+- **<a href="https://github.com/007revad/Synoboot_backup">Synoboot backup</a>**
   - Back up synoboot after each DSM update so you can recover from a corrupt USBDOM.
  
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
-### Other Synology scripts
+### Other Synology scripts and packages
 
-- **<a href="https://github.com/007revad/Synology_app_mover">Synology_app_mover</a>**
+- **<a href="https://github.com/007revad/Synology_drive_info">Synology Dive Info</a>**
+  - Synology package to show drive device id, DSM drive number, location, model, serial number, health and S.M.A.R.T. values for all drives in all your Synology NAS.
+
+- **<a href="https://github.com/007revad/Syno_Package_Source_Managero">Syno Package Source Manager</a>**
+  - Synology package that allows you to disable and enable community package sources you have added to Package Center. It also allows adding known, working, package sources without having to type and paste anything in Package Center's settings.
+
+- **<a href="https://github.com/007revad/Syno_CPU_Temperature">Syno CPU Temperature</a>**
+  - Synology package to log CPU temperature to help troubleshooting Synology randomly shutting down due to overheating.
+
+- **<a href="https://github.com/007revad/Synology_fix_size_units">Synology fix size units</a>**
+  - Make DSM show the correct TiB, GiB, MiB and KiB IEC labels instead of TB, GB, MB and KB binary labels.
+
+- **<a href="https://github.com/007revad/Check_UPS_Connected">Check UPS Connected</a>**
+  - Script to email you the USP status. Also works for Synology NAS that are UPS clients.
+
+- **<a href="https://github.com/007revad/DSM_Notify">DSM Notify</a>**
+  - Synology package to allow my scheduled scripts to send notifications to DSM 7.
+
+- **<a href="https://github.com/007revad/DSM_Update">DSM Update</a>**
+  - Script to automatically download the correct pat file and update DSM using the downloaded pat file.
+
+- **<a href="https://github.com/007revad/Synology_Ookla_Speedtest">Synology Ookla Speedtest</a>**
+  - Synology DSM 7 package to install Ookla Speedtest and run it in a GUI to test your internet speed.
+
+- **<a href="https://github.com/007revad/Synology_Open_Speedtest">Synology Open Speedtest</a>**
+  - Synology DSM 7 package to install OpenSpeedtest and run it in a GUI to test your LAN speed.
+
+- **<a href="https://github.com/007revad/Synology_Libre_Speedtest">Synology Libre Speedtest</a>**
+  - Synology DSM 7 package to install Libre Speedtest and run it in a GUI to test your LAN speed.
+
+- **<a href="https://github.com/007revad/Synology_app_mover">Synology app mover</a>**
   - Easily move Synology packages from one volume to another volume.
 
-- **<a href="https://github.com/007revad/Video_Station_for_DSM_722">Video_Station_for_DSM_722</a>**
+- **<a href="https://github.com/007revad/Video_Station_for_DSM_722">Video Station for DSM 722</a>**
   - Script to install Video Station in DSM 7.2.2
 
-- **<a href="https://github.com/007revad/SS_Motion_Detection">SS_Motion_Detection</a>**
+- **<a href="https://github.com/007revad/SS_Motion_Detection">SS Motion Detection</a>**
   - Installs previous Surveillance Station and Advanced Media Extensions versions so motion detection and HEVC are supported.
 
-- **<a href="https://github.com/007revad/Synology_Config_Backup">Synology_Config_Backup</a>**
+- **<a href="https://github.com/007revad/Synology_Config_Backup">Synology Config Backup</a>**
   - Backup and export your Synology DSM configuration.
 
-- **<a href="https://github.com/007revad/Synology_CPU_temperature">Synology_CPU_temperature</a>**
+- **<a href="https://github.com/007revad/Synology_CPU_temperature">Synology CPU temperature</a>**
   - Get and log Synology NAS CPU temperature via SSH.
 
-- **<a href="https://github.com/007revad/Synology_SMART_info">Synology_SMART_info</a>**
-  - Show Synology smart test progress or smart health and attributes.
+- **<a href="https://github.com/007revad/Synology_SMART_info">Synology SMART info</a>**
+  - Show Synology smart test progress or smart health and attributes. Can also email you when important values change.
 
-- **<a href="https://github.com/007revad/Synology_Cleanup_Coredumps">Synology_Cleanup_Coredumps</a>**
+- **<a href="https://github.com/007revad/Synology_Cleanup_Coredumps">Synology Cleanup Coredumps</a>**
   - Cleanup memory core dumps from crashed processes.
 
-- **<a href="https://github.com/007revad/Synology_toggle_reset_button">Synology_toggle_reset_button</a>**
+- **<a href="https://github.com/007revad/Synology_toggle_reset_button">Synology toggle reset button</a>**
   - Script to disable or enable the reset button and show current setting.
 
-- **<a href="https://github.com/007revad/Synology_Download_Station_Chrome_Extension">Synology_Download_Station_Chrome_Extension</a>**
+- **<a href="https://github.com/007revad/Synology_Download_Station_Chrome_Extension">Synology Download Station Chrome Extension</a>**
   - Download Station Chrome Extension.
  
-- **<a href="https://github.com/007revad/Seagate_lowCurrentSpinup">Seagate_lowCurrentSpinup</a>**
+- **<a href="https://github.com/007revad/Seagate_lowCurrentSpinup">Seagate low Current Spinup</a>**
   - This script avoids the need to buy and install a higher wattage power supply when using multiple large Seagate SATA HDDs.
  
-- **<a href="https://github.com/007revad/Synology_created_date">Synology_created_date</a>**
+- **<a href="https://github.com/007revad/Synology_created_date">Synology created date</a>**
   - Script to show you the created year and month of your Synology NAS or expansion unit.
+  
+- **<a href="https://github.com/007revad/Restore_RS3621_Fan_Speed">Restore RS3621 Fan Speed</a>**
+  - Script to restore RS3621xs+ and RS3621RPxs Quiet mode and Cool mode fan speeds back to how it was before DSM 7.3.2.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
 ### Synology hardware restrictions
 
-- **<a href="https://github.com/007revad/Synology_HDD_db">Synology_HDD_db</a>**
+- **<a href="https://github.com/007revad/Synology_HDD_db">Synology HDD db</a>**
   - Add your SATA or SAS HDDs and SSDs plus SATA and NVMe M.2 drives to your Synology's compatible drive databases, including your Synology M.2 PCIe card and Expansion Unit databases.
 
-- **<a href="https://github.com/007revad/Synology_enable_M2_volume">Synology_enable_M2_volume</a>**
+- **<a href="https://github.com/007revad/Synology_enable_M2_volume">Synology enable M2 volume</a>**
   - Enable creating volumes with non-Synology M.2 drives.
   - Enable Health Info for non-Synology NVMe drives (not in DSM 7.2.1 or later).
 
-- **<a href="https://github.com/007revad/Synology_M2_volume">Synology_M2_volume</a>**
+- **<a href="https://github.com/007revad/Synology_M2_volume">Synology M2 volume</a>**
   - Easily create an M.2 volume on Synology NAS.
 
-- **<a href="https://github.com/007revad/Synology_enable_M2_card">Synology_enable_M2_card</a>**
+- **<a href="https://github.com/007revad/Synology_enable_M2_card">Synology enable M2 card</a>**
   - Enable Synology M.2 PCIe cards in Synology NAS that don't officially support them.
 
-- **<a href="https://github.com/007revad/Synology_enable_eunit">Synology_enable_eunit</a>**
+- **<a href="https://github.com/007revad/Synology_enable_eunit">Synology enable eunit</a>**
   - Enable an unsupported Synology eSATA Expansion Unit models.
 
-- **<a href="https://github.com/007revad/Synology_enable_Deduplication">Synology_enable_Deduplication</a>**
+- **<a href="https://github.com/007revad/Synology_enable_Deduplication">Synology enable Deduplication</a>**
   - Enable deduplication with non-Synology SSDs and unsupported NAS models.
 
-- **<a href="https://github.com/007revad/Synology_SHR_switch">Synology_SHR_switch</a>**
+- **<a href="https://github.com/007revad/Synology_SHR_switch">Synology SHR switch</a>**
   - Easily switch between SHR and RAID Groups, or enable RAID F1.
 
-- **<a href="https://github.com/007revad/Synology_enable_sequential_IO">Synology_enable_sequential_IO</a>**
+- **<a href="https://github.com/007revad/Synology_enable_sequential_IO">Synology enable sequential IO</a>**
   - Enables sequential I/O for your SSD caches, like DSM 6 had.
 
-- **<a href="https://github.com/007revad/Synology_Information_Wiki">Synology_Information_Wiki</a>**
+- **<a href="https://github.com/007revad/Synology_Information_Wiki">Synology Information Wiki</a>**
   - Information about Synology hardware.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
-### 2025 plus models
+### Synology 2025 plus models
 
-- **<a href="https://github.com/007revad/Transcode_for_x25">Transcode_for_x25</a>**
-  - Installs the modules needed for Plex or Jellyfin hardware transcoding in DS425+ and DS225+.
+- **<a href="https://github.com/007revad/Transcode_for_x25">Transcode for x25</a>**
+  - Installs the modules needed for Plex or Jellyfin hardware transcoding on Synology DS425+ and DS225+.
+  - Available as a package and a script.
 
 - **<a href="https://github.com/007revad/Synology_HDD_db/blob/main/2025_plus_models.md">2025 series or later Plus models</a>**
   - Unverified 3rd party drive limitations and unofficial solutions.
@@ -161,23 +248,23 @@
 
 ### How To Guides
 
-- **<a href="https://github.com/007revad/Synology_SSH_key_setup">Synology_SSH_key_setup</a>**
+- **<a href="https://github.com/007revad/Synology_SSH_key_setup">Synology SSH key setup</a>**
   - How to setup SSH key authentication for your Synology.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
 
 ### Synology dev
 
-- **<a href="https://github.com/007revad/Download_Synology_Archive">Download_Synology_Archive</a>**
+- **<a href="https://github.com/007revad/Download_Synology_Archive">Download Synology Archive</a>**
   - Download all or part of the Synology archive.
 
-- **<a href="https://github.com/007revad/Syno_DSM_Extractor_GUI">Syno_DSM_Extractor_GUI</a>**
+- **<a href="https://github.com/007revad/Syno_DSM_Extractor_GUI">Syno DSM Extractor GUI</a>**
   - Windows GUI for extracting Synology DSM 7 pat files and spk package files.
 
 - **<a href="https://github.com/007revad/ScriptNotify">ScriptNotify</a>**
   - DSM 7 package to allow your scripts to send DSM notifications.
 
-- **<a href="https://github.com/007revad/DTC_GUI_for_Windows">DTC_GUI_for_Windows</a>**
+- **<a href="https://github.com/007revad/DTC_GUI_for_Windows">DTC GUI for Windows</a>**
   - GUI for DTC.exe for Windows.
 
  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Back to Contents](#contents)
