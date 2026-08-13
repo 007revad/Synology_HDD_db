@@ -53,6 +53,18 @@ Also works for 2025 series or later Plus models. See [2025_plus_models.md](https
 * Checks if there is a newer version of this script and offers to download it for you.
   * The new version available messages time out so they don't prevent the script running if it is scheduled to run unattended.
 
+### 2025 plus series and later models
+
+The table below summarizes drive compatibility by product series and drive type for models released in 2025 and later:
+
+**All series (DSM 7.3 or later) with Synology HDD DB:**
+
+| Drive Types | On Compatibility List | Not Listed | On Incompatibility List |
+|---|---|---|---|
+| HDD | ✓ Supported for:<br>• New installation and storage pool creation<br>• Migration from existing Synology systems | ✓ Supported for:<br>• Migration from existing Synology systems<br><br>✓ Supported for:<br>• New installation and storage pool creation<br>• Cache creation | ✓ Supported for:<br>• New installation and storage pool creation<br>• Cache creation<br>• Migration from existing Synology systems |
+| 2.5" SATA/SAS SSD | ✓ Supported for:<br>• New installation and storage pool creation<br>• Cache creation<br>• Migration from existing Synology systems | ✓ Supported for:<br>• Migration from existing Synology systems<br><br>✓ Supported for:<br>• New installation and storage pool creation<br>• Cache creation | ✓ Supported for:<br>• New installation and storage pool creation<br>• Cache creation<br>• Migration from existing Synology systems |
+| M.2 NVMe SSD | ✓ Supported for:<br>• Storage pool creation<br>• Cache creation<br>• Migration from existing Synology systems | ✓ Supported for:<br>• Migration from existing Synology systems<br><br>✓ Supported for:<br>• Storage pool creation<br>• Cache creation | ✓ Supported for:<br>• Storage pool creation<br>• Cache creation<br>• Migration from existing Synology systems |
+
 ### Download the script
 
 1. Download the latest version _Source code (zip)_ from https://github.com/007revad/Synology_HDD_db/releases
@@ -88,10 +100,13 @@ There are optional flags you can use when running the script:
 ```YAML
   -s, --showedits       Show edits made to <model>_host db and db.new file(s)
   -n, --noupdate        Prevent DSM updating the compatible drive databases
+                        Always use this option unless you need to update
+                        firmware on Synology drives
   -r, --ram             Disable memory compatibility checking (DSM 7.x only)
                         and sets max memory to the amount of installed memory
   -f, --force           Force DSM to not check drive compatibility
                         Do not use this option unless absolutely needed
+                        Do not use this option with DSM 7.4
   -i, --incompatible    Change incompatible drives to supported
                         Do not use this option unless absolutely needed
   -w, --wdda            Disable WD Device Analytics to prevent DSM showing
