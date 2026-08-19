@@ -214,6 +214,9 @@
 
 - **<a href="https://github.com/007revad/Synology_enable_eunit">Synology enable eunit</a>**
   - Enable an unsupported Synology eSATA Expansion Unit models.
+ 
+- **<a href="https://github.com/007revad/Synology_AQC_Unlock">Synology AQC Unlock</a>**
+  - DSM 7 package that allows you to use non-Synology 10GbE, 5GbE and 2.5GbE PCIe network cards that have a Marvell (Aquantia) AQC100, AQC107, AQC108, AQC111, AQC112, AQC113/AQC113C and AQC115 chip.
 
 - **<a href="https://github.com/007revad/Synology_enable_Deduplication">Synology enable Deduplication</a>**
   - Enable deduplication with non-Synology SSDs and unsupported NAS models.
