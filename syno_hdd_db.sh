@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.137"
+scriptver="v3.6.138"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -914,7 +914,7 @@ if [[ $restore == "yes" ]]; then
         # Restore writemostly if set
         if [[ $ssd_restore == "yes" ]]; then
             # Get array of internal drives
-            readarray -t internal_drives < <(synodisk --enum -t internal | grep 'Disk path' | cut -d"/" -f3)
+            readarray -t internal_drives < <(/usr/syno/bin/synodisk --enum -t internal | grep 'Disk path' | cut -d"/" -f3)
 
             # Restore all internal drives to just in_sync
             echo -e "\nRestoring internal drive's state"
@@ -1222,7 +1222,7 @@ m2_drive(){
 is_ssd(){ 
     # $1 is sda, sata1 or nvme0
     # Show TRIM warning if SSD or NVMe in RAID 5 or 6
-    if ! synodisk --isssd /dev/"$1" >/dev/null; then
+    if ! /usr/syno/bin/synodisk --isssd /dev/"$1" >/dev/null; then
         # exit code 0 = is not SSD
         # exit code 1 = is SSD
 
@@ -2273,7 +2273,7 @@ done
 
 if [[ $ssd == "yes" ]]; then
     # Get array of internal drives
-    readarray -t internal_drives < <(synodisk --enum -t internal | grep 'Disk path' | cut -d"/" -f3)
+    readarray -t internal_drives < <(/usr/syno/bin/synodisk --enum -t internal | grep 'Disk path' | cut -d"/" -f3)
 
     if [[ $ssd_restore == "yes" ]]; then
         # Restore all internal drives to just in_sync
@@ -2301,7 +2301,7 @@ if [[ $ssd == "yes" ]]; then
         # Get list of internal HDDs and qty of SSDs
         internal_ssd_qty="0"
         for idrive in "${internal_drives[@]}"; do
-            if synodisk --isssd /dev/"${idrive:?}" >/dev/null; then
+            if /usr/syno/bin/synodisk --isssd /dev/"${idrive:?}" >/dev/null; then
                 # exit code 0 = is not SSD
                 # exit code 1 = is SSD
 
