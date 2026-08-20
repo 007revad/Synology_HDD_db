@@ -10,7 +10,7 @@
 # Check running on DSM version that needs it
 # What to do if @database is on the NVMe volume?
 
-scriptver="v1.0.0"
+scriptver="v1.0.1"
 script=Synology_HDD_shutdown
 #repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_shutdown
@@ -34,8 +34,9 @@ if [[ $( whoami ) != "root" ]]; then
 fi
 
 # Get NAS model
-model=$(cat /proc/sys/kernel/syno_hw_version)
+#model=$(cat /proc/sys/kernel/syno_hw_version)
 #modelname="$model"
+model=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/synoinfo.conf upnpmodelname)
 
 
 # Show script version
@@ -43,14 +44,14 @@ model=$(cat /proc/sys/kernel/syno_hw_version)
 echo "$script $scriptver"
 
 # Get DSM full version
-productversion=$(synogetkeyvalue /etc.defaults/VERSION productversion)
-buildphase=$(synogetkeyvalue /etc.defaults/VERSION buildphase)
-buildnumber=$(synogetkeyvalue /etc.defaults/VERSION buildnumber)
-smallfixnumber=$(synogetkeyvalue /etc.defaults/VERSION smallfixnumber)
+productversion=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION productversion)
+buildphase=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION buildphase)
+buildnumber=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION buildnumber)
+smallfixnumber=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION smallfixnumber)
 
 # Get CPU arch and platform_name
 arch="$(uname -m)"
-platform_name=$(synogetkeyvalue /etc.defaults/synoinfo.conf platform_name)
+platform_name=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/synoinfo.conf platform_name)
 
 # Show DSM full version and model
 if [[ $buildphase == GM ]]; then buildphase=""; fi
@@ -68,7 +69,7 @@ else
 fi
 
 # Check Synology has synonvme
-if ! which synonvme >/dev/null; then
+if ! which /usr/syno/bin/synonvme >/dev/null; then
     ding
     echo "${model} does not have synonvme!"
     exit 2  # NAS model does support NVMe
@@ -158,7 +159,7 @@ package_status(){
     # $1 is package name
     [ "$trace" == "yes" ] && echo "${FUNCNAME[0]} called from ${FUNCNAME[1]}"
 #    local code
-    synopkg status "${1}" >/dev/null
+    /usr/syno/bin/synopkg status "${1}" >/dev/null
     code="$?"
     # DSM 7.2       0 = started, 17 = stopped, 255 = not_installed, 150 = broken
     # DSM 6 to 7.1  0 = started,  3 = stopped,   4 = not_installed, 150 = broken
@@ -182,7 +183,7 @@ package_status(){
 package_is_running(){ 
     # $1 is package name
     [ "$trace" == "yes" ] && echo "${FUNCNAME[0]} called from ${FUNCNAME[1]}"
-    synopkg is_onoff "${1}" >/dev/null
+    /usr/syno/bin/synopkg is_onoff "${1}" >/dev/null
     code="$?"
     return "$code"
 }
@@ -217,7 +218,7 @@ package_stop(){
     # $2 is package display name
     [ "$trace" == "yes" ] && echo "${FUNCNAME[0]} called from ${FUNCNAME[1]}"
     # Docker can take 12 minutes to stop 70 containers
-    timeout 30m synopkg stop "$1" >/dev/null &
+    timeout 30m /usr/syno/bin/synopkg stop "$1" >/dev/null &
     pid=$!
     string="Stopping ${2}"
     progbar "$pid" "$string"
@@ -268,8 +269,8 @@ skip_dev_tools(){
     [ "$trace" == "yes" ] && echo "${FUNCNAME[0]} called from ${FUNCNAME[1]}"
     local skip1
     local skip2
-    skip1="$(synogetkeyvalue "/var/packages/${package}/INFO" startable)"
-    skip2="$(synogetkeyvalue "/var/packages/${package}/INFO" ctl_stop)"
+    skip1="$(/usr/syno/bin/synogetkeyvalue "/var/packages/${package}/INFO" startable)"
+    skip2="$(/usr/syno/bin/synogetkeyvalue "/var/packages/${package}/INFO" ctl_stop)"
     if [[ $skip1 == "no" ]] || [[ $skip2 == "no" ]]; then
         return 0
     else
@@ -279,7 +280,7 @@ skip_dev_tools(){
 
 
 # Get list of volumes with shared folders
-readarray -t shares_array < <(synoshare --enum | tail -n +5)
+readarray -t shares_array < <(/usr/syno/sbin/synoshare --enum | tail -n +5)
 for share in "${shares_array[@]}"; do
 
 #echo "share: $share"  # debug ################################################
@@ -287,11 +288,11 @@ for share in "${shares_array[@]}"; do
     if [[ $buildnumber -gt "64570" ]]; then
         # DSM 7.2.1 and later
         # synoshare --get-real-path is case insensitive
-        path="$(synoshare --get-real-path "$share" | cut -d"/" -f2)"
+        path="$(/usr/syno/sbin/synoshare --get-real-path "$share" | cut -d"/" -f2)"
     else
         # DSM 7.2 and earlier
         # synoshare --getmap is case insensitive
-        path="$(synoshare --getmap "$share" | grep volume | cut -d"[" -f2 | cut -d"]" -f1)"
+        path="$(/usr/syno/sbin/synoshare --getmap "$share" | grep volume | cut -d"[" -f2 | cut -d"]" -f1)"
         # I could also have used:
         # web_pkg_path=$(/usr/syno/sbin/synoshare --get "$share" | tr '[]' '\n' | sed -n "9p")
     fi
@@ -368,9 +369,9 @@ while IFS= read -r -d '' link && IFS= read -r -d '' target; do
                 # Check if package is on NVMe volume
                 # shellcheck disable=SC2076
                 if [[ "/${nvme_vols[*]}" =~ "$package_volume" ]]; then
-                    package_name="$(synogetkeyvalue "/var/packages/${package}/INFO" displayname)"
+                    package_name="$(/usr/syno/bin/synogetkeyvalue "/var/packages/${package}/INFO" displayname)"
                     if [[ -z "$package_name" ]]; then
-                        package_name="$(synogetkeyvalue "/var/packages/${package}/INFO" package)"
+                        package_name="$(/usr/syno/bin/synogetkeyvalue "/var/packages/${package}/INFO" package)"
                     fi
 
 #echo "package_name: $package_name"  # debug ###############################

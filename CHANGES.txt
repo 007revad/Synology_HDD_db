@@ -1,3 +1,10 @@
+v3.6.138
+- syno_hdd_db: 
+  - Added `/usr/syno/bin` to 4 synodisk commmands that were missing the full path (for people with a corrupt or edited PATH). Issue #611
+- syno_hdd_shutdown:
+  - Added `/usr/syno/bin` or `/usr/syno/sbin` to the syno... commmands that were missing the full path (for people with a corrupt or edited PATH).
+  - Changed to a more reliable way of getting the NAS model name.
+
 v3.6.137
 - Bug fix for the wrong E10M20-T1, M2D20, M2D18 and M2D17 db files getting processed if the main drives were migrated from a different Synology model.
   - Resulted in NVMe drives in one of the above PCIe cards still showing as Unverified.
