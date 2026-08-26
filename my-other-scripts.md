@@ -25,6 +25,9 @@
 
 ### Speed Testing
 
+- **<a href="https://github.com/007revad/Synology_iperf3_Speedtest">Synology iperf3 Speedtest</a>**
+  - Synology package to run iperf3 to test the network speed between devices and internet speed.
+
 - **<a href="https://github.com/007revad/Synology_Ookla_Speedtest">Synology Ookla Speedtest</a>**
   - Synology DSM 7 package to install Ookla Speedtest and run it in a GUI to test your Internet speed.
 
@@ -149,6 +152,9 @@
 
 - **<a href="https://github.com/007revad/DSM_Update">DSM Update</a>**
   - Script to automatically download the correct pat file and update DSM using the downloaded pat file.
+
+- **<a href="https://github.com/007revad/Synology_iperf3_Speedtest">Synology iperf3 Speedtest</a>**
+  - Synology package to run iperf3 to test the network speed between devices and internet speed.
 
 - **<a href="https://github.com/007revad/Synology_Ookla_Speedtest">Synology Ookla Speedtest</a>**
   - Synology DSM 7 package to install Ookla Speedtest and run it in a GUI to test your internet speed.
