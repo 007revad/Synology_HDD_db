@@ -1,3 +1,7 @@
+v3.6.139
+- Changed to only edit the currnt Synology model's host db files.
+  - Skips old Synology model's db files if the drives were migrated from a different model.
+
 v3.6.138
 - syno_hdd_db: 
   - Added `/usr/syno/bin` to 4 synodisk commmands that were missing the full path (for people with a corrupt or edited PATH). Issue #611

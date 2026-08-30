@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.138"
+scriptver="v3.6.139"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -285,9 +285,19 @@ minor=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION minorversion)
 dsmversion="$major$minor"
 
 # Get Synology model
-#model=$(cat /proc/sys/kernel/syno_hw_version)
-#modelname="$model"
 modelname=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/synoinfo.conf upnpmodelname)
+# Fallback for systems where upnpmodelname is unavailable
+if [[ -z "$modelname" && -f /proc/sys/kernel/syno_hw_version ]]; then
+    modelname=$(cat /proc/sys/kernel/syno_hw_version 2>/dev/null || echo "")
+    # Check for dodgy characters after model number
+    if [[ ${modelname,,} =~ 'pv10-j'$ ]]; then  # GitHub issue #10
+        modelname=${modelname%??????}+              # replace last 6 chars with +
+    elif [[ ${modelname} =~ '-j'$ ]]; then      # GitHub issue #2
+        modelname=${modelname%??}                   # remove last 2 chars
+    fi
+fi
+# Convert model to lower case
+model=${modelname,,}
 
 # Get CPU platform_name
 #platform_name=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/synoinfo.conf platform_name)
@@ -312,21 +322,6 @@ if [[ $smallfixnumber -gt "0" ]]; then smallfix="-$smallfixnumber"; fi
 #echo "$model $arch DSM $productversion-$buildnumber$smallfix $buildphase"
 echo "$modelname $arch DSM $productversion-$buildnumber$smallfix $buildphase"
 
-
-# Convert model to lower case
-#model=${model,,}
-model=${modelname,,}
-
-# Check for dodgy characters after model number
-#if [[ $model =~ 'pv10-j'$ ]]; then  # GitHub issue #10
-#    modelname=${modelname%??????}+  # replace last 6 chars with +
-#    model=${model%??????}+          # replace last 6 chars with +
-#    echo -e "\nUsing model: $model"
-#elif [[ $model =~ '-j'$ ]]; then  # GitHub issue #2
-#    modelname=${modelname%??}     # remove last 2 chars
-#    model=${model%??}             # remove last 2 chars
-#    echo -e "\nUsing model: $model"
-#fi
 
 # Get StorageManager version
 storagemgrver=$(/usr/syno/bin/synopkg version StorageManager)
@@ -1442,8 +1437,13 @@ fi
 # Check databases and add our drives if needed
 
 # Host db files
-readarray -t db1list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db" ! -name "rule_*" | sort)
-readarray -t db2list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db.new" ! -name "rule_*" | sort)
+if [[ -n "$model" ]]; then
+    readarray -t db1list < <(find "$dbpath" -maxdepth 1 -name "${model}_host*.db" ! -name "rule_*" | sort)
+    readarray -t db2list < <(find "$dbpath" -maxdepth 1 -name "${model}_host*.db.new" ! -name "rule_*" | sort)
+else
+    readarray -t db1list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db" ! -name "rule_*" | sort)
+    readarray -t db2list < <(find "$dbpath" -maxdepth 1 -name "*_host*.db.new" ! -name "rule_*" | sort)
+fi
 
 find_eunit_db_files(){ 
     # Match an exact expansion-unit model family while allowing Synology's
