@@ -291,9 +291,9 @@ if [[ -z "$modelname" && -f /proc/sys/kernel/syno_hw_version ]]; then
     modelname=$(cat /proc/sys/kernel/syno_hw_version 2>/dev/null || echo "")
     # Check for dodgy characters after model number
     if [[ ${modelname,,} =~ 'pv10-j'$ ]]; then  # GitHub issue #10
-        modelname=${modelname%??????}+              # replace last 6 chars with +
+        modelname=${modelname%??????}+          # replace last 6 chars with +
     elif [[ ${modelname} =~ '-j'$ ]]; then      # GitHub issue #2
-        modelname=${modelname%??}                   # remove last 2 chars
+        modelname=${modelname%??}               # remove last 2 chars
     fi
 fi
 # Convert model to lower case
