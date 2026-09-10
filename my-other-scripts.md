@@ -135,6 +135,9 @@
 - **<a href="https://github.com/007revad/Synology_drive_info">Synology Dive Info</a>**
   - Synology package to show drive device id, DSM drive number, location, model, serial number, health and S.M.A.R.T. values for all drives in all your Synology NAS.
 
+- **<a href="https://github.com/007revad/Syno_Toolbox">Syno Toolbox</a>**
+  - Synology package containing many 007revad scripts that are too small to have their own package, as well as new ones that were never released as a script.
+
 - **<a href="https://github.com/007revad/Syno_Package_Source_Manager">Syno Package Source Manager</a>**
   - Synology package that allows you to disable and enable community package sources you have added to Package Center. It also allows adding known, working, package sources without having to type and paste anything in Package Center's settings.
 
