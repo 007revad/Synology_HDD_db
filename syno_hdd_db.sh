@@ -2372,7 +2372,7 @@ settingbak="$(/usr/syno/bin/synogetkeyvalue $synoinfo.bak $smc)"
 if [[ -z $settingbak || -z $setting ]]; then
     # For older models that don't use "support_memory_compatibility"
     memcheck="/usr/lib/systemd/system/SynoMemCheck.service"
-    memcheck_value="$(/usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart)"
+    memcheck_value="$(/usr/syno/bin/synogetkeyvalue "$memcheck" ExecStart)"
     if [[ $ram == "yes" ]]; then
         if [[ $memcheck_value == "/usr/syno/bin/syno_mem_check" ]]; then
             # Disable SynoMemCheck.service
