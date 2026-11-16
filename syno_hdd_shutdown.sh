@@ -10,7 +10,7 @@
 # Check running on DSM version that needs it
 # What to do if @database is on the NVMe volume?
 
-scriptver="v1.0.1"
+scriptver="v3.7.140"
 script=Synology_HDD_shutdown
 #repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_shutdown

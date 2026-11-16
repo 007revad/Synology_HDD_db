@@ -1,7 +1,7 @@
 v3.7.140
 - Added NVMe volumes' package startup code to syno_hdd_db.sh to automatically start packages stopped by syno_hdd_shutdown.sh once the NVMe volume is available.
 - Added code to automatically reboot a 2nd time after a DSM major, minor or micro update if syno_hdd_db, with the --reboot option, is running from a boot-up scheduled task.
-- Improvements and bug fixes in syno_hdd_shutdown.sh
+- Improvements and bug fixes in syno_hdd_shutdown.sh, and changed it's version number to match syno_hdd_db.sh
 - Improved restore mode.
 - Improved backup handling.
 - Changed to only replace model.dtb and show "You may need to reboot..." if model.dtb was changed.
