@@ -1,3 +1,28 @@
+v3.7.140
+- Added NVMe volumes' package startup code to syno_hdd_db.sh to automatically start packages stopped by syno_hdd_shutdown.sh once the NVMe volume is available.
+- Added code to automatically reboot a 2nd time after a DSM major, minor or micro update if syno_hdd_db, with the --reboot option, is running from a boot-up scheduled task.
+- Improvements and bug fixes in syno_hdd_shutdown.sh
+- Improved restore mode.
+- Improved backup handling.
+- Changed to only replace model.dtb and show "You may need to reboot..." if model.dtb was changed.
+- Changed to show an error message if compiling model.dtb failed.
+- Fix for when user has previously manually edited db files in iOS or Word. Issue #591
+- Bug fix for json_object_from_file errors on the first run after previously using -f or --force in DSM 7.4 or later.
+- Bug fixes for disable memory compatibility warnings. Issue #621
+- Bug fix for not turning off red color after "ERROR syno_hdd_vendor_ids.txt not found!".
+- Bug fixes for unable to create SSD cache in DSM 7.4 and later. Issue #626
+
+v3.6.139
+- Changed to only edit the current Synology model's host db files.
+  - Skips old Synology model's db files if the drives were migrated from a different model.
+
+v3.6.138
+- syno_hdd_db: 
+  - Added `/usr/syno/bin` to 4 synodisk commmands that were missing the full path (for people with a corrupt or edited PATH). Issue #611
+- syno_hdd_shutdown:
+  - Added `/usr/syno/bin` or `/usr/syno/sbin` to the syno... commmands that were missing the full path (for people with a corrupt or edited PATH).
+  - Changed to a more reliable way of getting the NAS model name.
+
 v3.6.137
 - Bug fix for the wrong E10M20-T1, M2D20, M2D18 and M2D17 db files getting processed if the main drives were migrated from a different Synology model.
   - Resulted in NVMe drives in one of the above PCIe cards still showing as Unverified.
@@ -156,7 +181,7 @@ v3.5.98
 - Improved output to make it clear which drive(s) have most_writely set.
 
 v3.5.97
-- Changed silently skip empty .db.new files with showing an error. Issue #175
+- Changed silently skip empty .db.new files without showing an error. Issue #175
 - Changed to warn if db file is 0 bytes.
 
 v3.5.96
