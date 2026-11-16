@@ -29,7 +29,7 @@
 # /var/packages/StorageManager/target/ui/storage_panel.js
 
 
-scriptver="v3.6.139"
+scriptver="v3.7.140"
 script=Synology_HDD_db
 repo="007revad/Synology_HDD_db"
 scriptname=syno_hdd_db
@@ -50,7 +50,7 @@ if ! /usr/bin/uname -a | grep -q -i synology; then
 fi
 
 ding(){ 
-    printf \\a
+    [[ -t 1 ]] && printf \\a
 }
 
 usage(){ 
@@ -94,6 +94,7 @@ Options:
                         Only works if script is running from a boot-up schedule
                         Only needed if NVMe volume or PCIe card need a 2nd
                         reboot after DSM update
+                        --reboot is ignored unless running by a Boot-up task
   -h, --help            Show this help message
   -v, --version         Show the script version
 
@@ -234,44 +235,74 @@ fi
 
 
 # Shell Colors
-if [[ $color != "no" ]]; then
-    #Black='\e[0;30m'   # ${Black}
-    Red='\e[0;31m'      # ${Red}
-    #Green='\e[0;32m'   # ${Green}
-    Yellow='\e[0;33m'   # ${Yellow}
-    #Blue='\e[0;34m'    # ${Blue}
-    #Purple='\e[0;35m'  # ${Purple}
-    Cyan='\e[0;36m'     # ${Cyan}
-    #White='\e[0;37m'   # ${White}
-    Error='\e[41m'      # ${Error}
-    Warn='\e[47;31m'    # ${Warn}
-    Off='\e[0m'         # ${Off}
-else
-    echo ""  # For task scheduler email readability
-fi
+set_shell_colors(){ 
+    if [[ $color != "no" ]]; then
+        #Black='\e[0;30m'   # ${Black}
+        Red='\e[0;31m'      # ${Red}
+        #Green='\e[0;32m'   # ${Green}
+        Yellow='\e[0;33m'   # ${Yellow}
+        #Blue='\e[0;34m'    # ${Blue}
+        #Purple='\e[0;35m'  # ${Purple}
+        Cyan='\e[0;36m'     # ${Cyan}
+        #White='\e[0;37m'   # ${White}
+        Error='\e[41m'      # ${Error}
+        Warn='\e[47;31m'    # ${Warn}
+        Off='\e[0m'         # ${Off}
+    else
+        echo ""  # For task scheduler email readability
+        #Black=""
+        Red=""
+        #Green=""
+        Yellow=""
+        #Blue=""
+        #Purple=""
+        Cyan=""
+        #White=""
+        Error=""
+        Warn=""
+        Off=""
+    fi
+}
+
+set_shell_colors
 
 
 # Check script is running as root
 if [[ $( whoami ) != "root" ]]; then
     ding
-    echo -e "${Error}ERROR${Off} This script must be run as sudo or root!"
+    #echo -e "${Error}ERROR${Off} This script must be run as sudo or root!"
+    echo -e "ERROR This script must be run as sudo or root!"
     exit 1
 fi
 
 
 detect_scheduler(){ 
-    # SYNO.Core.TaskS is regular scheduled task
-    # SYNO.Core.Event is triggered scheduled task
-    local pid=$PPID
-    local comm
+    # Sets scheduler_type to: shutdown | bootup | manual | timed | triggered | cron
+    # SYNO.Core.TaskS is manually run scheduled task
+    # synoschedtask is scheduled task run on a time schedule
+    # SYNO.Core.Event is triggered scheduled task (boot-up, shutdown) run manually
+    # esynoscheduler is triggered scheduled task (boot-up, shutdown) run at shutdown or boot-up
+    local pid=$PPID comm cmdline
+    scheduler_type=""
     while [[ "$pid" != "1" && -n "$pid" ]]; do
         comm=$(ps -p "$pid" -o comm=)
-        [[ "$comm" =~ (SYNO.Core.TaskS|SYNO.Core.Event|crond) ]] && return 0
+        cmdline=$(tr '\0' ' ' < /proc/"$pid"/cmdline 2>/dev/null)
+        if [[ $comm == "esynoscheduler" && $cmdline == *"event=shutdown"* ]]; then
+            scheduler_type="shutdown"; return 0
+        elif [[ $comm == "esynoscheduler" && $cmdline == *"event=bootup"* ]]; then
+            scheduler_type="bootup"; return 0
+        else
+            case "$comm" in
+                SYNO.Core.TaskS)  scheduler_type="manual"; return 0 ;;
+                synoschedtask)    scheduler_type="timed"; return 0 ;;
+                SYNO.Core.Event)  scheduler_type="triggered"; return 0 ;;  # Manually run bootup/shutdown schedule
+                crond)            scheduler_type="cron"; return 0 ;;
+            esac
+        fi
         pid=$(ps -p "$pid" -o ppid= | tr -d ' ')
     done
     return 1
 }
-
 
 # Get DSM major version
 dsm=$(/usr/syno/bin/synogetkeyvalue /etc.defaults/VERSION majorversion)
@@ -355,18 +386,27 @@ fi
 if [[ -f "/var/lib/disk-compatibility/${model}_host_v7.version" ]]; then
     echo -n "- ${model}_host_v7 version "
     cat "/var/lib/disk-compatibility/${model}_host_v7.version"
-    #echo -e "\n"
+    echo -e "\n"
 fi
 if [[ -f "/var/lib/disk-compatibility/${model}_host.version" ]]; then
     echo -n "- ${model}_host version "
     cat "/var/lib/disk-compatibility/${model}_host.version"
-    #echo -e "\n"
+    echo -e "\n"
 fi
 
 
 # Show options used
 if [[ ${#args[@]} -gt "0" ]]; then
-    echo "Using options: ${args[*]}"
+    echo "- Using options: ${args[*]}"
+fi
+
+if [[ $dsmversion -ge "74" ]]; then
+    if [[ "${args[*]}" =~ "--force" ]]; then
+        echo "- Ignoring option --force because DSM is 7.4 or later"    
+    elif [[ "${args[*]}" =~ "-f" ]]; then
+        echo "- Ignoring option -f because DSM is 7.4 or later"    
+    fi
+    force=""
 fi
 
 #echo ""  # To keep output readable
@@ -374,14 +414,25 @@ fi
 
 # Check if script is running in an interactive shell or from schedule
 if [[ -t 1 ]]; then  # Running in terminal
-    echo -e "- Running in an interactive shell (user terminal).\n"
+    echo "- Running in an interactive shell (user terminal)"
 else
     # Check if running via task scheduler
     if detect_scheduler; then
         sch_task="yes"
         color="no"
+        set_shell_colors
     fi
-    echo -e "- Running from a scheduled task.\n"
+    if [[ $sch_task == "yes" && $scheduler_type == "triggered" ]]; then
+        echo "- Running from a manually run boot-up or shutdown scheduled task"
+    elif [[ $sch_task == "yes" && -z $scheduler_type ]]; then
+        echo "- Running from an unknown type scheduled task"
+    elif [[ $sch_task == "yes" ]]; then
+        echo "- Running from a $scheduler_type scheduled task"
+    fi
+
+    if [[ $sch_task == "yes" && $scheduler_type != "bootup" && $scheduler_type != "triggered" ]]; then
+        echo "- WARNING: Create a Triggered (Boot-up) task so the changes are reapplied after a DSM update."
+    fi
 fi
 
 
@@ -442,7 +493,7 @@ while [ -L "$source" ]; do # Resolve $source until the file is no longer a symli
 done
 scriptpath=$( cd -P "$( dirname "$source" )" >/dev/null 2>&1 && pwd )
 scriptfile=$( basename -- "$source" )
-echo "Running from: ${scriptpath}/$scriptfile"
+echo "- Running from: ${scriptpath}/$scriptfile"
 
 #echo "Script location: $scriptpath"  # debug
 #echo "Source: $source"               # debug
@@ -623,16 +674,6 @@ if ! printf "%s\n%s\n" "$tag" "$scriptver" |
 fi
 
 
-# Show if running in shell or via task scheduler
-if detect_scheduler; then
-    echo "Running via task scheduler"
-    sch_task="yes"
-else
-    echo "Running in interactive shell"
-    sch_task=""
-fi
-
-
 # Warn if script located on M.2 drive
 get_script_vol() {
     local script_root vol_num vg_name
@@ -683,6 +724,7 @@ adapter_cards="/usr/syno/etc.defaults/adapter_cards.conf"
 adapter_cards2="/usr/syno/etc/adapter_cards.conf"
 dbpath=/var/lib/disk-compatibility/
 synoinfo="/etc.defaults/synoinfo.conf"
+synoinfo2="/etc/synoinfo.conf"
 
 if [[ $buildnumber -gt 64570 ]]; then
     # DSM 7.2.1 and later
@@ -752,8 +794,20 @@ set_writemostly(){
 #------------------------------------------------------------------------------
 # Restore changes from backups
 
+dec_version(){
+    local f="$1" v
+    v="$(<"$f")"
+    if [[ $v =~ ^[0-9]+$ && $((10#$v)) -gt 0 ]]; then
+        printf '%s' "$((10#$v - 1))" > "$f"
+        [[ "$(<"$f")" == "$((10#$v - 1))" ]]
+    else
+        return 1
+    fi
+}
+
 if [[ $restore == "yes" ]]; then
-    readarray -t dbbakfiles < <(find "$dbpath" -maxdepth 1 \( -name "*.db.new.bak" -o -name "*.db.bak" \) ! -name "rule_*" | sort)
+    restoreerr=0
+    readarray -t dbbakfiles < <(find "$dbpath" -maxdepth 1 \( -name "*.db.new.bakdb" -o -name "*.db.bakdb" \) ! -name "rule_*" | sort)
 
     echo ""
     if [[ ${#dbbakfiles[@]} -gt "0" || -f ${synoinfo}.bak ||\
@@ -770,25 +824,44 @@ if [[ $restore == "yes" ]]; then
                     if /usr/syno/bin/synosetkeyvalue "$synoinfo" "${keyvalues[v]}" "$defaultval";
                     then
                         echo "Restored ${keyvalues[v]} = $defaultval"
+                    else
+                        restoreerr=$((restoreerr +1))
+                        echo -e "${Error}ERROR${Off} Failed to restore ${keyvalues[v]} = $defaultval"
                     fi
                 fi
             done
+        fi
+
+        # Restore support_m2_pool in /etc/synoinfo.conf from backup
+        if [[ -f ${synoinfo}.bak ]]; then
+            defaultval="$(/usr/syno/bin/synogetkeyvalue ${synoinfo}.bak support_m2_pool)"
+            currentval="$(/usr/syno/bin/synogetkeyvalue ${synoinfo2} support_m2_pool)"
+            if [[ $currentval != "$defaultval" ]]; then
+                if /usr/syno/bin/synosetkeyvalue "$synoinfo2" support_m2_pool "$defaultval"; then
+                    echo "Restored support_m2_pool = $defaultval in $synoinfo2"
+                else
+                    restoreerr=$((restoreerr +1))
+                    echo -e "${Error}ERROR${Off} Failed to restore support_m2_pool = $defaultval in $synoinfo2"
+                fi
+            fi
         fi
 
         # Delete "drive_db_test_url=127.0.0.1" line (and line break) from synoinfo.conf
         sed -i "/drive_db_test_url=*/d" "$synoinfo"
         sed -i "/drive_db_test_url=*/d" /etc/synoinfo.conf
 
-        # Restore SynoOnlinePack version
+        # Get SynoOnlinePack INFO path if it exists
+        if [[ -f /var/packages/SynoOnlinePack_v3/INFO ]]; then
+            SOPinfo="/var/packages/SynoOnlinePack_v3/INFO"
+        elif [[ -f /var/packages/SynoOnlinePack_v2/INFO ]]; then
+            SOPinfo="/var/packages/SynoOnlinePack_v2/INFO"
+        else
+            SOPinfo="/var/packages/SynoOnlinePack/INFO"
+        fi
+
+        # Restore SynoOnlinePack version previously edited because 
         if [[ $dsmversion -ge "73" ]]; then
             # Is DSM 7.3 or later
-            if [[ -f /var/packages/SynoOnlinePack_v3/INFO ]]; then
-                SOPinfo="/var/packages/SynoOnlinePack_v3/INFO"
-            elif [[ -f /var/packages/SynoOnlinePack_v2/INFO ]]; then
-                SOPinfo="/var/packages/SynoOnlinePack_v2/INFO"
-            else
-                SOPinfo="/var/packages/SynoOnlinePack/INFO"
-            fi
             SOPpkgver="$(/usr/syno/bin/synogetkeyvalue $SOPinfo version)"
 
             # Re-enable drive db updates
@@ -801,10 +874,24 @@ if [[ $restore == "yes" ]]; then
                 if [[ ${SOPpkgver2:0:4} != "9999" ]]; then
                     echo -e "Re-enabled drive db auto updates."
                 else
+                    restoreerr=$((restoreerr +1))
                     echo -e "${Error}ERROR${Off} Failed to enable drive db auto updates!"
                 fi
             else
                 echo -e "Drive db auto updates already enabled."
+            fi
+        fi
+
+        # Update to latest drive databases from Synology
+        if [[ $dsmversion -ge "72" ]]; then
+            # Is DSM 7.2 or later
+            SOPpkgver="$(/usr/syno/bin/synogetkeyvalue "$SOPinfo" version)"
+            # Decrease the version so DSM sees a newer drive db is available
+            if [[ $SOPpkgver =~ ^[0-9]+$ && $((10#$SOPpkgver)) -gt 0 ]]; then
+                /usr/syno/bin/synosetkeyvalue "$SOPinfo" version "$((10#$SOPpkgver - 1))"
+            else
+                restoreerr=$((restoreerr +1))
+                echo -e "${Error}ERROR${Off} Unexpected SynoOnlinePack version: $SOPpkgver"
             fi
         fi
 
@@ -814,14 +901,14 @@ if [[ $restore == "yes" ]]; then
             if cp -p "${adapter_cards}.bak" "${adapter_cards}"; then
                 echo "Restored ${adapter_cards}"
             else
-                restoreerr=1
+                restoreerr=$((restoreerr +1))
                 echo -e "${Error}ERROR${Off} Failed to restore ${adapter_cards}!\n"
             fi
             # /usr/syno/etc/adapter_cards.conf
             if cp -p "${adapter_cards}.bak" "${adapter_cards2}"; then
                 echo -e "Restored ${adapter_cards2}"
             else
-                restoreerr=1
+                restoreerr=$((restoreerr +1))
                 echo -e "${Error}ERROR${Off} Failed to restore ${adapter_cards2}!\n"
             fi
 
@@ -837,14 +924,14 @@ if [[ $restore == "yes" ]]; then
             if cp -p "${dtb_file}.bak" "${dtb_file}"; then
                 echo "Restored ${dtb_file}"
             else
-                restoreerr=1
+                restoreerr=$((restoreerr +1))
                 echo -e "${Error}ERROR${Off} Failed to restore ${dtb_file}!\n"
             fi
             # Restore /etc/model.dtb from /etc.default/model.dtb
             if cp -p "${dtb_file}.bak" "${dtb2_file}"; then
                 echo -e "Restored ${dtb2_file}"
             else
-                restoreerr=1
+                restoreerr=$((restoreerr +1))
                 echo -e "${Error}ERROR${Off} Failed to restore ${dtb2_file}!\n"
             fi
         fi
@@ -861,26 +948,26 @@ if [[ $restore == "yes" ]]; then
             if cp -p "${strgmgr}.$strgmgrver" "$strgmgr"; then
                 echo "Restored $(basename -- "$strgmgr")"
             else
-                restoreerr=1
+                restoreerr=$((restoreerr +1))
                 echo -e "${Error}ERROR${Off} Failed to restore $(basename -- "$strgmgr")!\n"
             fi
         else
             echo "No backup of $(basename -- "$strgmgr") found."
         fi
 
+        # Restore .db files from .bakdb backups
         echo ""
-        # Restore .db files from backups
         for f in "${!dbbakfiles[@]}"; do
-            replaceme="${dbbakfiles[f]%.bak}"  # Remove .bak
+            replaceme="${dbbakfiles[f]%.bakdb}"  # Remove .bakdb
             if cp -p "${dbbakfiles[f]}" "$replaceme"; then
                 echo "Restored $(basename -- "$replaceme")"
             else
-                restoreerr=1
+                restoreerr=$((restoreerr +1))
                 echo -e "${Error}ERROR${Off} Failed to restore $(basename -- "$replaceme")!\n"
             fi
         done
 
-        # Delete any .dbr and .db.newr files left by previous script versions
+        # Delete any .dbr, .db.newr and .bakver files left by previous script versions
         for f in "${dbpath}"*dbr; do
             if [[ -f $f ]]; then
                 rm "$f" >/dev/null
@@ -891,19 +978,83 @@ if [[ $restore == "yes" ]]; then
                 rm "$f" >/dev/null
             fi
         done
+        for f in "${dbpath}"*bakver; do
+            if [[ -f $f ]]; then
+                rm "$f" >/dev/null
+            fi
+        done
 
         # Update .db files from Synology
         echo -e "\nUpdating .db files from Synology"
-        /usr/syno/bin/syno_disk_db_update --update
+
+        if [[ $dsmversion -lt "72" ]]; then
+            verfile7="${dbpath}${model}_host_v7.version"
+            [[ -f $verfile7 ]] && origver7="$(<"$verfile7")"
+            verfile6="${dbpath}${model}_host.version"
+            [[ -f $verfile6 ]] && origver6="$(<"$verfile6")"
+            for f in "${dbpath}"*.version; do
+                if [[ ! "$(basename "$f")" =~ rule ]]; then
+                    [[ -f $f ]] || continue
+                    dec_version "$f" || {
+                        restoreerr=$((restoreerr + 1))
+                        echo -e "${Error}ERROR${Off} Failed to lower $(basename -- "$f")"
+                    }
+                fi
+            done
+        fi
+
+        timeout -k 5 60 /usr/syno/bin/syno_disk_db_update --update
+        rc=$?
+
+        if [[ $dsmversion -ge "72" ]]; then
+            # Is DSM 7.2 or later
+            newver="$(/usr/syno/bin/synogetkeyvalue "$SOPinfo" version)"
+            if [[ $newver =~ ^[0-9]+$ && $((10#$newver)) -ge $((10#$SOPpkgver)) ]]; then
+                echo "Updated .db files from Synology"
+            else
+                restoreerr=$((restoreerr + 1))
+                echo -e "${Error}ERROR${Off} Drive database update failed or timed out (exit $rc)"
+            fi
+        else
+            hostokay=0
+            mayberestoreerr=0
+
+            if [[ -f $verfile7 ]]; then
+                newver="$(<"$verfile7")"
+                if [[ $newver =~ ^[0-9]+$ && $((10#$newver)) -ge $((10#$origver7)) ]]; then
+                    echo "Updated v7.db files from Synology"
+                    hostokay=$((hostokay + 1))
+                fi
+            else
+                mayberestoreerr=$((mayberestoreerr + 1))
+            fi
+
+            if [[ -f $verfile6 ]]; then
+                newver="$(<"$verfile6")"
+                if [[ $newver =~ ^[0-9]+$ && $((10#$newver)) -ge $((10#$origver6)) ]]; then
+                    echo "Updated .db files from Synology"
+                    hostokay=$((hostokay + 1))
+                fi
+            else
+                mayberestoreerr=$((mayberestoreerr + 1))
+            fi
+
+            if [[ "$mayberestoreerr" -eq 2 ]]; then
+                restoreerr=$((restoreerr + 1))
+                echo -e "${Error}ERROR${Off} No ${model}_host_v7.version or ${model}_host.version to check the update"
+                echo -e "${Error}ERROR${Off} Could not verify the drive database restored (exit $rc)"
+            elif [[ ! "$hostokay" -gt 0 ]]; then
+                restoreerr=$((restoreerr + 1))
+                rc_show=""
+                [[ $rc -gt 0 ]] && rc_show="(exit $rc)"
+                echo -e "${Error}ERROR${Off} Drive database restore failed or timed out $rc_show"
+            fi
+        fi
 
         # Enable SynoMemCheck.service if disabled
         memcheck="/usr/lib/systemd/system/SynoMemCheck.service"
         if [[ $(/usr/syno/bin/synogetkeyvalue "$memcheck" ExecStart) == "/bin/true" ]]; then
             /usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart /usr/syno/bin/syno_mem_check
-        fi
-
-        if [[ -z $restoreerr ]]; then
-            echo -e "\nRestore successful."
         fi
 
         # Restore writemostly if set
@@ -934,10 +1085,18 @@ if [[ $restore == "yes" ]]; then
             done
         fi
 
+        if [[ "$restoreerr" == 0 ]]; then
+            echo -e "\nRestore successful."
+            exit 0
+        else
+            echo -e "\nRestore had $restoreerr errors"
+            exit 1
+        fi
+
     else
         echo "Nothing to restore."
     fi
-    exit
+    exit 0
 fi
 
 
@@ -986,7 +1145,7 @@ vendor_from_id(){
                     echo "$vidlist" >&2
                 fi
             else
-                echo -e "\n${Error}ERROR${OFF} $vidlist not found!" >&2
+                echo -e "\n${Error}ERROR${Off} $vidlist not found!" >&2
             fi
         ;;
     esac
@@ -1521,9 +1680,18 @@ sanitize_smart_quotes(){
 }
 
 
+db_is_unedited(){ 
+    local ver t1 t2
+    ver="${1%.new}"; ver="${ver%.db}.version"
+    [[ -f $1 && -f $ver ]] || return 1
+    t1=$(stat -c %Y "$1"); t2=$(stat -c %Y "$ver")
+    (( t1 - t2 <= 2 && t2 - t1 <= 2 ))
+}
+
+
 backupdb(){ 
     # Backup database file if needed
-    local bakversion newversion fname
+    local fname
     [[ -z "$1" || ! -f "$1" ]] && return 1  # Don't try to backup non-existent files
     if [[ $2 == "long" ]]; then
         fname="$1"
@@ -1537,45 +1705,28 @@ backupdb(){
         sanitize_smart_quotes "$1"
     fi
 
-    if [[ ! -f "$1.bak" ]]; then
-        # No existing backup
+    if [[ "$1" =~ \.db$ ]]; then
+        # No existing .bakdb backup of unedited db file
+        if db_is_unedited "$1"; then
+            if cp -p "$1" "$1.bakdb"; then
+                echo -e "Backed up ${fname}" >&2
+            else
+                echo -e "${Error}ERROR 5${Off} Failed to backup ${fname}!" >&2
+                return 1
+            fi
+        fi
+    elif [[ "$1" =~ \.db\.new$ ]]; then
+        :  # Replaced by syno_disk_db_update, no backup needed
+    elif [[ ! -f "$1.bak" ]]; then
+        # No existing backup of non-db files
         if [[ $(basename "$1") == "synoinfo.conf" ]]; then
             echo "" >&2  # Formatting for stdout
         fi
         if cp -p "$1" "$1.bak"; then
             echo -e "Backed up ${fname}" >&2
-            if [[ "${1##*.}" == "db" ]]; then
-                # Backup db version file as well
-                if [[ -f "${1%.db}.version" ]]; then
-                    cp -p "${1%.db}.version" "${1%.db}.bakver"
-                fi
-            fi
         else
             echo -e "${Error}ERROR 5${Off} Failed to backup ${fname}!" >&2
             return 1
-        fi
-    elif [[ "${1##*.}" == "db" ]]; then
-        # Only .db files have version files
-        if [[ ! -f "${1%.db}.bakver" ]]; then
-            # Existing backup has no .bakver file, create one
-            if [[ -f "${1%.db}.version" ]]; then
-                cp -p "${1%.db}.version" "${1%.db}.bakver"
-            fi
-        fi
-        bakversion=$(cat "${1%.db}.bakver" 2>/dev/null)
-        newversion=$(cat "${1%.db}.version" 2>/dev/null)
-        if [[ "$newversion" -gt "$bakversion" ]]; then
-            # Newer version db files have been installed
-            if cp -p "$1" "$1.bak"; then
-                echo -e "Backed up ${fname}" >&2
-                # Update db version backup as well
-                if [[ -f "${1%.db}.version" ]]; then
-                    cp -p "${1%.db}.version" "${1%.db}.bakver"
-                fi
-            else
-                echo -e "${Error}ERROR 5${Off} Failed to backup ${fname}!" >&2
-                return 1
-            fi
         fi
     fi
 
@@ -1997,6 +2148,7 @@ enable_card(){
                 /usr/syno/bin/set_section_key_value "$adapter_cards2" "$2" "$modelrplowercase" yes
                 echo -e "Enabled ${Yellow}$3${Off} for ${Cyan}$modelname${Off}" >&2
                 rebootmsg=yes  # Show reboot message at end
+                reboot_needed="yes"  # Reboot once if --reboot option used and DSM build has updated
             else
                 echo -e "${Error}ERROR 9${Off} Failed to enable $3 for ${modelname}!" >&2
             fi
@@ -2216,19 +2368,25 @@ edit_modeldtb(){
                 if ! grep -q "$c" "$dtb_file"; then
                     dts_m2_card "$c" "$dts_file"
                     echo -e "Added ${Yellow}$c${Off} to ${Cyan}model${hwrev}.dtb${Off}" >&2
+
+                    # Compile model.dts to model.dtb
+                    if dtc -q -I dts -O dtb -o "$dtb_file" "$dts_file"; then  # -q Suppress warnings
+                        # Set owner and permissions for model.dtb
+                        chmod a+r "$dtb_file"
+                        chown root:root "$dtb_file"
+                        cp -pu "$dtb_file" "$dtb2_file"  # Copy dtb file to /etc
+
+                        rebootmsg=yes  # Show reboot message at end
+                        reboot_needed="yes"  # Reboot once if --reboot option used and DSM build has updated
+                    else
+                        echo -e "${Error}ERROR${Off} Failed to compile model.dtb!" >&2
+                        # Restore /etc.defaults/model.dtb from backup
+                        [[ -f ${dtb_file}.bak ]] && cp -p "${dtb_file}.bak" "$dtb_file"
+                    fi
                 else
                     echo -e "${Yellow}$c${Off} already exists in ${Cyan}model${hwrev}.dtb${Off}" >&2
                 fi
             done
-
-            # Compile model.dts to model.dtb
-            dtc -q -I dts -O dtb -o "$dtb_file" "$dts_file"  # -q Suppress warnings
-
-            # Set owner and permissions for model.dtb
-            chmod a+r "$dtb_file"
-            chown root:root "$dtb_file"
-            cp -pu "$dtb_file" "$dtb2_file"  # Copy dtb file to /etc
-            rebootmsg=yes  # Show reboot message at end
         else
             echo -e "${Error}ERROR${Off} Missing /usr/sbin/dtc or not executable!" >&2
         fi
@@ -2358,6 +2516,7 @@ else
         if [[ $setting == "yes" ]]; then
             echo -e "\nRe-enabled support disk compatibility."
         fi
+        sdc_reenabled=yes
     elif [[ $setting == "yes" ]]; then
         echo -e "\nSupport disk compatibility already enabled."
     fi
@@ -2377,7 +2536,7 @@ if [[ -z $settingbak || -z $setting ]]; then
         if [[ $memcheck_value == "/usr/syno/bin/syno_mem_check" ]]; then
             # Disable SynoMemCheck.service
             /usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart /bin/true
-            memcheck_value="$(/usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart)"
+            memcheck_value="$(/usr/syno/bin/synogetkeyvalue "$memcheck" ExecStart)"
             if [[ $memcheck_value == "/bin/true" ]]; then
                 echo -e "\nDisabled SynoMemCheck memory compatibility."
             fi
@@ -2388,7 +2547,7 @@ if [[ -z $settingbak || -z $setting ]]; then
         if [[ $memcheck_value == "/bin/true" ]]; then
             # Enable SynoMemCheck.service
             /usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart /usr/syno/bin/syno_mem_check
-            memcheck_value="$(/usr/syno/bin/synosetkeyvalue "$memcheck" ExecStart)"
+            memcheck_value="$(/usr/syno/bin/synogetkeyvalue "$memcheck" ExecStart)"
             if [[ $memcheck_value == "/usr/syno/bin/syno_mem_check" ]]; then
                 echo -e "\nRe-enabled SynoMemCheck memory compatibility."
             fi
@@ -2548,18 +2707,76 @@ if ls /dev | grep -q "nv[cm]"; then
                 /usr/syno/bin/synosetkeyvalue "$synoinfo" "$smp" "yes"
                 enabled="yes"
             elif [[ $setting == "yes" ]]; then
-                echo -e "\nM.2 volume support already enabled."
+                #echo -e "\nM.2 volume support already enabled."
+                echo -e "\nM.2 volume support already enabled in $synoinfo"
             fi
 
-            # Check if we enabled m2 volume support
+            # Check if m2 volume support is enabled in /etc/synoinfo.conf
+            smp=support_m2_pool
+            setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo2 ${smp})"
+            enabled2=""
+            if [[ ! $setting ]]; then
+                # Add support_m2_pool="yes"
+                #echo 'support_m2_pool="yes"' >> "$synoinfo2"
+                /usr/syno/bin/synosetkeyvalue "$synoinfo2" "$smp" "yes"
+                enabled2="yes"
+            elif [[ $setting == "no" ]]; then
+                # Change support_m2_pool="no" to "yes"
+                /usr/syno/bin/synosetkeyvalue "$synoinfo2" "$smp" "yes"
+                enabled2="yes"
+            elif [[ $setting == "yes" ]]; then
+                echo -e "\nM.2 volume support already enabled in $synoinfo2"
+            fi
+
+            # Check if we enabled m2 volume support in /etc.defaults/synoinfo.conf
             setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo ${smp})"
             if [[ $enabled == "yes" ]]; then
                 if [[ $setting == "yes" ]]; then
-                    echo -e "\nEnabled M.2 volume support."
+                    echo -e "\nEnabled M.2 volume support in $synoinfo"
                 else
-                    echo -e "\n${Error}ERROR${Off} Failed to enable m2 volume support!"
+                    echo -e "\n${Error}ERROR${Off} Failed to enable m2 volume support in ${synoinfo}!"
                 fi
             fi
+
+            # Check if we enabled m2 volume support in /etc/synoinfo.conf
+            setting="$(/usr/syno/bin/synogetkeyvalue $synoinfo2 ${smp})"
+            if [[ $enabled2 == "yes" ]]; then
+                if [[ $setting == "yes" ]]; then
+                    echo -e "\nEnabled M.2 volume support in $synoinfo2"
+                else
+                    echo -e "\n${Error}ERROR${Off} Failed to enable m2 volume support in ${synoinfo2}!"
+                fi
+            fi
+        fi
+    fi
+fi
+
+
+# Enable 3rd party SSD caches in DSM 7.4
+if [[ $dsmversion -ge "74" ]]; then
+    rulefile="/var/lib/disk-compatibility/rule_v2_host_${model}.db"
+    if [[ -f "$rulefile" ]]; then
+        if jq --tab '
+              .drive_rule[].rules[] |=
+                if .property == {"positive":{"compatibility":"support","type":"SSD"},"negative":{"vendor":["Synology"]}}
+                then .actions |= (.cache_selectable="yes"
+                                | .cache_rescue_selectable="yes"
+                                | .legacy_cache_selectable="yes"
+                                | .legacy_cache_rescue_selectable="yes")
+                else . end
+            ' "$rulefile" > "$rulefile.tmp"; then
+            if cmp -s "$rulefile" "$rulefile.tmp"; then
+                # Nothing to change
+                rm -f "$rulefile.tmp"
+            else
+                chmod --reference="$rulefile" "$rulefile.tmp"
+                chown --reference="$rulefile" "$rulefile.tmp"
+                mv "$rulefile.tmp" "$rulefile"
+                echo "Enabled 3rd party SSD caches in $(basename -- "$rulefile")"
+            fi
+        else
+            rm -f "$rulefile.tmp"
+            echo -e "${Error}ERROR${Off} Failed to enable 3rd party SSD caches in $(basename -- "$rulefile")"
         fi
     fi
 fi
@@ -2805,6 +3022,13 @@ if [[ ${showedits,,} == "yes" ]]; then
     done
 fi
 
+# Ensure /run/synostorage/disks/<drive=id>/compatibility_action exists
+# Needed in DSM 7.4 if support_disk_compatibility="no" in synoinfo.conf changed to yes
+if [[ $sdc_reenabled == "yes" && -f /usr/syno/sbin/synostgdisk ]]; then
+    # First check after re-enabling creates the per-drive files
+    /usr/syno/sbin/synostgdisk --check-all-disks-compatibility >/dev/null 2>&1
+fi
+
 # Make Synology check disk compatibility
 if [[ -f /usr/syno/sbin/synostgdisk ]]; then  # DSM 6.2.3 does not have synostgdisk
     /usr/syno/sbin/synostgdisk --check-all-disks-compatibility
@@ -2840,21 +3064,300 @@ if [[ $show_trim_warning == "yes" ]]; then
     echo "https://tinyurl.com/ssd-trim"
 fi
 
+echo ""
+
+#------------------------------------------------------------------------------
+# Code to start NVMe volume packages that were stopped by syno_hdd_shutdown if
+# NVMe volume is writable after reboot and --reboot option used in boot-up task
+
+progbar(){ 
+    # $1 is pid of process
+    # $2 is string to echo
+    string="$2"
+    local dots
+    local progress
+    dots=""
+    while [[ -d /proc/$1 ]]; do
+        dots="${dots}."
+        progress="$dots"
+        if [[ ${#dots} -gt "10" ]]; then
+            dots=""
+            progress="           "
+        fi
+        echo -ne "  ${2}$progress\r"; /usr/bin/sleep 0.3
+    done
+}
+
+progstatus(){ 
+    # $1 is return status of process
+    # $2 is string to echo
+    # $3 line number function was called from
+    if [[ $1 == "0" ]]; then
+        echo -e "$2            "
+    else
+        ding
+        echo -e "Line ${LINENO}: ERROR $2 failed!"
+        echo "${FUNCNAME[0]} called from ${FUNCNAME[1]} $3 ($scriptver)"
+        if [[ $exitonerror != "no" ]]; then
+            exit 1  # Skip exit if exitonerror != no
+        fi
+    fi
+    exitonerror=""
+}
+
+package_status(){ 
+    # $1 is package name
+    synopkg status "$1" >/dev/null
+    code="$?"
+    # DSM 7.2       0 = started, 55 = starting, 17 = stopped, 255 = not_installed, 150 = broken
+    # DSM 6 to 7.1  0 = started,  4 = starting,  3 = stopped,   4 = not_installed, 150 = broken
+    if [[ $code == "0" ]]; then
+        #echo "$1 is started"  # debug
+        return 0
+    elif [[ $code == "55" ]]; then
+        #echo "$1 is starting"  # debug
+        return 55
+    elif [[ $code == "17" ]] || [[ $code == "3" ]]; then
+        #echo "$1 is stopped"  # debug
+        return 1
+    elif [[ $code == "255" ]] || [[ $code == "4" ]]; then
+        #echo "$1 is not installed"  # debug
+        return 255
+    elif [[ $code == "150" ]]; then
+        #echo "$1 is broken"  # debug
+        return 150
+    else
+        return "$code"
+    fi
+}
+
+package_is_running(){ 
+    # $1 is package name
+    synopkg is_onoff "$1" >/dev/null
+    code="$?"
+    return "$code"
+}
+
+wait_status(){ 
+    # Wait for package to finish stopping or starting
+    # $1 is package
+    # $2 is start or stop
+    local num
+    if [[ $2 == "start" ]]; then
+        state="0"
+    elif [[ $2 == "stop" ]]; then
+        state="1"
+    fi
+    if [[ $state == "0" ]] || [[ $state == "1" ]]; then
+        num="0"
+        package_status "$1"
+        while [[ $? != "$state" ]]; do
+            sleep 1
+            num=$((num +1))
+            if [[ $num -gt "20" ]]; then
+                break
+            fi
+            package_status "$1"
+        done
+    fi
+}
+
+package_start(){ 
+    # $1 is package name
+    # $2 is package display name
+    if [[ ${#pkg_start_array[@]} -gt "1" ]]; then
+        /usr/syno/bin/synopkg start "$1" >/dev/null &
+    else
+        # Only timeout if there are other packages to process
+        #timeout 5m /usr/syno/bin/synopkg start "$1" >/dev/null &
+        # Docker can take 15 minutes to start 70 containers
+        timeout 30m /usr/syno/bin/synopkg start "$1" >/dev/null &
+    fi
+    pid=$!
+    if [[ "$sch_task" != "yes" ]]; then
+        string="Starting $2"
+        if [[ -t 1 ]]; then
+            progbar "$pid" "$string"
+        else
+            echo "$string"
+        fi
+        exitonerror="no"
+        wait "$pid"
+        progstatus "$?" "$string" "line ${LINENO}"
+    else
+        echo "Starting $2"
+        wait "$pid"
+    fi
+
+    # Allow package processes to finish starting
+    wait_status "$1" start &
+    pid=$!
+    if [[ "$sch_task" != "yes" ]]; then
+        string="Waiting for $2 to start"
+        if [[ -t 1 ]]; then
+            progbar "$pid" "$string"
+        else
+            echo "$string"
+        fi
+        exitonerror="no"
+        wait "$pid"
+        progstatus "$?" "$string" "line ${LINENO}"
+    else
+        wait "$pid"
+    fi
+}
+
+shutdown_log="${scriptpath}/syno_hdd_shutdown.log"
+
+volume_is_writable(){ 
+    # $1 is volume path. e.g. /volume3
+    # Only DSM 7+ synostgvolume has --is-writable option
+    if [[ $dsm -gt "6" ]]; then
+        synostgvolume --is-writable "$1" 2>/dev/null
+    else  # DSM 6
+        grep "[[:space:]]rw[[:space:],]" /proc/mounts | grep -q "$1"
+    fi
+}
+
+read_shutdown_log(){ 
+    # Get NVMe and eunit volumes, and the packages to start, from syno_hdd_shutdown.log
+    # Sets arrays volumes_array and pkg_start_array
+    # Returns 0 if log has volumes, or 1 if no log or no volumes
+    local line
+    volumes_array=()
+    pkg_start_array=()
+
+    if [[ ! -f "$shutdown_log" ]]; then
+        echo -e "\nNo syno_hdd_shutdown.log found"
+        return 1
+    fi
+
+    while IFS= read -r line || [[ -n $line ]]; do
+        # Skip volumes= line and blank lines
+        if [[ ${line:0:8} != "volumes=" && -n $line ]]; then
+            pkg_start_array+=("$line")
+        fi
+    done < "$shutdown_log"
+
+    # Drop packages that are no longer installed (or their volume was deleted)
+    local kept=() p
+    for p in "${pkg_start_array[@]}"; do
+        [[ -f /var/packages/${p}/INFO ]] && kept+=("$p")
+    done
+    pkg_start_array=("${kept[@]}")
+    if [[ ${#pkg_start_array[@]} -lt 1 ]]; then
+        rm -f "$shutdown_log"   # Nothing left to start
+        return 1
+    fi
+
+    # Volumes of the remaining packages
+    local derived=($(for p in "${pkg_start_array[@]}"; do
+        readlink "/var/packages/${p}/target" | cut -d'/' -f1,2
+    done | grep . | sort -u))
+    [[ ${#derived[@]} -gt 0 ]] && volumes_array=("${derived[@]}")
+
+    if [[ ${#volumes_array[@]} -lt 1 ]]; then
+        echo "Could not determine the volumes of the packages to start"
+        return 1
+    fi
+    return 0
+}
+
+volumes_are_writable(){ 
+    # Check all volumes in volumes_array are writable
+    # Sets array online_volumes_array
+    # Returns 0 if all volumes are writable, or 1 if any are not
+    local v
+    online_volumes_array=()
+
+    for v in "${volumes_array[@]}"; do
+        if volume_is_writable "$v"; then
+            online_volumes_array+=("$v")
+        else
+            echo "$v not writable"
+        fi
+    done
+
+    if [[ ${#volumes_array[@]} != "${#online_volumes_array[@]}" ]]; then
+        echo "Not all required volumes are writable"
+        reboot_needed="yes"
+        return 1
+    fi
+    return 0
+}
+
+start_nvme_packages(){ 
+    # Start packages in pkg_start_array that syno_hdd_shutdown stopped
+    local pkg pkg_name unstarted=0
+
+    echo -e "\nStarting packages installed on NVMe volumes: ${volumes_array[*]}"
+
+    for pkg in "${pkg_start_array[@]}"; do
+        # Skip packages that have been uninstalled
+        [[ -f /var/packages/${pkg}/INFO ]] || continue
+
+        pkg_name="$(synogetkeyvalue "/var/packages/${pkg}/INFO" displayname)"
+        if [[ -z "$pkg_name" ]]; then
+            pkg_name="$(synogetkeyvalue "/var/packages/${pkg}/INFO" package)"
+        fi
+        if ! package_is_running "$pkg"; then
+            #echo "Starting $pkg_name"
+            package_start "$pkg" "$pkg_name"
+            package_is_running "$pkg" || unstarted=$((unstarted +1))
+        else
+            echo "$pkg_name is already running."
+        fi
+    done
+
+    # Log has done its job once every package is running
+    if [[ $unstarted -eq 0 ]]; then
+        rm -f "$shutdown_log"
+    fi
+}
+
+# Start NVMe volume packages if volumes are writable
+# Use return, not exit, so the reboot code below still runs
+if [[ $scheduler_type != "shutdown" ]]; then
+    if read_shutdown_log; then
+        if volumes_are_writable; then
+            start_nvme_packages
+        fi
+    fi
+fi
+
 
 # Show reboot message or reboot cleanly once if needed
-if [[ $do_reboot == "yes" && $sch_task == "yes" ]]; then
-    # Reboot cleanly after DSM update if needed
+if [[ $do_reboot == "yes" && $sch_task == "yes" && $scheduler_type == "bootup" ]]; then
     previous_build="$(/usr/syno/bin/synogetkeyvalue "$reboot_file" dsm_build)"
-    if [[ $buildnumber -gt "$previous_build" ]]; then
+    if [[ ! $previous_build =~ ^[0-9]+$ ]]; then
+        /usr/syno/bin/synosetkeyvalue "$reboot_file" dsm_build "$buildnumber"
+        if [[ $rebootmsg == "yes" ]]; then
+            # Show reboot message if required
+            echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+        fi
+    elif [[ $buildnumber =~ ^[0-9]+$ && $((10#$buildnumber)) -gt $((10#$previous_build)) ]]; then
         /usr/syno/bin/synosetkeyvalue "$reboot_file" dsm_build "$buildnumber"  # Update buildnumber
-        echo -e "\nDSM has updated from build $previous_build to $buildnumber"
-        echo "Rebooting..."
-        /usr/syno/sbin/synoshutdown --reboot  # Reboot cleanly
-        exit
+        if [[ "$(/usr/syno/bin/synogetkeyvalue "$reboot_file" dsm_build)" == "$buildnumber" ]]; then
+            if [[ $reboot_needed == "yes" ]]; then
+                echo -e "\nDSM has updated from build $previous_build to $buildnumber"
+                echo "Rebooting..."
+                sync
+                /usr/syno/sbin/synoshutdown --reboot >/dev/null
+                exit
+            fi
+        else
+            echo -e "\n${Error}ERROR${Off} Failed to save DSM build number so NOT rebooting automatically"
+            echo -e "You need to ${Cyan}reboot the Synology${Off} to see the changes."
+        fi
     fi
 elif [[ $dsm -eq "6" || $rebootmsg == "yes" ]]; then
     # Show reboot message if required
     echo -e "\nYou may need to ${Cyan}reboot the Synology${Off} to see the changes."
+fi
+
+# Update reboot_file
+if [[ $scheduler_type != "shutdown" ]]; then
+    /usr/syno/bin/synosetkeyvalue "$reboot_file" dsm_build "$buildnumber"
 fi
 
 exit
